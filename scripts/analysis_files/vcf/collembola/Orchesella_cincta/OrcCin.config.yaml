@@ -1,5 +1,5 @@
 # The name of the relevant project account.
-account: 
+account: EcoGenetics
 # Name of species being analyzed
 species_name: Orchesella cincta
 # List of paths to all BAM files.

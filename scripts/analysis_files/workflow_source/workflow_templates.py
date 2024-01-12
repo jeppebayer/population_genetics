@@ -75,6 +75,9 @@ def partition_chrom(parse_fasta: list, size: int = 500000):
 
 ########################## PoolSNP ##########################
 
+def name_mpileup(idx: int, target: AnonymousTarget) -> str:
+    return f'{os.path.basename(target.outputs["mpileup"])}'
+
 def mpileup_parts(bam_files: list, reference_genome: str, species_name: str, region: str, num: int, start: int, end: int, output_directory: str):
     """
     Template: Create :format:`mpileup` files for each partition of reference genome from multiple :format:`BAM` files using :script:`samtools mpileup`.
@@ -143,6 +146,9 @@ def mpileup_parts(bam_files: list, reference_genome: str, species_name: str, reg
     """
     return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
+def name_sync(idx: int, target: AnonymousTarget) -> str:
+    return f'{os.path.basename(target.outputs["sync"])}'
+
 def mpileup2sync(mpileup_file: str, output_directory: str, mpileup2sync: str = glob.glob(f'{os.path.dirname(os.path.realpath(__file__))}/scripts/popoolation2*/mpileup2sync.pl')[0]):
     """
     Template: Makes a :format:`sync` file for a corresponding :format:`mpileup` file using :script:`popoolation2`'s :script:`mpileup2sync.pl`
@@ -191,6 +197,9 @@ def mpileup2sync(mpileup_file: str, output_directory: str, mpileup2sync: str = g
     echo "$(jobinfo "$SLURM_JOBID")"
     """
     return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def name_cov(idx: int, target: AnonymousTarget) -> str:
+    return f'{os.path.basename(target.outputs["cutoff"])}'
 
 def max_cov(mpileup: str, contig: str, cutoff: float, output_directory: str, script: str = f'{os.path.dirname(os.path.realpath(__file__))}/PoolSNP/scripts/max-cov.py'):
     """

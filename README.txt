@@ -1,2 +1,7 @@
-Write a description of the project in this file.
-If you want to initialize a git repository it is suggested you do it from this directory.
+Project description
+
+Currently this project encompasses a lot as it both covers my own work in relation to genetic load but also all other work I'm involved in in regards to the population genetic data.
+These include:
+    - Neutral genetic diversity, Tammy Ai Tian Ho
+    - Master's projects
+    - Bachelor's projects
