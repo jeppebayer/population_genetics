@@ -78,7 +78,7 @@ def partition_chrom(parse_fasta: list, size: int = 500000):
 def name_mpileup(idx: int, target: AnonymousTarget) -> str:
     return f'{os.path.basename(target.outputs["mpileup"])}'
 
-def mpileup_parts(bam_files: list, reference_genome: str, species_name: str, region: str, num: int, start: int, end: int, output_directory: str):
+def mpileup_parts(bam_files: list, reference_genome_file: str, species_name: str, region: str, num: int, start: int, end: int, output_directory: str):
     """
     Template: Create :format:`mpileup` files for each partition of reference genome from multiple :format:`BAM` files using :script:`samtools mpileup`.
     
@@ -86,11 +86,11 @@ def mpileup_parts(bam_files: list, reference_genome: str, species_name: str, reg
     
         inputs = {'bam_files': bam_files,
                   'reference': reference_genome}
-        outputs = {'mpileup': *.mpileup}
+        outputs = {'mpileup': *_num_region.mpileup}
     
     :param list bam_files:
         List of all :format:`BAM` files to be included in :format:`mpileup` file.
-    :param str reference_genome:
+    :param str reference_genome_file:
         Path to genome reference file in `FASTA`format.
     :param str species_name:
         Name of species being worked on.
@@ -103,10 +103,10 @@ def mpileup_parts(bam_files: list, reference_genome: str, species_name: str, reg
     :param int end:
         End position from **partition_chrom**.
     :param str output_directory:
-        Path to desired output directory. Creates directories 'tmp/bed' and 'tmp/mpileup' at location.
+        Path to output directory. Creates directories 'tmp/bed' and 'tmp/mpileup' at location.
     """
     inputs = {'bam_files': bam_files,
-              'reference': reference_genome}
+              'reference': reference_genome_file}
     outputs = {'mpileup': f'{output_directory}/tmp/mpileup/{species_abbreviation(species_name)}_{num}_{region}.mpileup'}
     options = {
         'cores': 1,
@@ -132,7 +132,7 @@ def mpileup_parts(bam_files: list, reference_genome: str, species_name: str, reg
     
     samtools mpileup \
         --max-depth 0 \
-        --fasta-ref {reference_genome} \
+        --fasta-ref {reference_genome_file} \
         --positions {output_directory}/tmp/bed/{num}.bed \
         --min-BQ 0 \
         --region {region} \
@@ -149,20 +149,21 @@ def mpileup_parts(bam_files: list, reference_genome: str, species_name: str, reg
 def name_sync(idx: int, target: AnonymousTarget) -> str:
     return f'{os.path.basename(target.outputs["sync"])}'
 
-def mpileup2sync(mpileup_file: str, output_directory: str, mpileup2sync: str = glob.glob(f'{os.path.dirname(os.path.realpath(__file__))}/scripts/popoolation2*/mpileup2sync.pl')[0]):
+def mpileup2sync(mpileup_file: str, output_directory: str, mpileup2sync_script: str = glob.glob(f'{os.path.dirname(os.path.realpath(__file__))}/scripts/popoolation2*/mpileup2sync.pl')[0]):
     """
     Template: Makes a :format:`sync` file for a corresponding :format:`mpileup` file using :script:`popoolation2`'s :script:`mpileup2sync.pl`
     
     Template I/O::
     
         inputs = {'mpileup': mpileup_file}
-        outputs = {'sync': *.sync}
+        outputs = {'sync': *.sync,
+                   'params': *.sync.params}
     
     :param str mpileup_file:
         Input :format:`mpileup` file.
     :param str output_directory:
-        Desired output directory for :format:`sync` file. Creates directories 'tmp/sync/' at location.
-    :param str mpileup2sync:
+        Output directory for :format:`sync` file. Creates directories 'tmp/sync/' at location.
+    :param str mpileup2sync_script:
         Path to :script:`mpile2sync.pl`.
     """
     inputs = {'mpileup': mpileup_file}
@@ -185,7 +186,7 @@ def mpileup2sync(mpileup_file: str, output_directory: str, mpileup2sync: str = g
     
     [ -d {output_directory}/tmp/sync ] || mkdir -p {output_directory}/tmp/sync
 
-    perl {mpileup2sync} \
+    perl {mpileup2sync_script} \
         --input {mpileup_file} \
         --output {output_directory}/{os.path.splitext(os.path.basename(mpileup_file))[0]}.prog.sync \
         --fastq-type sanger
@@ -201,26 +202,34 @@ def mpileup2sync(mpileup_file: str, output_directory: str, mpileup2sync: str = g
 def name_cov(idx: int, target: AnonymousTarget) -> str:
     return f'{os.path.basename(target.outputs["cutoff"])}'
 
-def max_cov(mpileup: str, contig: str, cutoff: float, output_directory: str, script: str = f'{os.path.dirname(os.path.realpath(__file__))}/PoolSNP/scripts/max-cov.py'):
+def max_cov(mpileup_file: str, contig: str, cutoff: float, output_directory: str, max_cov_script: str = f'{os.path.dirname(os.path.realpath(__file__))}/PoolSNP/scripts/max-cov.py'):
     """
     Template: Calculates coverage thresholds using :script:`max-cov.py`.
     
     Template I/O::
     
-        inputs = {}
-        outputs = {}
+        inputs = {'mpileup': mpileup_file}
+        outputs = {'cutoff': output_directory/tmp/cov/cutoffs/contig.txt}
     
-    :param
+    :param str mpileup_file:
+        Input :format:`mpileup` file.
+    :param str contig:
+        Name of contig to be processed.
+    :param float cutoff:
+        Maximum coverage cutoff value. The maximum coverage percentile to be computed.
+    :param str output_directory:
+        Output directory for 'cutoff' file. Creates subdirectories tmp/cov/cutoffs/ at location.
+    :param str max_cov_script:
+        Path to PoolSNPs :script:`max-cov.py`.
     """
-    file_name = '{output_directory}/tmp/cov/cutoffs/{contig}'.format(output_directory=output_directory, contig=contig)
-    inputs = {'mpileup': mpileup}
-    outputs = {'cutoff': '{}.txt'.format(file_name)}
+    inputs = {'mpileup': mpileup_file}
+    outputs = {'cutoff': f'{output_directory}/tmp/cov/cutoffs/{contig}.txt'}
     options = {
         'cores': 1,
         'memory': '10g',
         'walltime': '96:00:00'
     }
-    spec = """
+    spec = f"""
     # Sources environment
     if [ "$USER" == "jepe" ]; then
         source /home/"$USER"/.bashrc
@@ -232,27 +241,27 @@ def max_cov(mpileup: str, contig: str, cutoff: float, output_directory: str, scr
     
     [ -d {output_directory}/tmp/cov/cutoffs ] || mkdir -p {output_directory}/tmp/cov/cutoffs
 
-    presence=$(awk -v contig={contig} 'BEGIN{{presence = "no"}} {{if ($1 == contig) {{presence = "yes"; exit}} }} END{{print presence}}' {mpileup})
+    presence=$(awk -v contig={contig} 'BEGIN{{presence = "no"}} {{if ($1 == contig) {{presence = "yes"; exit}} }} END{{print presence}}' {mpileup_file})
 
     if [ "$presence" == "yes" ]; then
         awk \
             -v contig={contig} \
             '{{if ($1 == contig) {{print $0}}}}' \
-            {mpileup} \
-        | python {script} \
+            {mpileup_file} \
+        | python {max_cov_script} \
             --mpileup - \
             --cutoff {cutoff} \
             --contig {contig} \
-            --out {file_name}.prog.txt
+            --out {output_directory}/tmp/cov/cutoffs/{contig}.prog.txt
         
-        mv {file_name}.prog.txt {cutoff_file}
+        mv {output_directory}/tmp/cov/cutoffs/{contig}.prog.txt {outputs['cutoff']}
     else
-        echo -n "" > {cutoff_file}
+        echo -n "" > {outputs['cutoff']}
     fi
     
     echo "END: $(date)"
     echo "$(jobinfo "$SLURM_JOBID")"
-    """.format(output_directory=output_directory, contig=contig, mpileup=mpileup, script=script, cutoff=cutoff, file_name=file_name, cutoff_file=outputs['cutoff'])
+    """
     return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
 def concat(files: list, output_name: str, output_directory: str = None, compress: bool = False):
@@ -320,3 +329,326 @@ def concat(files: list, output_name: str, output_directory: str = None, compress
     echo "$(jobinfo "$SLURM_JOBID")"
     """
     return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
+
+def poolsnp(mpileup_file: str, max_cov_file: str, sample_list: list, reference_genome_file: str, working_directory: str, species_name: str, output_directory: str = None, min_cov: int = 10, min_count: int = 3, min_freq: float = 0.01, miss_frac: float = 0.1, bq: int = 15, sites: int = 1, poolsnp_script: str = '/faststorage/project/EcoGenetics/people/Jeppe_Bayer/scripts/gwf/03_initial_analysis_files/workflow_source/PoolSNP/scripts/PoolSnp.py'):
+    """
+    Template: Creates :format:`VCF` file using :script:`PoolSnp.py`.
+    
+    Template I/O::
+    
+        inputs = {'mpileup': mpileup_file,
+                  'max_cov': max_cov_file}
+        outputs = {'vcf': *.vcf.gz}
+    
+    :param str mpileup_file:
+        Input :format:`mpileup` file.
+    :param str max_cov_file:
+        Maximum coverage cutoff file produced by PoolSNPs :script:`max-cov.py`.
+    :param list sample_list:
+        List of all samples names in the :format:`mpileup` file.
+    :param str reference_genome_file:
+        Path to genome reference file in `FASTA` format.
+    :param str working_directory:
+        Path to directory for intermediary files.
+    :param str species_name:
+        Name of species being worked on.
+    :param output directory:
+        Path to output directory for :format:`VCF` file. Defaults to working directory.
+    :param int min_cov:
+        Sample-wise minimum coverage. Default 10.
+    :param int min_count:
+        Minimum alternative allele count across all populations pooled. Default 3.
+    :param float min_freq:
+        Minimum alternative allele frequency across all populations pooled. Default 0.01.
+    :param float miss_frac:
+        Maximum allowed fraction of samples not fullfilling all parameters. Default 0.1.
+    :param int bq:
+        Minimum base quality for every nucleotide. Default 15.
+    :param int sites:
+        Include all sites (1) or only polymorphic sites (0). Default 1.
+    :param str poolsnp_script:
+        Path to PoolSNPs :script:`PoolSnp.py`.
+    """
+    if output_directory is None:
+        output_directory = working_directory
+    sample_string = '\t'.join(sample_list)
+    inputs = {'mpileup': mpileup_file,
+              'max_cov': max_cov_file}
+    outputs = {'vcf': f'{output_directory}/{species_abbreviation(species_name)}.vcf.gz'}
+    protect = outputs['vcf']
+    options = {
+        'cores': 40,
+        'memory': '160g',
+        'walltime': '60:00:00'
+    }
+    spec = f"""
+    # Sources environment
+    if [ "$USER" == "jepe" ]; then
+        source /home/"$USER"/.bashrc
+        source activate vcf
+    fi
+    
+    echo "START: $(date)"
+    echo "JobID: $SLURM_JOBID"
+    
+    [ -d {working_directory}/tmp ] || mkdir -p {working_directory}/tmp
+
+    headerfile={working_directory}/tmp/header.txt
+    echo -e "##fileformat=VCFv4.2" > "$headerfile"
+    echo -e "##fileDate=$(date +%d'/'%m'/'%y)" >> "$headerfile"
+    echo -e "##Source=PoolSnp-1.05" >> "$headerfile"
+    echo -e "##Parameters=<ID=MinCov,Number={min_cov},Type=Integer,Description=\\"Minimum coverage per sample\\">" >> "$headerfile"
+    echo -e "##Parameters=<ID=MaxCov,Number={max_cov_file},Type=Integer,Description=\\"Maximum chromosome- and sample-specific maximum coverage; Either a precomputed file or the maximum percentile cutoff, eg. 0.95 to consider only reads within the 95% coverage percentile\\">" >> "$headerfile"
+    echo -e "##Parameters=<ID=MinCount,Number={min_count},Type=Integer,Description=\\"Minimum alternative allele count across all samples pooled\\">" >> "$headerfile"
+    echo -e "##Parameters=<ID=MinFreq,Number={min_freq},Type=Float,Description=\\"Minimum alternative allele frequency across all samples pooled\\">" >> "$headerfile"
+    echo -e "##Parameters=<ID=MaximumMissingFraction,Number={miss_frac},Type=Float,Description=\\"Maximum fraction of samples allowed that are not fullfilling all parameters\\">" >> "$headerfile"
+    echo -e "##Parameters=<ID=BaseQual,Number={bq},Type=Integer,Description=\\"Minimum PHRED scaled base quality\\">" >> "$headerfile"
+    echo -e "##Reference={reference_genome_file}" >> "$headerfile"
+    echo -e "##INFO=<ID=ADP,Number=1,Type=Integer,Description=\\"Average per-sample depth of bases with Phred score >={bq}\\">" >> "$headerfile"
+    echo -e "##INFO=<ID=NC,Number=1,Type=Integer,Description=\\"Number of samples not called\\">" >> "$headerfile"
+    echo -e "##FORMAT=<ID=GT,Number=1,Type=String,Description=\\"Genotype\\">" >> "$headerfile"
+    echo -e "##FORMAT=<ID=RD,Number=1,Type=Integer,Description=\\"Reference Counts\\">" >> "$headerfile"
+    echo -e "##FORMAT=<ID=AD,Number=1,Type=Integer,Description=\\"Alternative Counts\\">" >> "$headerfile"
+    echo -e "##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\\"Total Depth\\">" >> "$headerfile"
+    echo -e "##FORMAT=<ID=FREQ,Number=1,Type=Float,Description=\\"Variant allele frequency\\">" >> "$headerfile"
+    echo -e "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t{sample_string}" >> "$headerfile"
+
+    parallel \
+        -k \
+        -j {options['cores']} \
+        --pipepart \
+        --no-notice \
+        -a {mpileup_file} \
+    --cat python {poolsnp_script} \
+        --mpileup {{}} \
+        --min-cov {min_cov} \
+        --max-cov {max_cov_file} \
+        --min-freq {min_freq} \
+        --miss-frac {miss_frac} \
+        --min-count {min_count} \
+        --base-quality  {bq} \
+        --allsites {sites} \
+        > {working_directory}/tmp/SNPs.prog.txt
+
+    mv {working_directory}/tmp/SNPs.prog.txt {working_directory}/tmp/SNPs.txt
+
+    cat {working_directory}/tmp/header.txt {working_directory}/tmp/SNPs.txt | gzip > {output_directory}/{species_abbreviation(species_name)}.prog.vcf.gz
+    
+    mv {output_directory}/{species_abbreviation(species_name)}.prog.vcf.gz {outputs['vcf']}
+
+    rm -f {working_directory}/tmp/header.txt
+    rm -f {working_directory}/tmp/SNPs.txt
+
+    echo "END: $(date)"
+    echo "$(jobinfo "$SLURM_JOBID")"
+    """
+    return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+
+def vcf_filter(vcf_file: str, output_directory: str, species_name: str):
+    """
+    Template: Filter :format:`VCF` file turning it into a biallelic format.
+    
+    Template I/O::
+    
+        inputs = {'vcf': vcf_file}
+        outputs = {'biallelic': *.biallelic.vcf.gz}
+    
+    :param str vcf_file:
+        Input :format:`VCF` file.
+    :param str output_directory:
+        Output directory for biallelic :format:`VCF` file.
+    :param str species_name:
+        Name species currently being worked on.
+    """
+    inputs = {'vcf': vcf_file}
+    outputs = {'biallelic': f'{output_directory}/{species_abbreviation(species_name)}.biallelic.vcf.gz'}
+    options = {
+        'cores': 1,
+        'memory': '10g',
+        'walltime': '12:00:00'
+    }
+    spec = f"""
+    # Sources environment
+    if [ "$USER" == "jepe" ]; then
+        source /home/"$USER"/.bashrc
+        source activate vcf
+    fi
+    
+    echo "START: $(date)"
+    echo "JobID: $SLURM_JOBID"
+    
+    if [ "${{{vcf_file}%.*}}" == ".gz" ]; then
+	    input_file="<(zcat {vcf_file})"
+    else
+        input_file={vcf_file}
+    fi
+    
+    awk \
+        'BEGIN{{FS=OFS="\t"}}
+        {{
+        if ($0 ~ /^#/)
+        	{{print $0}}
+        else
+        	{{len=length($5)
+        	if ($5 !=  "." && len == 1)
+        		{{for(i=1;i<=NF;i++)
+        			{{if (substr($i,1,3)=="0/1" && substr($i,length($i)-2,3)=="0.0") 
+        				{{sub("0/1", "0/0", $i)}}
+        			}}; print
+        		}}
+        	else
+        		{{if ($5 !=  "." && len == 3)
+        			{{for(i=1;i<=NF;i++)
+        				{{if (substr($i,1,4)=="0/1:" && substr($i,length($i)-2,3)=="0.0")
+        					{{sub("0/1", "0/0", $i)}}
+        				if (substr($i,1,4)=="0/2:" && substr($i,length($i)-2,3)=="0.0")
+        					{{sub("0/2", "0/0", $i)}}
+        				if (substr($i,1,6)=="0/1/2:" && substr($i,length($i)-6,7)=="0.0,0.0")
+        					{{sub("0/1/2", "0/0", $i)}}
+        				if (substr($i,1,6)=="0/1/2:" && substr($i,length($i)-2,3)=="0.0" && substr($i,length($i)-6,3)!="0.0")
+        					{{sub("0/1/2", "0/1", $i)}}
+        				if (substr($i,1,6)=="0/1/2:" && substr($i,length($i)-7,3)=="0.0" && substr($i,length($i)-2,3)!="0.0")
+        					{{sub("0/1/2", "0/2", $i)}}
+        				}}; print
+        			}}
+        		else
+        			{{if ($5 !=  "." && len == 5)
+        				{{for(i=1;i<=NF;i++)
+        					{{if (substr($i,1,4)=="0/1:"  && substr($i,length($i)-2,3)=="0.0")
+        						{{sub("0/1", "0/0", $i)}}
+        					if (substr($i,1,4)=="0/2:" && substr($i,length($i)-2,3)=="0.0")
+        						{{sub("0/2", "0/0", $i)}}
+        					if (substr($i,1,4)=="0/3:" && substr($i,length($i)-2,3)=="0.0")
+        						{{sub("0/3", "0/0", $i)}}
+        					if (substr($i,1,6)=="0/1/2:" && substr($i,length($i)-6,7)=="0.0,0.0")
+        						{{sub("0/1/2", "0/0", $i)}}
+        					if (substr($i,1,6)=="0/1/2:" && substr($i,length($i)-2,3)=="0.0" && substr($i,length($i)-6,3)!="0.0")
+        						{{sub("0/1/2", "0/1", $i)}}
+        					if (substr($i,1,6)=="0/1/2:"&& substr($i,length($i)-7,3)=="0.0" && substr($i,length($i)-2,3)!="0.0")
+        						{{sub("0/1/2", "0/2", $i)}}
+        					if (substr($i,1,6)=="0/1/3:" && substr($i,length($i)-6,7)=="0.0,0.0")
+        						{{sub("0/1/3", "0/0", $i)}}
+        					if (substr($i,1,6)=="0/1/3:" && substr($i,length($i)-2,3)=="0.0" && substr($i,length($i)-6,3)!="0.0")
+        						{{sub("0/1/3", "0/1", $i)}}
+        					if (substr($i,1,6)=="0/1/3:" && substr($i,length($i)-7,3)=="0.0" && substr($i,length($i)-2,3)!="0.0")
+        						{{sub("0/1/3", "0/3", $i)}}
+        					if (substr($i,1,6)=="0/2/3:" && substr($i,length($i)-6,7)=="0.0,0.0")
+        						{{sub("0/2/3", "0/0", $i)}}
+        					if (substr($i,1,6)=="0/2/3:" && substr($i,length($i)-2,3)=="0.0" && substr($i,length($i)-6,3)!="0.0")
+        						{{sub("0/2/3", "0/2", $i)}}
+        					if (substr($i,1,6)=="0/2/3:" && substr($i,length($i)-7,3)=="0.0" && substr($i,length($i)-2,3)!="0.0")
+        						{{sub("0/2/3", "0/3", $i)}}
+        					if (substr($i,1,8)=="0/1/2/3:" && substr($i,length($i)-10,11)=="0.0,0.0,0.0") 
+        						{{sub("0/1/2/3", "0/0", $i)}}
+        					if (substr($i,1,8)=="0/1/2/3:" && substr($i,length($i)-6,7)=="0.0,0.0" && substr($i,length($i)-10,3)!="0.0") 
+        						{{sub("0/1/2/3", "0/1", $i)}}
+        					if (substr($i,1,8)=="0/1/2/3:" && substr($i,length($i)-2,3)=="0.0" && substr($i,length($i)-11,3)=="0.0" && substr($i,length($i)-6,3)!="0.0")
+        						{{sub("0/1/2/3", "0/2", $i)}}
+        					if (substr($i,1,8)=="0/1/2/3:" && substr($i,length($i)-11,7)=="0.0,0.0" && substr($i,length($i)-2,3)!="0.0")
+        						{{sub("0/1/2/3", "0/3", $i)}}
+        					}}; print
+        				}}
+        			else {{print $0}}
+        			}}
+        		}}
+        	}}
+        }}' "$input_file" \
+    | awk \
+        'BEGIN{{FS=OFS="\t"}}
+        {{
+        if ($0 ~ /^#/)
+        	{{print $0}}
+        else
+        	{{len=length($5)
+        	if ($5 !=  "." && len == 3)
+        		{{for(i=1;i<=NF;i++)
+        			{{if (substr($i,1,4)=="0/0:" && substr($i,length($i)-6,7)=="0.0,0.0")
+        				{{sub("0.0,0.0", "0.0", $i)}}
+        			if (substr($i,1,4)=="0/1:" && substr($i,length($i)-2,3)=="0.0")
+        				{{sub(",0.0", "", $i)}}
+        			if (substr($i,1,4)=="0/2:" && substr($i,length($i)-2,3)!="0.0")
+        				{{sub("0.0,", "", $i)}}
+        			}}; print
+        		}}
+        	else
+        		{{if ($5 !=  "." && len == 5)
+        			{{for(i=1;i<=NF;i++)
+        				{{if (substr($i,1,4)=="0/0:"  && substr($i,length($i)-7,8)==":0.0,0.0")
+        					{{sub("0.0,0.0", "0.0", $i)}}
+        				if (substr($i,1,4)=="0/0:" && substr($i,length($i)-10,11)=="0.0,0.0,0.0")
+        					{{sub("0.0,0.0,0.0", "0.0", $i)}}
+        				if (substr($i,1,4)=="0/1:" && substr($i,length($i)-2,3)=="0.0" && substr($i,length($i)-6,3)!="0.0")
+        					{{sub(",0.0", "", $i)}}
+        				if (substr($i,1,4)=="0/2:" && substr($i,length($i)-2,3)!="0.0")
+        					{{sub("0.0,", "", $i)}}
+        				if (substr($i,1,4)=="0/3:" && substr($i,length($i)-2,3)!="0.0" && substr($i,length($i)-8,4)==":0.0")
+        					{{sub("0.0,", "", $i)}}
+        				if (substr($i,1,4)=="0/2:"&& substr($i,length($i)-2,3)=="0.0" && substr($i,length($i)-6,3)!="0.0" && substr($i,length($i)-8,1)==":")
+        					{{sub(",0.0", "", $i)}}
+        				if (substr($i,1,4)=="0/1:" && substr($i,length($i)-6,7)=="0.0,0.0")
+        					{{sub(",0.0,0.0", "", $i)}}
+        				if (substr($i,1,4)=="0/2:" && substr($i,length($i)-2,3)=="0.0" && substr($i,length($i)-11,3)=="0.0" && substr($i,length($i)-6,3)!="0.0")
+        					{{sub("0.0,", "", $i); sub(",0.0", "", $i)}}
+        				if (substr($i,1,4)=="0/3:" && substr($i,length($i)-2,3)!="0.0")
+        					{{sub("0.0,0.0,", "", $i)}}
+        				}}; print
+        			}}
+        		else {{print $0}}
+        		}}
+        	}}
+        }}' \
+    | awk \
+        'BEGIN{{FS=OFS="\t"}}
+        {{
+        if ($0 ~ /^#/)
+        	{{print $0}}
+        else
+        	{{ONE = 0; TWO = 0; THREE = 0
+        	if ($0 ~ /\/1/)
+        		{{ONE = 1}}
+        	if ($0 ~ /\/2/)
+        		{{TWO = 1}}
+        	if ($0 ~ /\/3/)
+        		{{THREE = 1}}
+        	if (ONE + TWO + THREE == 0)
+        		{{sub($5,".", $5); print $0}}
+        	if (ONE + TWO + THREE >= 2)
+        		{{next}}
+        	else
+        		{{if (ONE == 1)
+        			{{sub($5,substr($5,1,1),$5); print $0}}
+        		else
+        			{{if (TWO == 1)
+        				{{sub($5,substr($5,3,1),$5); print $0}}
+        			else
+        				{{if (THREE == 1)
+        					{{sub($5,substr($5,5,1),$5); print $0}}
+        				}}
+        			}}
+        		}}
+        	}}
+        }}' \
+    | awk \
+        'BEGIN{{FS=OFS="\t"}}
+        {{
+        if ($0 ~ /^#/)
+        	{{print $0}}
+        else
+        	{{gsub("/2","/1"); print $0}}
+        }}' \
+    | awk \
+        'BEGIN{{FS=OFS="\t"}}
+        {{
+        if ($0 ~ /^#/)
+        	{{print $0}}
+        else
+        	{{gsub("/3","/1"); print $0}}
+        }}' \
+    | gzip > {output_directory}/{species_abbreviation(species_name)}.biallelic.prog.vcf.gz
+    
+    mv {output_directory}/{species_abbreviation(species_name)}.biallelic.prog.vcf.gz {outputs['biallelic']}
+    
+    echo "END: $(date)"
+    echo "$(jobinfo "$SLURM_JOBID")"
+    """
+    return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)

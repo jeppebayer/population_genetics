@@ -20,9 +20,9 @@ reference_genome_path: /faststorage/project/EcoGenetics/BACKUP/reference_genomes
 working_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps
 # Directory for final output files.
 output_directory_path: /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_cincta
-# Maximum coverage cutoff value. the maximum coverage percentile to be computed.
+# Maximum coverage cutoff value. The maximum coverage percentile to be computed.
 max_cov: 0.98
-# Sample-wise minimum coverage:
+# Sample-wise minimum coverage.
 min_cov: 2
 # Minimum alternative allele count across all populations pooled.
 min_count: 2

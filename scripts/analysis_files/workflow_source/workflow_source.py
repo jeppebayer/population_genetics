@@ -72,9 +72,79 @@ def poolsnp_vcf_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
         template_func=mpileup_parts,
         inputs=partitions,
         extra={'bam_files': SAMPLE_LIST,
-               'reference_genome': REFERENCE_GENOME,
+               'reference_genome_file': REFERENCE_GENOME,
                'species_name': SPECIES_NAME,
                'output_directory': top_dir}
+    )
+
+    sync = gwf.map(
+        name=name_sync,
+        template_func=mpileup2sync,
+        inputs=collect(mpileup.outputs, ['mpileup'])['mpileups']
+    )
+
+    concat_mpileup = gwf.target_from_template(
+        name='concat_mpileup',
+        template=concat(
+            files=collect(mpileup.outputs, ['mpileup'])['mpileups'],
+            output_name=f'{species_abbreviation(SPECIES_NAME)}',
+            output_directory=output_dir
+        )
+    )
+
+    concat_sync = gwf.target_from_template(
+        name='concat_sync',
+        template=concat(
+            files=collect(sync.outputs, ['sync'])['syncs'],
+            output_name=f'{species_abbreviation(SPECIES_NAME)}',
+            output_directory=output_dir
+        )
+    )
+
+    coverage_threshold = gwf.map(
+        name=name_cov,
+        template_func=max_cov,
+        inputs=contigs,
+        extra={'mpileup_file': concat_mpileup.outputs['concat_file'],
+               'cutoff': MAXCOV,
+               'output_directory': top_dir}
+    )
+
+    concat_coverage = gwf.target_from_template(
+        name='concatenate_coverage',
+        template=concat(
+            files=collect(coverage_threshold.outputs, ['cutoff'])['cutoffs'],
+            output_name=f'{species_abbreviation(SPECIES_NAME)}-cov-{MAXCOV}',
+            output_directory=top_dir
+        )
+    )
+
+    run_poolsnp = gwf.target_from_template(
+        name='poolsnp',
+        template=poolsnp(
+            mpileup_file=concat_mpileup.outputs['concat_file'],
+            max_cov_file=concat_coverage.outputs['concat_file'],
+            sample_list=sample_names,
+            reference_genome_file=REFERENCE_GENOME,
+            working_directory=top_dir,
+            species_name=SPECIES_NAME,
+            output_directory=output_dir,
+            min_cov=MINCOV,
+            min_count=MINCOUNT,
+            min_freq=MINFREQ,
+            miss_frac=MISSFRAC,
+            bq=BASEQUAL,
+            sites=ALLSITES
+        )
+    )
+
+    biallelic_vcf = gwf.target_from_template(
+        name='biallelic_filter',
+        template=vcf_filter(
+            vcf_file=run_poolsnp.outputs['vcf'],
+            output_directory=output_dir,
+            species_name=SPECIES_NAME
+        )
     )
 
     return gwf
