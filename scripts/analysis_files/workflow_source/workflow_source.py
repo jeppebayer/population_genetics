@@ -6,7 +6,7 @@ from workflow_templates import *
 
 def poolsnp_vcf_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
     """
-    Workflow: Create :format:`mpileup`, :format:`sync` and :foramt:`VCF` files using :script:`samtools`, :script:`popoolation2` and :script:`PoolSNP`.
+    Workflow: Create :format:`mpileup`, :format:`sync` and :format:`VCF` files using :script:`samtools`, :script:`popoolation2` and :script:`PoolSNP`.
     
     :param str config_file:
         Configuration file containing pre-defined set of variables
@@ -63,9 +63,12 @@ def poolsnp_vcf_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
             outfile.write('\n'.join('\t'.join(str(i) for i in entry.values()) for entry in partitions))
         # Creates list of contigs in reference genome
         contigs = [{'contig': contig['sequence_name']} for contig in sequences]
-    
+
     top_dir = f'{WORKING_DIR}/analysis_files/{SPECIES_NAME.replace(" ", "_")}'
     output_dir = f'{OUTPUT_DIR}/{species_abbreviation(SPECIES_NAME)}'
+
+    # Creates list of dictionariues with contigs and corresponding mpileup files
+    mpileup_filelist = mpileup_partitions_filelist(partitions=partitions, top_dir=top_dir, species_name=SPECIES_NAME)
 
     mpileup = gwf.map(
         name=name_mpileup,
@@ -80,7 +83,8 @@ def poolsnp_vcf_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
     sync = gwf.map(
         name=name_sync,
         template_func=mpileup2sync,
-        inputs=collect(mpileup.outputs, ['mpileup'])['mpileups']
+        inputs=collect(mpileup.outputs, ['mpileup'])['mpileups'],
+        extra={'output_directory': top_dir}
     )
 
     concat_mpileup = gwf.target_from_template(
@@ -103,12 +107,20 @@ def poolsnp_vcf_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 
     coverage_threshold = gwf.map(
         name=name_cov,
-        template_func=max_cov,
-        inputs=contigs,
-        extra={'mpileup_file': concat_mpileup.outputs['concat_file'],
-               'cutoff': MAXCOV,
+        template_func=max_cov_threshold,
+        inputs=mpileup_filelist,
+        extra={'cutoff': MAXCOV,
                'output_directory': top_dir}
     )
+
+    # coverage_threshold = gwf.map(
+    #     name=name_cov,
+    #     template_func=max_cov,
+    #     inputs=contigs,
+    #     extra={'mpileup_file': concat_mpileup.outputs['concat_file'],
+    #            'cutoff': MAXCOV,
+    #            'output_directory': top_dir}
+    # )
 
     concat_coverage = gwf.target_from_template(
         name='concatenate_coverage',
