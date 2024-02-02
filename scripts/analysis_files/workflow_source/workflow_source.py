@@ -64,7 +64,7 @@ def poolsnp_vcf_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
         # Creates list of contigs in reference genome
         contigs = [{'contig': contig['sequence_name']} for contig in sequences]
 
-    top_dir = f'{WORKING_DIR}/analysis_files/{SPECIES_NAME.replace(" ", "_")}'
+    top_dir = f'{WORKING_DIR}/{SPECIES_NAME.replace(" ", "_")}/analysis_files'
     output_dir = f'{OUTPUT_DIR}/{species_abbreviation(SPECIES_NAME)}'
 
     # Creates list of dictionariues with contigs and corresponding mpileup files

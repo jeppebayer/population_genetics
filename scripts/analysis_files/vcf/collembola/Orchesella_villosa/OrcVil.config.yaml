@@ -1,0 +1,31 @@
+# The name of the relevant project account.
+account: EcoGenetics
+# Name of species being analyzed
+species_name: Orchesella villosa
+# List of paths to all BAM files.
+sample_list:
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_villosa/OrcVil_BRS-C95/OrcVil_BRS-C95_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_villosa/OrcVil_CA_KNJ-C208/OrcVil_CA_KNJ-C208_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_villosa/OrcVil_FaaJ-C5/OrcVil_FaaJ-C5_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_villosa/OrcVil_MSJ-C3/OrcVil_MSJ-C3_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_villosa/OrcVil_NYS-F-C26/OrcVil_NYS-F-C26_filtered.bam
+# Path to reference genome.
+reference_genome_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Orchesella_villosa/repeatmasking/OrcVil.softmasked.nowhitespace.fna
+# Directory for intermediary files.
+working_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola
+# Directory for final output files.
+output_directory_path: /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_villosa
+# Maximum coverage cutoff value. The maximum coverage percentile to be computed.
+max_cov: 0.98
+# Sample-wise minimum coverage.
+min_cov: 2
+# Minimum alternative allele count across all populations pooled.
+min_count: 2
+# Minimum alternative allele frequency across all populations pooled.
+min_freq: 0
+# Maximum allowed fraction of samples not fullfilling all parameters.
+miss_frac: 0.001
+# Minimum base quality for every nucleotide.
+bq: 15
+# Include all sites (or only polymorphic sites). True | False
+all_sites: True

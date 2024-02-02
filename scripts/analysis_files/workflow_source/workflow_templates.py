@@ -144,7 +144,7 @@ def mpileup_parts(bam_files: list, reference_genome_file: str, species_name: str
     options = {
         'cores': 1,
         'memory': '16g',
-        'walltime': '10:00:00'
+        'walltime': '20:00:00'
     }
     spec = f"""
     # Sources environment
@@ -200,12 +200,12 @@ def mpileup2sync(mpileup_file: str, output_directory: str, mpileup2sync_script: 
         Path to :script:`mpile2sync.pl`.
     """
     inputs = {'mpileup': mpileup_file}
-    outputs = {'sync': f'{output_directory}/{os.path.splitext(os.path.basename(mpileup_file))[0]}.sync',
-               'params': f'{output_directory}/{os.path.splitext(os.path.basename(mpileup_file))[0]}.sync.params'}
+    outputs = {'sync': f'{output_directory}/tmp/sync/{os.path.splitext(os.path.basename(mpileup_file))[0]}.sync',
+               'params': f'{output_directory}/tmp/sync/{os.path.splitext(os.path.basename(mpileup_file))[0]}.sync.params'}
     options = {
         'cores': 2,
         'memory': '16g',
-        'walltime': '06:00:00'
+        'walltime': '20:00:00'
     }
     spec = f"""
     # Sources environment
@@ -221,11 +221,11 @@ def mpileup2sync(mpileup_file: str, output_directory: str, mpileup2sync_script: 
 
     perl {mpileup2sync_script} \
         --input {mpileup_file} \
-        --output {output_directory}/{os.path.splitext(os.path.basename(mpileup_file))[0]}.prog.sync \
+        --output {output_directory}/tmp/sync/{os.path.splitext(os.path.basename(mpileup_file))[0]}.prog.sync \
         --fastq-type sanger
     
-    mv {output_directory}/{os.path.splitext(os.path.basename(mpileup_file))[0]}.prog.sync {outputs['sync']}
-    mv {output_directory}/{os.path.splitext(os.path.basename(mpileup_file))[0]}.prog.sync.params {outputs['params']}
+    mv {output_directory}/tmp/sync/{os.path.splitext(os.path.basename(mpileup_file))[0]}.prog.sync {outputs['sync']}
+    mv {output_directory}/tmp/sync/{os.path.splitext(os.path.basename(mpileup_file))[0]}.prog.sync.params {outputs['params']}
 
     echo "END: $(date)"
     echo "$(jobinfo "$SLURM_JOBID")"
@@ -275,7 +275,7 @@ def max_cov_threshold(mpileup_files: list, contig: str, cutoff: float, output_di
     
     [ -d {output_directory}/tmp/cov/cutoffs ] || mkdir -p {output_directory}/tmp/cov/cutoffs
 
-    if [ -s {mpileup_files[0]}) ]; then
+    if [ -s {mpileup_files[0]} ]; then
         python {max_cov_script} \
             --mpileup <(cat {" ".join(mpileup_files)})  \
             --cutoff {cutoff} \
