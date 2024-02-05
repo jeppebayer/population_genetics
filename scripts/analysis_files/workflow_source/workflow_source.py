@@ -88,7 +88,7 @@ def poolsnp_vcf_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
     )
 
     concat_mpileup = gwf.target_from_template(
-        name='concat_mpileup',
+        name='concatenate_mpileup',
         template=concat(
             files=collect(mpileup.outputs, ['mpileup'])['mpileups'],
             output_name=f'{species_abbreviation(SPECIES_NAME)}',
@@ -97,7 +97,7 @@ def poolsnp_vcf_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
     )
 
     concat_sync = gwf.target_from_template(
-        name='concat_sync',
+        name='concatenate_sync',
         template=concat(
             files=collect(sync.outputs, ['sync'])['syncs'],
             output_name=f'{species_abbreviation(SPECIES_NAME)}',

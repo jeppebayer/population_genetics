@@ -1,6 +1,6 @@
 #!/bin/env python3
 from gwf import AnonymousTarget
-import os, glob
+import os, glob, re
 
 ########################## Functions ##########################
 
@@ -65,12 +65,13 @@ def partition_chrom(parse_fasta: list, size: int = 500000):
         whole_chunks = chrom['sequence_length'] // size
         partial_chunk = chrom['sequence_length'] - whole_chunks * size
         start = 0
+        npad = len(whole_chunks + 1)
         for chunk in range(whole_chunks):
             end = start + size
-            chrom_partition.append({'num': num, 'region': chrom['sequence_name'], 'start': start, 'end': end})
+            chrom_partition.append({'num': f'{num:0{npad}}', 'region': chrom['sequence_name'], 'start': start, 'end': end})
             start = end
             num += 1
-        chrom_partition.append({'num': num, 'region': chrom['sequence_name'], 'start': start, 'end': start + partial_chunk})
+        chrom_partition.append({'num': f'{num:0{npad}}', 'region': chrom['sequence_name'], 'start': start, 'end': start + partial_chunk})
         num += 1
     return chrom_partition
 
@@ -182,7 +183,7 @@ def mpileup_parts(bam_files: list, reference_genome_file: str, species_name: str
 def name_sync(idx: int, target: AnonymousTarget) -> str:
     return f'{os.path.basename(target.outputs["sync"])}'
 
-def mpileup2sync(mpileup_file: str, output_directory: str, mpileup2sync_script: str = glob.glob(f'{os.path.dirname(os.path.realpath(__file__))}/scripts/popoolation2*/mpileup2sync.pl')[0]):
+def mpileup2sync(mpileup_file: str, output_directory: str, mpileup2sync_script: str = glob.glob(f'{os.path.dirname(os.path.realpath(__file__))}/software/popoolation2*/mpileup2sync.pl')[0]):
     """
     Template: Makes a :format:`sync` file for a corresponding :format:`mpileup` file using :script:`popoolation2`'s :script:`mpileup2sync.pl`
     
@@ -235,7 +236,7 @@ def mpileup2sync(mpileup_file: str, output_directory: str, mpileup2sync_script: 
 def name_cov(idx: int, target: AnonymousTarget) -> str:
     return f'{os.path.basename(target.outputs["cutoff"])}'
 
-def max_cov_threshold(mpileup_files: list, contig: str, cutoff: float, output_directory: str, max_cov_script: str = f'{os.path.dirname(os.path.realpath(__file__))}/PoolSNP/scripts/max-cov.py'):
+def max_cov_threshold(mpileup_files: list, contig: str, cutoff: float, output_directory: str, max_cov_script: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/PoolSNP/scripts/max-cov.py'):
     """
     Template: Calculates coverage thresholds using :script:`max-cov.py`.
     
@@ -372,7 +373,6 @@ def concat(files: list, output_name: str, output_directory: str = None, compress
     :param bool compress:
         Bool indicating whether the output file should be compressed or not.
     """
-    files.sort()
     if output_directory is None:
         output_directory = os.path.dirname(files[0])
     inputs = {'files': files}
@@ -420,7 +420,7 @@ def concat(files: list, output_name: str, output_directory: str = None, compress
     """
     return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def poolsnp(mpileup_file: str, max_cov_file: str, sample_list: list, reference_genome_file: str, working_directory: str, species_name: str, output_directory: str = None, min_cov: int = 10, min_count: int = 3, min_freq: float = 0.01, miss_frac: float = 0.1, bq: int = 15, sites: int = 1, poolsnp_script: str = '/faststorage/project/EcoGenetics/people/Jeppe_Bayer/scripts/gwf/03_initial_analysis_files/workflow_source/PoolSNP/scripts/PoolSnp.py'):
+def poolsnp(mpileup_file: str, max_cov_file: str, sample_list: list, reference_genome_file: str, working_directory: str, species_name: str, output_directory: str = None, min_cov: int = 10, min_count: int = 3, min_freq: float = 0.01, miss_frac: float = 0.1, bq: int = 15, sites: int = 1, poolsnp_script: str = '/faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/scripts/analysis_files/workflow_source/software/PoolSNP/scripts/PoolSnp.py'):
     """
     Template: Creates :format:`VCF` file using :script:`PoolSnp.py`.
     
@@ -558,6 +558,8 @@ def vcf_filter(vcf_file: str, output_directory: str, species_name: str):
         'memory': '10g',
         'walltime': '12:00:00'
     }
+    if vcf_file.endswith('.gz'):
+        vcf_file=f'<(zcat {vcf_file})'
     spec = f"""
     # Sources environment
     if [ "$USER" == "jepe" ]; then
@@ -567,13 +569,7 @@ def vcf_filter(vcf_file: str, output_directory: str, species_name: str):
     
     echo "START: $(date)"
     echo "JobID: $SLURM_JOBID"
-    
-    if [ "${{{vcf_file}%.*}}" == ".gz" ]; then
-	    input_file="<(zcat {vcf_file})"
-    else
-        input_file={vcf_file}
-    fi
-    
+
     awk \
         'BEGIN{{FS=OFS="\t"}}
         {{
@@ -643,7 +639,7 @@ def vcf_filter(vcf_file: str, output_directory: str, species_name: str):
         			}}
         		}}
         	}}
-        }}' "$input_file" \
+        }}' {vcf_file} \
     | awk \
         'BEGIN{{FS=OFS="\t"}}
         {{
