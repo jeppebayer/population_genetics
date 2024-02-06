@@ -293,7 +293,7 @@ def max_cov_threshold(mpileup_files: list, contig: str, cutoff: float, output_di
     """
     return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def max_cov(mpileup_file: str, contig: str, cutoff: float, output_directory: str, max_cov_script: str = f'{os.path.dirname(os.path.realpath(__file__))}/PoolSNP/scripts/max-cov.py'):
+def max_cov(mpileup_file: str, contig: str, cutoff: float, output_directory: str, max_cov_script: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/PoolSNP/scripts/max-cov.py'):
     """
     Template: Calculates coverage thresholds using :script:`max-cov.py`.
     
@@ -420,7 +420,7 @@ def concat(files: list, output_name: str, output_directory: str = None, compress
     """
     return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def poolsnp(mpileup_file: str, max_cov_file: str, sample_list: list, reference_genome_file: str, working_directory: str, species_name: str, output_directory: str = None, min_cov: int = 10, min_count: int = 3, min_freq: float = 0.01, miss_frac: float = 0.1, bq: int = 15, sites: int = 1, poolsnp_script: str = '/faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/scripts/analysis_files/workflow_source/software/PoolSNP/scripts/PoolSnp.py'):
+def poolsnp(mpileup_file: str, max_cov_file: str, sample_list: list, reference_genome_file: str, working_directory: str, species_name: str, output_directory: str = None, min_cov: int = 10, min_count: int = 3, min_freq: float = 0.01, miss_frac: float = 0.1, bq: int = 15, sites: int = 1, poolsnp_script: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/PoolSNP/scripts/PoolSnp.py'):
     """
     Template: Creates :format:`VCF` file using :script:`PoolSnp.py`.
     
