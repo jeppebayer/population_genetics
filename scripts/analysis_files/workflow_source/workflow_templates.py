@@ -571,7 +571,7 @@ def vcf_filter(vcf_file: str, output_directory: str, species_name: str):
     echo "JobID: $SLURM_JOBID"
 
     awk \
-        'BEGIN{{FS=OFS="\t"}}
+        'BEGIN{{FS=OFS="\\t"}}
         {{
         if ($0 ~ /^#/)
         	{{print $0}}
@@ -641,7 +641,7 @@ def vcf_filter(vcf_file: str, output_directory: str, species_name: str):
         	}}
         }}' {vcf_file} \
     | awk \
-        'BEGIN{{FS=OFS="\t"}}
+        'BEGIN{{FS=OFS="\\t"}}
         {{
         if ($0 ~ /^#/)
         	{{print $0}}
@@ -685,7 +685,7 @@ def vcf_filter(vcf_file: str, output_directory: str, species_name: str):
         	}}
         }}' \
     | awk \
-        'BEGIN{{FS=OFS="\t"}}
+        'BEGIN{{FS=OFS="\\t"}}
         {{
         if ($0 ~ /^#/)
         	{{print $0}}
@@ -716,7 +716,7 @@ def vcf_filter(vcf_file: str, output_directory: str, species_name: str):
         	}}
         }}' \
     | awk \
-        'BEGIN{{FS=OFS="\t"}}
+        'BEGIN{{FS=OFS="\\t"}}
         {{
         if ($0 ~ /^#/)
         	{{print $0}}
@@ -724,7 +724,7 @@ def vcf_filter(vcf_file: str, output_directory: str, species_name: str):
         	{{gsub("/2","/1"); print $0}}
         }}' \
     | awk \
-        'BEGIN{{FS=OFS="\t"}}
+        'BEGIN{{FS=OFS="\\t"}}
         {{
         if ($0 ~ /^#/)
         	{{print $0}}
