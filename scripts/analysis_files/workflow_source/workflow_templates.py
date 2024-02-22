@@ -42,7 +42,22 @@ def parse_fasta(fasta_file: str):
         fasta_list.append({'sequence_name': seq_name, 'sequence_length': length})
     return fasta_list
 
-def partition_chrom(parse_fasta: list, size: int = 500000):
+def padding_calculator(parse_fasta: list, size: int = 500000):
+    """
+    Calculates proper 0 padding for numbers in **partition_chrom**.
+
+    :param list parse_fasta:
+        List of dictionaries produced by **parse_fasta**.
+    :param int size:
+        Size of partitions. Default 500kb.
+    """
+    num = 1
+    for chrom in parse_fasta:
+        whole_chunks = chrom['sequence_length'] // size
+        num += (whole_chunks + 1)
+    return len(str(num))
+
+def partition_chrom(parse_fasta: list, size: int = 500000, npad: int = 5):
     """
     Partitions :format:`FASTA` file parsed with **parse_fasta**.
     
@@ -65,7 +80,6 @@ def partition_chrom(parse_fasta: list, size: int = 500000):
         whole_chunks = chrom['sequence_length'] // size
         partial_chunk = chrom['sequence_length'] - whole_chunks * size
         start = 0
-        npad = len(whole_chunks + 1)
         for chunk in range(whole_chunks):
             end = start + size
             chrom_partition.append({'num': f'{num:0{npad}}', 'region': chrom['sequence_name'], 'start': start, 'end': end})
@@ -75,7 +89,7 @@ def partition_chrom(parse_fasta: list, size: int = 500000):
         num += 1
     return chrom_partition
 
-def mpileup_partitions_filelist(partitions: list, top_dir: str, species_name: str):
+def mpileup_partitions_filelist(partitions: list, top_dir: str, species_name: str, npad: int = 5):
     """
     Generates list of dictionaries containing names of contigs and filenames of :format:`mpileup`-parts per contig based on **partition_chrom** output.
 
@@ -100,10 +114,10 @@ def mpileup_partitions_filelist(partitions: list, top_dir: str, species_name: st
         part_num += 1
         if partition['region'] != contig_name:
             if contig_name:
-                mpileup_filelists.append({'contig': contig_name, 'mpileup_files': [f'{top_dir}/tmp/mpileup/{species_abbreviation(species_name)}_{num}_{contig_name}.mpileup' for num in range(start, part_num)]})
+                mpileup_filelists.append({'contig': contig_name, 'mpileup_files': [f'{top_dir}/tmp/mpileup/{species_abbreviation(species_name)}_{num:0{npad}}_{contig_name}.mpileup' for num in range(start, part_num)]})
             start = part_num
             contig_name = partition['region']
-    mpileup_filelists.append({'contig': contig_name, 'mpileup_files': [f'{top_dir}/tmp/mpileup/{species_abbreviation(species_name)}_{num}_{contig_name}.mpileup' for num in range(start, part_num + 1)]})
+    mpileup_filelists.append({'contig': contig_name, 'mpileup_files': [f'{top_dir}/tmp/mpileup/{species_abbreviation(species_name)}_{num:0{npad}}_{contig_name}.mpileup' for num in range(start, part_num + 1)]})
     return mpileup_filelists
 
 ########################## PoolSNP ##########################
@@ -258,7 +272,7 @@ def max_cov_threshold(mpileup_files: list, contig: str, cutoff: float, output_di
     """
     mpileup_files.sort()
     inputs = {'mpileups': mpileup_files}
-    outputs = {'cutoff': f'{output_directory}/tmp/cov/cutoffs/{contig}.txt'}
+    outputs = {'cutoff': f'{output_directory}/tmp/cov/cutoffs/{contig}_maxcov{cutoff}.txt'}
     options = {
         'cores': 1,
         'memory': '10g',
@@ -283,7 +297,7 @@ def max_cov_threshold(mpileup_files: list, contig: str, cutoff: float, output_di
             --contig {contig} \
             --out {output_directory}/tmp/cov/cutoffs/{contig}.prog.txt
         
-        mv {output_directory}/tmp/cov/cutoffs/{contig}.prog.txt {outputs['cutoff']}
+        mv {output_directory}/tmp/cov/cutoffs/{contig}_maxcov{cutoff}.prog.txt {outputs['cutoff']}
     else
         echo -n "" > {outputs['cutoff']}
     fi
@@ -377,7 +391,7 @@ def concat(files: list, output_name: str, output_directory: str = None, compress
         output_directory = os.path.dirname(files[0])
     inputs = {'files': files}
     if compress:
-        outputs = {'concat_file': f'{output_directory}/{output_name}{os.path.splitext(files[0])[1]}.gzip'}
+        outputs = {'concat_file': f'{output_directory}/{output_name}{os.path.splitext(files[0])[1]}.gz'}
     else:
         outputs = {'concat_file': f'{output_directory}/{output_name}{os.path.splitext(files[0])[1]}'}
     options = {
@@ -410,9 +424,9 @@ def concat(files: list, output_name: str, output_directory: str = None, compress
         | gzip \
             -c \
             - \
-            > {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}.gzip
+            > {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}.gz
         
-        mv {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}.gzip {outputs['concat_file']}
+        mv {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}.gz {outputs['concat_file']}
     fi
 
     echo "END: $(date)"
@@ -462,9 +476,13 @@ def poolsnp(mpileup_file: str, max_cov_file: str, sample_list: list, reference_g
     if output_directory is None:
         output_directory = working_directory
     sample_string = '\t'.join(sample_list)
+    if sites == 1:
+        sitestate = 'allsites'
+    elif sites == 0:
+        sitestate = 'variants'
     inputs = {'mpileup': mpileup_file,
               'max_cov': max_cov_file}
-    outputs = {'vcf': f'{output_directory}/{species_abbreviation(species_name)}.vcf.gz'}
+    outputs = {'vcf': f'{output_directory}/{species_abbreviation(species_name)}.{sitestate}_maxcov{os.path.splitext(max_cov_file)[0].split(sep = "-")[-1]}_mincov{min_cov}_mincnt{min_count}_minfrq{min_freq}_missfrc{miss_frac}_bq{bq}.vcf.gz'}
     protect = outputs['vcf']
     options = {
         'cores': 40,
@@ -482,8 +500,9 @@ def poolsnp(mpileup_file: str, max_cov_file: str, sample_list: list, reference_g
     echo "JobID: $SLURM_JOBID"
     
     [ -d {working_directory}/tmp ] || mkdir -p {working_directory}/tmp
+    [ -d {output_directory} ] || mkdir -p {output_directory}
 
-    headerfile={working_directory}/tmp/header.txt
+    headerfile={working_directory}/tmp/header.{sitestate}_{os.path.splitext(max_cov_file)[0].split(sep = "-")[-1]}_{min_cov}_{min_count}_{min_freq}_{miss_frac}_{bq}.txt
     echo -e "##fileformat=VCFv4.2" > "$headerfile"
     echo -e "##fileDate=$(date +%d'/'%m'/'%y)" >> "$headerfile"
     echo -e "##Source=PoolSnp-1.05" >> "$headerfile"
@@ -516,18 +535,21 @@ def poolsnp(mpileup_file: str, max_cov_file: str, sample_list: list, reference_g
         --min-freq {min_freq} \
         --miss-frac {miss_frac} \
         --min-count {min_count} \
-        --base-quality  {bq} \
+        --base-quality {bq} \
         --allsites {sites} \
-        > {working_directory}/tmp/SNPs.prog.txt
+        > {working_directory}/tmp/SNPs.{sitestate}_{os.path.splitext(max_cov_file)[0].split(sep = "-")[-1]}_{min_cov}_{min_count}_{min_freq}_{miss_frac}_{bq}.txt
 
-    mv {working_directory}/tmp/SNPs.prog.txt {working_directory}/tmp/SNPs.txt
-
-    cat {working_directory}/tmp/header.txt {working_directory}/tmp/SNPs.txt | gzip > {output_directory}/{species_abbreviation(species_name)}.prog.vcf.gz
+    cat \
+        {working_directory}/tmp/header.{sitestate}_{os.path.splitext(max_cov_file)[0].split(sep = "-")[-1]}_{min_cov}_{min_count}_{min_freq}_{miss_frac}_{bq}.txt \
+        {working_directory}/tmp/SNPs.{sitestate}_{os.path.splitext(max_cov_file)[0].split(sep = "-")[-1]}_{min_cov}_{min_count}_{min_freq}_{miss_frac}_{bq}.txt \
+    | gzip \
+        > {output_directory}/{species_abbreviation(species_name)}.prog.vcf.gz
     
-    mv {output_directory}/{species_abbreviation(species_name)}.prog.vcf.gz {outputs['vcf']}
+    mv {output_directory}/{species_abbreviation(species_name)}.{sitestate}_maxcov{os.path.splitext(max_cov_file)[0].split(sep = "-")[-1]}_mincov{min_cov}_mincnt{min_count}_minfrq{min_freq}_missfrc{miss_frac}_bq{bq}.prog.vcf.gz \
+        {outputs['vcf']}
 
-    rm -f {working_directory}/tmp/header.txt
-    rm -f {working_directory}/tmp/SNPs.txt
+    rm -f {working_directory}/tmp/header.{sitestate}_{os.path.splitext(max_cov_file)[0].split(sep = "-")[-1]}_{min_cov}_{min_count}_{min_freq}_{miss_frac}_{bq}.txt
+    rm -f {working_directory}/tmp/SNPs.{sitestate}_{os.path.splitext(max_cov_file)[0].split(sep = "-")[-1]}_{min_cov}_{min_count}_{min_freq}_{miss_frac}_{bq}.txt
 
     echo "END: $(date)"
     echo "$(jobinfo "$SLURM_JOBID")"
@@ -551,15 +573,17 @@ def vcf_filter(vcf_file: str, output_directory: str, species_name: str):
         Name species currently being worked on.
     """
     inputs = {'vcf': vcf_file}
-    outputs = {'biallelic': f'{output_directory}/{species_abbreviation(species_name)}.biallelic.vcf.gz'}
+    if vcf_file.endswith('.gz'):
+        outputs = {'biallelic': f'{output_directory}/{os.path.splitext(os.path.splitext(vcf_file)[0])[0]}.biallelic.vcf.gz'}
+        vcf_file=f'<(zcat {vcf_file})'
+    else:
+        outputs = {'biallelic': f'{output_directory}/{os.path.splitext(vcf_file)[0]}.biallelic.vcf.gz'}
     protect = outputs['biallelic']
     options = {
         'cores': 1,
         'memory': '10g',
         'walltime': '12:00:00'
     }
-    if vcf_file.endswith('.gz'):
-        vcf_file=f'<(zcat {vcf_file})'
     spec = f"""
     # Sources environment
     if [ "$USER" == "jepe" ]; then
@@ -569,6 +593,8 @@ def vcf_filter(vcf_file: str, output_directory: str, species_name: str):
     
     echo "START: $(date)"
     echo "JobID: $SLURM_JOBID"
+
+    [ -d {output_directory} ] || mkdir -p {output_directory}
 
     awk \
         'BEGIN{{FS=OFS="\\t"}}

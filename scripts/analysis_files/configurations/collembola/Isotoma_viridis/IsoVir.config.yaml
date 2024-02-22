@@ -1,25 +1,31 @@
 # The name of the relevant project account.
 account: EcoGenetics
 # Name of species being analyzed
-species_name: Orchesella cincta
+species_name: Isotoma viridis
 # List of paths to all BAM files.
 sample_list:
-- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_cincta/OrcCin_aeRoe-C182/OrcCin_aeRoe-C182_filtered.bam
-- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_cincta/OrcCin_DSJ-C233/OrcCin_DSJ-C233_filtered.bam
-- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_cincta/OrcCin_FaaJ-C6/OrcCin_FaaJ-C6_filtered.bam
-- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_cincta/OrcCin_JHJ-C222/OrcCin_JHJ-C222_filtered.bam
-- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_cincta/OrcCin_KLJ-C49/OrcCin_KLJ-C49_filtered.bam
-- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_cincta/OrcCin_LEJ-C63/OrcCin_LEJ-C63_filtered.bam
-- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_cincta/OrcCin_MSJ-C87/OrcCin_MSJ-C87_filtered.bam
-- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_cincta/OrcCin_NYS-F-C25/OrcCin_NYS-F-C25_filtered.bam
-- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_cincta/OrcCin_NYS-F/OrcCin_NYS-F_filtered.bam
-- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_cincta/OrcCin_RYJ/OrcCin_RYJ_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_BJJ-C98/IsoVir_BJJ-C98_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_CA-BM3J-C121/IsoVir_CA-BM3J-C121_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_CA-FS6J_C91/IsoVir_CA-F6J_C91_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_CA-FS6J_C91/IsoVir_CA-FS6J_C91_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_CA_FSJ-C221/IsoVir_CA_FSJ-C221_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_CA_KNJ-C209/IsoVir_CA_KNJ-C209_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_FUR-C232/IsoVir_FUR-C232_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_GoeJ-C135/IsoVir_GoeJ-C135_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_JHJ-C224/IsoVir_JHJ-C224_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_JoeJ-C251/IsoVir_JoeJ-C251_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_K_FSJ-C210/IsoVir_K_FSJ-C210_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_K_HVJ-C246/IsoVir_K_HVJ-C246_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_K_KNJ-C217/IsoVir_K_KNJ-C217_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_KoeJ-C213/IsoVir_KoeJ-C213_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_RYJ-C17/IsoVir_RYJ-C17_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_SBJ-C73/IsoVir_SBJ-C73_filtered.bam
 # Path to reference genome.
-reference_genome_path: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Orchesella_cincta/GCA_001718145.1_ASM171814v1_genomic.fna
+reference_genome_path: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Isotoma_viridis/EG_IsoVir_19022024_genomic.fasta
 # Directory for intermediary files.
-working_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps
+working_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola
 # Directory for final output files.
-output_directory_path: /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_cincta
+output_directory_path: /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis
 # Maximum coverage cutoff value. The maximum coverage percentile to be computed.
 max_cov: 0.98
 # Sample-wise minimum coverage.

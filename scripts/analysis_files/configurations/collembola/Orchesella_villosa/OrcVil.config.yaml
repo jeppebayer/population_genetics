@@ -10,7 +10,7 @@ sample_list:
 - /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_villosa/OrcVil_MSJ-C3/OrcVil_MSJ-C3_filtered.bam
 - /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_villosa/OrcVil_NYS-F-C26/OrcVil_NYS-F-C26_filtered.bam
 # Path to reference genome.
-reference_genome_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Orchesella_villosa/repeatmasking/OrcVil.softmasked.nowhitespace.fna
+reference_genome_path: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Orchesella_villosa/EG_OrcVil_14022024_genomic.fasta
 # Directory for intermediary files.
 working_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola
 # Directory for final output files.
