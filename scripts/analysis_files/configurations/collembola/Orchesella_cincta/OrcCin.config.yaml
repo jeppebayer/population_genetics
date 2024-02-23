@@ -17,20 +17,39 @@ sample_list:
 # Path to reference genome.
 reference_genome_path: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Orchesella_cincta/GCA_001718145.1_ASM171814v1_genomic.fna
 # Directory for intermediary files.
-working_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps
+working_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola
 # Directory for final output files.
 output_directory_path: /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Orchesella_cincta
-# Maximum coverage cutoff value. The maximum coverage percentile to be computed.
-max_cov: 0.98
+# Include all sites (1) or only polymorphic sites (0).(0 | 1)
+all_sites: 1
+# If you want to create multiple different VCF files created with different settings, list the different values in matching order for each variable
+# Maximum coverage cutoff value. The maximum coverage percentile to be computed. (If several different thresholds, list must be sorted)
+max_cov:
+- 0.98
+- 0.98
+- 0.98
 # Sample-wise minimum coverage.
-min_cov: 2
+min_cov: 
+- 2
+- 2
+- 2
 # Minimum alternative allele count across all populations pooled.
-min_count: 2
+min_count:
+- 2
+- 5
+- 10
 # Minimum alternative allele frequency across all populations pooled.
-min_freq: 0
+min_freq:
+- 0
+- 0
+- 0
 # Maximum allowed fraction of samples not fullfilling all parameters.
-miss_frac: 0.001
+miss_frac:
+- 0.001
+- 0.001
+- 0.001
 # Minimum base quality for every nucleotide.
-bq: 15
-# Include all sites (or only polymorphic sites). True | False
-all_sites: True
+bq:
+- 15
+- 15
+- 15

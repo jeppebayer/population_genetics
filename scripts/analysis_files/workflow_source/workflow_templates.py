@@ -295,7 +295,7 @@ def max_cov_threshold(mpileup_files: list, contig: str, cutoff: float, output_di
             --mpileup <(cat {" ".join(mpileup_files)})  \
             --cutoff {cutoff} \
             --contig {contig} \
-            --out {output_directory}/tmp/cov/cutoffs/{contig}.prog.txt
+            --out {output_directory}/tmp/cov/cutoffs/{contig}_maxcov{cutoff}.prog.txt
         
         mv {output_directory}/tmp/cov/cutoffs/{contig}_maxcov{cutoff}.prog.txt {outputs['cutoff']}
     else
