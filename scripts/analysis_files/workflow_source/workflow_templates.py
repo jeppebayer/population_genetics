@@ -543,7 +543,7 @@ def poolsnp(mpileup_file: str, max_cov_file: str, sample_list: list, reference_g
         {working_directory}/tmp/header.{sitestate}_{os.path.splitext(max_cov_file)[0].split(sep = "-")[-1]}_{min_cov}_{min_count}_{min_freq}_{miss_frac}_{bq}.txt \
         {working_directory}/tmp/SNPs.{sitestate}_{os.path.splitext(max_cov_file)[0].split(sep = "-")[-1]}_{min_cov}_{min_count}_{min_freq}_{miss_frac}_{bq}.txt \
     | gzip \
-        > {output_directory}/{species_abbreviation(species_name)}.prog.vcf.gz
+        > {output_directory}/{species_abbreviation(species_name)}.{sitestate}_maxcov{os.path.splitext(max_cov_file)[0].split(sep = "-")[-1]}_mincov{min_cov}_mincnt{min_count}_minfrq{min_freq}_missfrc{miss_frac}_bq{bq}.prog.vcf.gz
     
     mv {output_directory}/{species_abbreviation(species_name)}.{sitestate}_maxcov{os.path.splitext(max_cov_file)[0].split(sep = "-")[-1]}_mincov{min_cov}_mincnt{min_count}_minfrq{min_freq}_missfrc{miss_frac}_bq{bq}.prog.vcf.gz \
         {outputs['vcf']}
@@ -574,10 +574,10 @@ def vcf_filter(vcf_file: str, output_directory: str, species_name: str):
     """
     inputs = {'vcf': vcf_file}
     if vcf_file.endswith('.gz'):
-        outputs = {'biallelic': f'{output_directory}/{os.path.splitext(os.path.splitext(vcf_file)[0])[0]}.biallelic.vcf.gz'}
+        outputs = {'biallelic': f'{output_directory}/{os.path.basename(os.path.splitext(os.path.splitext(vcf_file)[0])[0])}.biallelic.vcf.gz'}
         vcf_file=f'<(zcat {vcf_file})'
     else:
-        outputs = {'biallelic': f'{output_directory}/{os.path.splitext(vcf_file)[0]}.biallelic.vcf.gz'}
+        outputs = {'biallelic': f'{output_directory}/{os.path.basename(os.path.splitext(vcf_file)[0])}.biallelic.vcf.gz'}
     protect = outputs['biallelic']
     options = {
         'cores': 1,
