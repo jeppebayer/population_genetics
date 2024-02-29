@@ -1,0 +1,73 @@
+# The name of the relevant project account.
+account: EcoGenetics
+# Name of species being analyzed
+species_name: Isotoma viridis
+# List of paths to all BAM files. 
+# Can be separated in up to 3 sets, intended to accomodate a setup with 3 different types of sampling site per species.
+# A name should be provided for each set when using multiple. If only one set is used a name is optinal.
+# Name of first set of data.
+sample_list1_name: grasslands
+# List of BAM files constituting the first set of data.
+sample_list1:
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_BJJ-C98/IsoVir_BJJ-C98_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_FUR-C232/IsoVir_FUR-C232_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_GoeJ-C135/IsoVir_GoeJ-C135_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_JHJ-C224/IsoVir_JHJ-C224_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_JoeJ-C251/IsoVir_JoeJ-C251_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_KoeJ-C213/IsoVir_KoeJ-C213_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_RYJ-C17/IsoVir_RYJ-C17_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_SBJ-C73/IsoVir_SBJ-C73_filtered.bam
+# Name of second set of data.
+sample_list2_name: conservation_agr
+# List of BAM files constituting the second set of data.
+sample_list2:
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_CA-BM3J-C121/IsoVir_CA-BM3J-C121_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_CA-FS6J_C91/IsoVir_CA-FS6J_C91_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_CA_FSJ-C221/IsoVir_CA_FSJ-C221_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_CA_KNJ-C209/IsoVir_CA_KNJ-C209_filtered.bam
+# Name of third set of data.
+sample_list3_name: conventional_agr
+# List of BAM files constituting the third set of data.
+samplelist3:
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_K_FSJ-C210/IsoVir_K_FSJ-C210_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_K_HVJ-C246/IsoVir_K_HVJ-C246_filtered.bam
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_K_KNJ-C217/IsoVir_K_KNJ-C217_filtered.bam
+# Path to reference genome.
+reference_genome_path: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Isotoma_viridis/EG_IsoVir_19022024_genomic.fasta
+# Directory for intermediary files.
+working_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola
+# Directory for final output files.
+output_directory_path: /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis
+# Include all sites (1) or only polymorphic sites (0).(0 | 1)
+all_sites: 1
+# If you want to create multiple different VCF files with different settings, list the different values in matching order for each variable
+# Maximum coverage cutoff value. The maximum coverage percentile to be computed. (If several different thresholds, list must be sorted)
+max_cov:
+- 0.98
+- 0.98
+- 0.98
+# Sample-wise minimum coverage.
+min_cov: 
+- 2
+- 2
+- 2
+# Minimum alternative allele count across all populations pooled.
+min_count:
+- 2
+- 5
+- 10
+# Minimum alternative allele frequency across all populations pooled.
+min_freq:
+- 0
+- 0
+- 0
+# Maximum allowed fraction of samples not fullfilling all parameters.
+miss_frac:
+- 0.001
+- 0.001
+- 0.001
+# Minimum base quality for every nucleotide.
+bq:
+- 15
+- 15
+- 15

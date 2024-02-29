@@ -18,8 +18,11 @@ def poolsnp_vcf_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
     config = yaml.safe_load(open(config_file))
     ACCOUNT: str = config['account']
     SPECIES_NAME: str = config['species_name']
+    # LISTNAMES: list = [config['sample_list1_name'], config['sample_list2_name'], config['sample_list3_name']]
     SAMPLE_LIST: list = config['sample_list']
+    # SAMPLE_LIST: list = [config['sample_list1'], config['sample_list2'], config['sample_list3']]
     sample_names: list = [os.path.basename(os.path.dirname(path)) for path in SAMPLE_LIST]
+    # sample_names: list = [[os.path.basename(os.path.dirname(path)) for path in SAMPLE_LIST[0]], [os.path.basename(os.path.dirname(path)) for path in SAMPLE_LIST[1]], [os.path.basename(os.path.dirname(path)) for path in SAMPLE_LIST[2]]]
     REFERENCE_GENOME: str = config['reference_genome_path']
     WORKING_DIR: str = config['working_directory_path']
     OUTPUT_DIR: str = config['output_directory_path']
@@ -63,101 +66,180 @@ def poolsnp_vcf_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
         # Creates list of contigs in reference genome
         contigs = [{'contig': contig['sequence_name']} for contig in sequences]
 
-    top_dir = f'{WORKING_DIR}/{SPECIES_NAME.replace(" ", "_")}/analysis_files'
-    output_dir = f'{OUTPUT_DIR}/{species_abbreviation(SPECIES_NAME)}'
-    
-    # Creates list of dictionaries with contigs and corresponding mpileup files
-    mpileup_filelist = mpileup_partitions_filelist(partitions=partitions, top_dir=top_dir, species_name=SPECIES_NAME, npad=npadding)
+    # for (data_set, data_set_name, sample_name_list) in zip(SAMPLE_LIST, LISTNAMES, sample_names):
+        # top_dir = f'{WORKING_DIR}/{SPECIES_NAME.replace(" ", "_")}/analysis_files/{data_set_name}'
+        # output_dir = f'{OUTPUT_DIR}/{species_abbreviation(SPECIES_NAME)}/{data_set_name}'
+        top_dir = f'{WORKING_DIR}/{SPECIES_NAME.replace(" ", "_")}/analysis_files'
+        output_dir = f'{OUTPUT_DIR}/{species_abbreviation(SPECIES_NAME)}'
+        
+        # Creates list of dictionaries with contigs and corresponding mpileup files
+        mpileup_filelist = mpileup_partitions_filelist(partitions=partitions, top_dir=top_dir, species_name=SPECIES_NAME, npad=npadding)
 
-    mpileup = gwf.map(
-        name=name_mpileup,
-        template_func=mpileup_parts,
-        inputs=partitions,
-        extra={'bam_files': SAMPLE_LIST,
-               'reference_genome_file': REFERENCE_GENOME,
-               'species_name': SPECIES_NAME,
-               'output_directory': top_dir}
-    )
-
-    sync = gwf.map(
-        name=name_sync,
-        template_func=mpileup2sync,
-        inputs=collect(mpileup.outputs, ['mpileup'])['mpileups'],
-        extra={'output_directory': top_dir}
-    )
-
-    concat_mpileup = gwf.target_from_template(
-        name='concatenate_mpileup',
-        template=concat(
-            files=collect(mpileup.outputs, ['mpileup'])['mpileups'],
-            output_name=f'{species_abbreviation(SPECIES_NAME)}',
-            output_directory=output_dir
+        mpileup = gwf.map(
+            name=name_mpileup,
+            template_func=mpileup_parts,
+            inputs=partitions,
+            extra={'bam_files': SAMPLE_LIST,
+                'reference_genome_file': REFERENCE_GENOME,
+                'species_name': SPECIES_NAME,
+                'output_directory': top_dir}
         )
-    )
 
-    concat_sync = gwf.target_from_template(
-        name='concatenate_sync',
-        template=concat(
-            files=collect(sync.outputs, ['sync'])['syncs'],
-            output_name=f'{species_abbreviation(SPECIES_NAME)}',
-            output_directory=output_dir
+        # mpileup = gwf.map(
+        #     name=name_mpileup,
+        #     template_func=mpileup_parts,
+        #     inputs=partitions,
+        #     extra={'bam_files': data_set,
+        #         'reference_genome_file': REFERENCE_GENOME,
+        #         'species_name': SPECIES_NAME,
+        #         'output_directory': top_dir}
+        # )
+
+        sync = gwf.map(
+            name=name_sync,
+            template_func=mpileup2sync,
+            inputs=collect(mpileup.outputs, ['mpileup'])['mpileups'],
+            extra={'output_directory': top_dir}
         )
-    )
 
-    # coverage_threshold = gwf.map(
-    #     name=name_cov,
-    #     template_func=max_cov_threshold,
-    #     inputs=mpileup_filelist,
-    #     extra={'cutoff': MAXCOV,
-    #            'output_directory': top_dir}
-    # )
+        concat_mpileup = gwf.target_from_template(
+            name='concatenate_mpileup',
+            template=concat(
+                files=collect(mpileup.outputs, ['mpileup'])['mpileups'],
+                output_name=f'{species_abbreviation(SPECIES_NAME)}',
+                output_directory=output_dir
+            )
+        )
 
-    # # coverage_threshold = gwf.map(
-    # #     name=name_cov,
-    # #     template_func=max_cov,
-    # #     inputs=contigs,
-    # #     extra={'mpileup_file': concat_mpileup.outputs['concat_file'],
-    # #            'cutoff': MAXCOV,
-    # #            'output_directory': top_dir}
-    # # )
+        # concat_mpileup = gwf.target_from_template(
+        #     name=f'concatenate_{data_set_name}_mpileup',
+        #     template=concat(
+        #         files=collect(mpileup.outputs, ['mpileup'])['mpileups'],
+        #         output_name=f'{species_abbreviation(SPECIES_NAME)}.{data_set_name}',
+        #         output_directory=output_dir
+        #     )
+        # )
 
-    # concat_coverage = gwf.target_from_template(
-    #     name='concatenate_coverage',
-    #     template=concat(
-    #         files=collect(coverage_threshold.outputs, ['cutoff'])['cutoffs'],
-    #         output_name=f'{species_abbreviation(SPECIES_NAME)}-cov-{MAXCOV}',
-    #         output_directory=top_dir
-    #     )
-    # )
+        concat_sync = gwf.target_from_template(
+            name='concatenate_sync',
+            template=concat(
+                files=collect(sync.outputs, ['sync'])['syncs'],
+                output_name=f'{species_abbreviation(SPECIES_NAME)}',
+                output_directory=output_dir
+            )
+        )
 
-    if ALLSITES == 1:
-        sitestate = 'allsites'
-    elif ALLSITES == 0:
-        sitestate = 'variants'
-    if type(MAXCOV) is list:
-        prev = None
-        for i in range(0, len(MAXCOV)):
-            if MAXCOV[i] != prev:
+        # concat_sync = gwf.target_from_template(
+        #     name=f'concatenate_{data_set_name}_sync',
+        #     template=concat(
+        #         files=collect(sync.outputs, ['sync'])['syncs'],
+        #         output_name=f'{species_abbreviation(SPECIES_NAME)}.{data_set_name}',
+        #         output_directory=output_dir
+        #     )
+        # )
 
-                coverage_threshold = gwf.map(
-                    name=name_cov,
-                    template_func=max_cov_threshold,
-                    inputs=mpileup_filelist,
-                    extra={'cutoff': MAXCOV[i],
-                        'output_directory': top_dir}
-                )
+        # coverage_threshold = gwf.map(
+        #     name=name_cov,
+        #     template_func=max_cov_threshold,
+        #     inputs=mpileup_filelist,
+        #     extra={'cutoff': MAXCOV,
+        #            'output_directory': top_dir}
+        # )
 
-                concat_coverage = gwf.target_from_template(
-                    name=f'concatenate_coverage_{MAXCOV[i]}',
-                    template=concat(
-                        files=collect(coverage_threshold.outputs, ['cutoff'])['cutoffs'],
-                        output_name=f'{species_abbreviation(SPECIES_NAME)}-cov-{MAXCOV[i]}',
-                        output_directory=top_dir
+        # # coverage_threshold = gwf.map(
+        # #     name=name_cov,
+        # #     template_func=max_cov,
+        # #     inputs=contigs,
+        # #     extra={'mpileup_file': concat_mpileup.outputs['concat_file'],
+        # #            'cutoff': MAXCOV,
+        # #            'output_directory': top_dir}
+        # # )
+
+        # concat_coverage = gwf.target_from_template(
+        #     name='concatenate_coverage',
+        #     template=concat(
+        #         files=collect(coverage_threshold.outputs, ['cutoff'])['cutoffs'],
+        #         output_name=f'{species_abbreviation(SPECIES_NAME)}-cov-{MAXCOV}',
+        #         output_directory=top_dir
+        #     )
+        # )
+
+        if ALLSITES == 1:
+            sitestate = 'allsites'
+        elif ALLSITES == 0:
+            sitestate = 'variants'
+        if type(MAXCOV) is list:
+            prev = None
+            for i in range(0, len(MAXCOV)):
+                if MAXCOV[i] != prev:
+
+                    coverage_threshold = gwf.map(
+                        name=name_cov,
+                        template_func=max_cov_threshold,
+                        inputs=mpileup_filelist,
+                        extra={'cutoff': MAXCOV[i],
+                            'output_directory': top_dir}
+                    )
+
+                    concat_coverage = gwf.target_from_template(
+                        name=f'concatenate_coverage_{MAXCOV[i]}',
+                        template=concat(
+                            files=collect(coverage_threshold.outputs, ['cutoff'])['cutoffs'],
+                            output_name=f'{species_abbreviation(SPECIES_NAME)}-cov-{MAXCOV[i]}',
+                            output_directory=top_dir
+                        )
+                    )
+
+                run_poolsnp = gwf.target_from_template(
+                    name=f'poolsnp_{sitestate}_maxcov{MAXCOV[i]}_mincov{MINCOV[i]}_mincnt{MINCOUNT[i]}_minfrq{MINFREQ[i]}_missfrc{MISSFRAC[i]}_bq{BASEQUAL[i]}',
+                    template=poolsnp(
+                        mpileup_file=concat_mpileup.outputs['concat_file'],
+                        max_cov_file=concat_coverage.outputs['concat_file'],
+                        sample_list=sample_names,
+                        reference_genome_file=REFERENCE_GENOME,
+                        working_directory=top_dir,
+                        species_name=SPECIES_NAME,
+                        output_directory=f'{output_dir}/vcf_{sitestate}_maxcov{MAXCOV[i]}_mincov{MINCOV[i]}_mincnt{MINCOUNT[i]}_minfrq{MINFREQ[i]}_missfrc{MISSFRAC[i]}_bq{BASEQUAL[i]}',
+                        min_cov=MINCOV[i],
+                        min_count=MINCOUNT[i],
+                        min_freq=MINFREQ[i],
+                        miss_frac=MISSFRAC[i],
+                        bq=BASEQUAL[i],
+                        sites=ALLSITES
                     )
                 )
 
+                biallelic_vcf = gwf.target_from_template(
+                    name=f'biallelic_filter_{sitestate}_maxcov{MAXCOV[i]}_mincov{MINCOV[i]}_mincnt{MINCOUNT[i]}_minfrq{MINFREQ[i]}_missfrc{MISSFRAC[i]}_bq{BASEQUAL[i]}',
+                    template=vcf_filter(
+                        vcf_file=run_poolsnp.outputs['vcf'],
+                        output_directory=f'{output_dir}/vcf_{sitestate}_maxcov{MAXCOV[i]}_mincov{MINCOV[i]}_mincnt{MINCOUNT[i]}_minfrq{MINFREQ[i]}_missfrc{MISSFRAC[i]}_bq{BASEQUAL[i]}',
+                        species_name=SPECIES_NAME
+                    )
+                )
+
+                prev = MAXCOV[i]
+        
+        elif type(MAXCOV) is float:
+            coverage_threshold = gwf.map(
+                name=name_cov,
+                template_func=max_cov_threshold,
+                inputs=mpileup_filelist,
+                extra={'cutoff': MAXCOV,
+                    'output_directory': top_dir}
+            )
+
+            concat_coverage = gwf.target_from_template(
+                name=f'concatenate_coverage_{MAXCOV}',
+                template=concat(
+                    files=collect(coverage_threshold.outputs, ['cutoff'])['cutoffs'],
+                    output_name=f'{species_abbreviation(SPECIES_NAME)}-cov-{MAXCOV}',
+                    output_directory=top_dir
+                )
+            )
+
             run_poolsnp = gwf.target_from_template(
-                name=f'poolsnp_{sitestate}_maxcov{MAXCOV[i]}_mincov{MINCOV[i]}_mincnt{MINCOUNT[i]}_minfrq{MINFREQ[i]}_missfrc{MISSFRAC[i]}_bq{BASEQUAL[i]}',
+                name=f'poolsnp_{sitestate}_maxcov{MAXCOV}_mincov{MINCOV}_mincnt{MINCOUNT}_minfrq{MINFREQ}_missfrc{MISSFRAC}_bq{BASEQUAL}',
                 template=poolsnp(
                     mpileup_file=concat_mpileup.outputs['concat_file'],
                     max_cov_file=concat_coverage.outputs['concat_file'],
@@ -165,71 +247,125 @@ def poolsnp_vcf_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
                     reference_genome_file=REFERENCE_GENOME,
                     working_directory=top_dir,
                     species_name=SPECIES_NAME,
-                    output_directory=f'{output_dir}/vcf_{sitestate}_maxcov{MAXCOV[i]}_mincov{MINCOV[i]}_mincnt{MINCOUNT[i]}_minfrq{MINFREQ[i]}_missfrc{MISSFRAC[i]}_bq{BASEQUAL[i]}',
-                    min_cov=MINCOV[i],
-                    min_count=MINCOUNT[i],
-                    min_freq=MINFREQ[i],
-                    miss_frac=MISSFRAC[i],
-                    bq=BASEQUAL[i],
+                    output_directory=output_dir,
+                    min_cov=MINCOV,
+                    min_count=MINCOUNT,
+                    min_freq=MINFREQ,
+                    miss_frac=MISSFRAC,
+                    bq=BASEQUAL,
                     sites=ALLSITES
                 )
             )
 
             biallelic_vcf = gwf.target_from_template(
-                name=f'biallelic_filter_{sitestate}_maxcov{MAXCOV[i]}_mincov{MINCOV[i]}_mincnt{MINCOUNT[i]}_minfrq{MINFREQ[i]}_missfrc{MISSFRAC[i]}_bq{BASEQUAL[i]}',
+                name=f'biallelic_filter_{sitestate}_maxcov{MAXCOV}_mincov{MINCOV}_mincnt{MINCOUNT}_minfrq{MINFREQ}_missfrc{MISSFRAC}_bq{BASEQUAL}',
                 template=vcf_filter(
                     vcf_file=run_poolsnp.outputs['vcf'],
-                    output_directory=f'{output_dir}/vcf_{sitestate}_maxcov{MAXCOV[i]}_mincov{MINCOV[i]}_mincnt{MINCOUNT[i]}_minfrq{MINFREQ[i]}_missfrc{MISSFRAC[i]}_bq{BASEQUAL[i]}',
+                    output_directory=output_dir,
                     species_name=SPECIES_NAME
                 )
             )
 
-            prev = MAXCOV[i]
-    
-    elif type(MAXCOV) is float:
-        coverage_threshold = gwf.map(
-            name=name_cov,
-            template_func=max_cov_threshold,
-            inputs=mpileup_filelist,
-            extra={'cutoff': MAXCOV,
-                'output_directory': top_dir}
-        )
+        # if ALLSITES == 1:
+        #     sitestate = 'allsites'
+        # elif ALLSITES == 0:
+        #     sitestate = 'variants'
+        # if type(MAXCOV) is list:
+        #     prev = None
+        #     for i in range(0, len(MAXCOV)):
+        #         if MAXCOV[i] != prev:
 
-        concat_coverage = gwf.target_from_template(
-            name=f'concatenate_coverage_{MAXCOV}',
-            template=concat(
-                files=collect(coverage_threshold.outputs, ['cutoff'])['cutoffs'],
-                output_name=f'{species_abbreviation(SPECIES_NAME)}-cov-{MAXCOV}',
-                output_directory=top_dir
-            )
-        )
+        #             coverage_threshold = gwf.map(
+        #                 name=name_cov,
+        #                 template_func=max_cov_threshold,
+        #                 inputs=mpileup_filelist,
+        #                 extra={'cutoff': MAXCOV[i],
+        #                     'output_directory': top_dir}
+        #             )
 
-        run_poolsnp = gwf.target_from_template(
-            name=f'poolsnp_{sitestate}_maxcov{MAXCOV}_mincov{MINCOV}_mincnt{MINCOUNT}_minfrq{MINFREQ}_missfrc{MISSFRAC}_bq{BASEQUAL}',
-            template=poolsnp(
-                mpileup_file=concat_mpileup.outputs['concat_file'],
-                max_cov_file=concat_coverage.outputs['concat_file'],
-                sample_list=sample_names,
-                reference_genome_file=REFERENCE_GENOME,
-                working_directory=top_dir,
-                species_name=SPECIES_NAME,
-                output_directory=output_dir,
-                min_cov=MINCOV,
-                min_count=MINCOUNT,
-                min_freq=MINFREQ,
-                miss_frac=MISSFRAC,
-                bq=BASEQUAL,
-                sites=ALLSITES
-            )
-        )
+        #             concat_coverage = gwf.target_from_template(
+        #                 name=f'concatenate_{data_set_name}_coverage_{MAXCOV[i]}',
+        #                 template=concat(
+        #                     files=collect(coverage_threshold.outputs, ['cutoff'])['cutoffs'],
+        #                     output_name=f'{species_abbreviation(SPECIES_NAME)}-cov-{MAXCOV[i]}',
+        #                     output_directory=top_dir
+        #                 )
+        #             )
 
-        biallelic_vcf = gwf.target_from_template(
-            name=f'biallelic_filter_{sitestate}_maxcov{MAXCOV}_mincov{MINCOV}_mincnt{MINCOUNT}_minfrq{MINFREQ}_missfrc{MISSFRAC}_bq{BASEQUAL}',
-            template=vcf_filter(
-                vcf_file=run_poolsnp.outputs['vcf'],
-                output_directory=output_dir,
-                species_name=SPECIES_NAME
-            )
-        )
+        #         run_poolsnp = gwf.target_from_template(
+        #             name=f'poolsnp_{data_set_name}_{sitestate}_maxcov{MAXCOV[i]}_mincov{MINCOV[i]}_mincnt{MINCOUNT[i]}_minfrq{MINFREQ[i]}_missfrc{MISSFRAC[i]}_bq{BASEQUAL[i]}',
+        #             template=poolsnp(
+        #                 mpileup_file=concat_mpileup.outputs['concat_file'],
+        #                 max_cov_file=concat_coverage.outputs['concat_file'],
+        #                 sample_list=sample_name_list,
+        #                 reference_genome_file=REFERENCE_GENOME,
+        #                 working_directory=top_dir,
+        #                 species_name=SPECIES_NAME,
+        #                 output_directory=f'{output_dir}/vcf_{sitestate}_maxcov{MAXCOV[i]}_mincov{MINCOV[i]}_mincnt{MINCOUNT[i]}_minfrq{MINFREQ[i]}_missfrc{MISSFRAC[i]}_bq{BASEQUAL[i]}',
+        #                 min_cov=MINCOV[i],
+        #                 min_count=MINCOUNT[i],
+        #                 min_freq=MINFREQ[i],
+        #                 miss_frac=MISSFRAC[i],
+        #                 bq=BASEQUAL[i],
+        #                 sites=ALLSITES
+        #             )
+        #         )
+
+        #         biallelic_vcf = gwf.target_from_template(
+        #             name=f'biallelic_filter_{data_set_name}_{sitestate}_maxcov{MAXCOV[i]}_mincov{MINCOV[i]}_mincnt{MINCOUNT[i]}_minfrq{MINFREQ[i]}_missfrc{MISSFRAC[i]}_bq{BASEQUAL[i]}',
+        #             template=vcf_filter(
+        #                 vcf_file=run_poolsnp.outputs['vcf'],
+        #                 output_directory=f'{output_dir}/vcf_{sitestate}_maxcov{MAXCOV[i]}_mincov{MINCOV[i]}_mincnt{MINCOUNT[i]}_minfrq{MINFREQ[i]}_missfrc{MISSFRAC[i]}_bq{BASEQUAL[i]}',
+        #                 species_name=SPECIES_NAME
+        #             )
+        #         )
+
+        #         prev = MAXCOV[i]
+        
+        # elif type(MAXCOV) is float:
+        #     coverage_threshold = gwf.map(
+        #         name=name_cov,
+        #         template_func=max_cov_threshold,
+        #         inputs=mpileup_filelist,
+        #         extra={'cutoff': MAXCOV,
+        #             'output_directory': top_dir}
+        #     )
+
+        #     concat_coverage = gwf.target_from_template(
+        #         name=f'concatenate_{data_set_name}_coverage_{MAXCOV}',
+        #         template=concat(
+        #             files=collect(coverage_threshold.outputs, ['cutoff'])['cutoffs'],
+        #             output_name=f'{species_abbreviation(SPECIES_NAME)}-cov-{MAXCOV}',
+        #             output_directory=top_dir
+        #         )
+        #     )
+
+        #     run_poolsnp = gwf.target_from_template(
+        #         name=f'poolsnp_{data_set_name}_{sitestate}_maxcov{MAXCOV}_mincov{MINCOV}_mincnt{MINCOUNT}_minfrq{MINFREQ}_missfrc{MISSFRAC}_bq{BASEQUAL}',
+        #         template=poolsnp(
+        #             mpileup_file=concat_mpileup.outputs['concat_file'],
+        #             max_cov_file=concat_coverage.outputs['concat_file'],
+        #             sample_list=sample_name_list,
+        #             reference_genome_file=REFERENCE_GENOME,
+        #             working_directory=top_dir,
+        #             species_name=SPECIES_NAME,
+        #             output_directory=output_dir,
+        #             min_cov=MINCOV,
+        #             min_count=MINCOUNT,
+        #             min_freq=MINFREQ,
+        #             miss_frac=MISSFRAC,
+        #             bq=BASEQUAL,
+        #             sites=ALLSITES
+        #         )
+        #     )
+
+        #     biallelic_vcf = gwf.target_from_template(
+        #         name=f'biallelic_filter_{data_set_name}_{sitestate}_maxcov{MAXCOV}_mincov{MINCOV}_mincnt{MINCOUNT}_minfrq{MINFREQ}_missfrc{MISSFRAC}_bq{BASEQUAL}',
+        #         template=vcf_filter(
+        #             vcf_file=run_poolsnp.outputs['vcf'],
+        #             output_directory=output_dir,
+        #             species_name=SPECIES_NAME
+        #         )
+        #     )
 
     return gwf
