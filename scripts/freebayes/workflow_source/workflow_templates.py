@@ -125,6 +125,62 @@ def mpileup_partitions_filelist(partitions: list, top_dir: str, species_name: st
 def name_freebayes_chrom(idx: str, target: AnonymousTarget) -> str:
 	return f'{os.path.basename(target.outputs["vcf"])}'
 
+# def freebayes_chrom(reference_genome_file: str, bam_file_list: list, output_directory: str, species_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2):
+# 	"""
+# 	Template: Create VCF file for each 'chromosome' in pooled alignment.
+	
+# 	Template I/O::
+	
+# 		inputs = {}
+# 		outputs = {}
+	
+# 	:param
+# 	"""
+# 	bam_file_string = ' -b '.join(bam_file_list)
+# 	inputs = {'reference': reference_genome_file,
+# 		   	  'bam': bam_file_list}
+# 	outputs = {'vcf': f'{output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf'}
+# 	options = {
+# 		'cores': 1,
+# 		'memory': '100g',
+# 		'walltime': '36:00:00'
+# 	}
+# 	spec = f"""
+# 	# Sources environment
+# 	if [ "$USER" == "jepe" ]; then
+# 		source /home/"$USER"/.bashrc
+# 		source activate vcf
+# 	fi
+	
+# 	export _JAVA_OPTIONS="-Xmx{options['memory']}"
+
+# 	echo "START: $(date)"
+# 	echo "JobID: $SLURM_JOBID"
+
+# 	[ -d {output_directory}/freebayes_vcf/tmp ] || mkdir -p {output_directory}/freebayes_vcf/tmp
+	
+# 	freebayes \
+# 		-f {reference_genome_file} \
+# 		-n {best_n_alleles} \
+# 		-p {ploidy} \
+# 		-r {region}:{start}-{end} \
+# 		--min-alternate-fraction {min_alternate_fraction} \
+# 		--min-alternate-count {min_alternate_count} \
+# 		--pooled-discrete \
+#         -b {bam_file_string} \
+# 	| bcftools filter \
+# 		-e 'INFO/TYPE~"del" || INFO/TYPE~"ins"' \
+# 		-O v \
+# 		- \
+# 		> {output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf
+	
+# 	mv {output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf {outputs['vcf']}
+	
+# 	echo "END: $(date)"
+# 	echo "$(jobinfo "$SLURM_JOBID")"
+# 	"""
+# 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
 def freebayes_chrom(reference_genome_file: str, bam_file_list: list, output_directory: str, species_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2):
 	"""
 	Template: Create VCF file for each 'chromosome' in pooled alignment.
@@ -168,11 +224,7 @@ def freebayes_chrom(reference_genome_file: str, bam_file_list: list, output_dire
 		--min-alternate-count {min_alternate_count} \
 		--pooled-discrete \
         -b {bam_file_string} \
-	| bcftools filter \
-		-e 'INFO/TYPE~"del" || INFO/TYPE~"ins"' \
-		-O v \
-		- \
-		> {output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf
+	    > {output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf
 	
 	mv {output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf {outputs['vcf']}
 	
