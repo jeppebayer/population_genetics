@@ -199,7 +199,7 @@ def freebayes_chrom(reference_genome_file: str, bam_file_list: list, output_dire
 	options = {
 		'cores': 1,
 		'memory': '100g',
-		'walltime': '36:00:00'
+		'walltime': '60:00:00'
 	}
 	spec = f"""
 	# Sources environment
