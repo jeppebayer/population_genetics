@@ -2,11 +2,13 @@
 account: EcoGenetics
 # Name of species being analyzed
 species_name: Entomobrya nicoleti
+# Path to VCF file (can be .gz compressed).
+vcf_file: /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Entomobrya_nicoleti/EntNic/vcf_allsites_maxcov0.98_mincov2_mincnt2_minfrq0_missfrc0.001_bq15/EntNic.allsites_maxcov0.98_mincov2_mincnt2_minfrq0_missfrc0.001_bq15.vcf.gz
 # Path to reference genome file.
 reference_genome_path: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Entomobrya_nicoleti/EG_EntNic_19022024_genome.fasta
 # Path to reference annotation file in GTF format.
 gtf_annotation_file: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Entomobrya_nicoleti/annotation/EG_EntNic_19022024_genome.gtf
 # Directory for intermediary files.
-working_directory_path: 
+working_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola
 # Directory for final output files.
 output_directory_path: 

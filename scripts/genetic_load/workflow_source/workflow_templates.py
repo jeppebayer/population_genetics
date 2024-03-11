@@ -18,7 +18,7 @@ def species_abbreviation(species_name: str) -> str:
 
 def snpeff_database_build(gtf_annotation_file: str, reference_genome_file: str, species_name: str, snpeff_directory: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/snpeff'):
 	"""
-	Template: Constructs custom snpeff database entry.
+	Template: Constructs custom SnpEff database entry.
 	
 	Template I/O::
 	
@@ -38,7 +38,7 @@ def snpeff_database_build(gtf_annotation_file: str, reference_genome_file: str, 
 	options = {
 		'cores': 1,
 		'memory': '80g',
-		'walltime': '06:00:00'
+		'walltime': '04:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -112,6 +112,63 @@ def snpeff_database_build(gtf_annotation_file: str, reference_genome_file: str, 
 	
 	rm *.agat.log
 
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def snpeff_annotation(vcf_file: str, reference_genome_file: str, snpeff_config_file: str, output_directory: str, species_name: str):
+	"""
+	Template: Annotates :format:`VCF` file with variant function.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'vcf': vcf_file,
+		   	  'reference': reference_genome_file,
+			  'config': snpeff_config_file}
+	outputs = {'ann': f'{output_directory}/snpEff/{os.path.splitext(os.path.basename(vcf_file))[0]}.ann.vcf.gz',
+			   'stats': f'{output_directory}/snpEff/{species_abbreviation(species_name)}.snpEff_summary.csv'}
+	options = {
+		'cores': 18,
+		'memory': '80g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate vcf
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/snpEff ] || mkdir -p {output_directory}/snpEff
+	
+	export _JAVA_OPTIONS="-Xmx{options['memory']}"
+
+	snpEff ann \
+		-csvStats {output_directory}/snpEff/{species_abbreviation(species_name)}.snpEff_summary.prog.csv \
+		-nodownload \
+		-config {snpeff_config_file} \
+		-verbose \
+		-i vcf \
+		-o vcf \
+		{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]} \
+		{vcf_file} \
+	| gzip \
+		--stdout \
+		- \
+		> {output_directory}/snpEff/{os.path.splitext(os.path.basename(vcf_file))[0] if reference_genome_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz
+	
+	mv {output_directory}/snpEff/{os.path.splitext(os.path.basename(vcf_file))[0]}.ann.prog.vcf.gz {outputs['ann']}
+	mv {output_directory}/snpEff/{species_abbreviation(species_name)}.snpEff_summary.prog.csv {outputs['stats']}
+	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""

@@ -18,6 +18,7 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 	config = yaml.safe_load(open(config_file))
 	ACCOUNT: str = config['account']
 	SPECIES_NAME: str = config['species_name']
+	VCF: str = config['vcf_file']
 	REFERENCE: str = config['reference_genome_path']
 	GTF: str = config['gtf_annotation_file']
 	WORK_DIR: str = config['working_directory_path']
@@ -30,7 +31,11 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 	gwf = Workflow(
 		defaults={'account': ACCOUNT}
 	)
-	
+
+	top_dir = f'{WORK_DIR}/{SPECIES_NAME.replace(" ", "_")}/genetic_load'
+	if not OUTPUT_DIR:
+		OUTPUT_DIR = top_dir
+
 	database_entry = gwf.target_from_template(
 		name=f'{species_abbreviation(SPECIES_NAME)}_snpeff_database_entry',
 		template=snpeff_database_build(
@@ -40,4 +45,15 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 		)
 	)
 	
+	variant_annotation = gwf.target_from_template(
+		name=f'{species_abbreviation(SPECIES_NAME)}_snpeff_annotation',
+		template=snpeff_annotation(
+			vcf_file=VCF,
+			reference_genome_file=REFERENCE,
+			snpeff_config_file=database_entry.outputs['config'],
+			output_directory=top_dir,
+			species_name=SPECIES_NAME
+		)
+	)
+
 	return gwf
