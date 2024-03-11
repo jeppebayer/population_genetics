@@ -198,7 +198,7 @@ def freebayes_chrom(reference_genome_file: str, bam_file_list: list, output_dire
 	outputs = {'vcf': f'{output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf'}
 	options = {
 		'cores': 1,
-		'memory': '100g',
+		'memory': '80g',
 		'walltime': '60:00:00'
 	}
 	spec = f"""

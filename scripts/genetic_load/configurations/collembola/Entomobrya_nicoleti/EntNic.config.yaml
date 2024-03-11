@@ -1,0 +1,12 @@
+# The name of the relevant project account.
+account: EcoGenetics
+# Name of species being analyzed
+species_name: Entomobrya nicoleti
+# Path to reference genome file.
+reference_genome_path: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Entomobrya_nicoleti/EG_EntNic_19022024_genome.fasta
+# Path to reference annotation file in GTF format.
+gtf_annotation_file: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Entomobrya_nicoleti/annotation/EG_EntNic_19022024_genome.gtf
+# Directory for intermediary files.
+working_directory_path: 
+# Directory for final output files.
+output_directory_path: 

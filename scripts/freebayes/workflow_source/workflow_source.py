@@ -22,12 +22,11 @@ def freebayes_vcf_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
     REFERENCE_GENOME: str = config['reference_genome_path']
     OUTPUT_DIR: str = config['output_directory_path']
     WORK_DIR: str = config['working_directory_path']
+    PARTITION_SIZE: int = config['partition_size']
     PLOIDY: int = config['sample_ploidy']
     BESTN: int = config['best_n_alleles']
     ALT_FRACTION: float | int = config['min_alternate_fraction']
     ALT_COUNT: int = config['min_alternate_count']
-    
-    partition_size = 200000
 
     # --------------------------------------------------
     #                  Workflow
@@ -37,10 +36,10 @@ def freebayes_vcf_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
         defaults={'account': ACCOUNT}
     )
     
-    if os.path.exists(f'reference_partitions.{partition_size}bp.txt') and os.path.exists('reference_sequences.txt'):
+    if os.path.exists(f'reference_partitions.{PARTITION_SIZE}bp.txt') and os.path.exists('reference_sequences.txt'):
         # If files exists reads data directly from files
         # Loads reference genome partitioning
-        with open(f'reference_partitions.{partition_size}bp.txt', 'r') as infile:
+        with open(f'reference_partitions.{PARTITION_SIZE}bp.txt', 'r') as infile:
             partitions = [{'num': entry.split(sep='\t')[0].strip(), 'region': entry.split(sep='\t')[1].strip(), 'start': entry.split(sep='\t')[2].strip(), 'end': entry.split(sep='\t')[3].strip()} for entry in infile]
             npadding = len(str(sum(1 for line in partitions)))
         # Loads list of contigs in reference genome
@@ -52,9 +51,9 @@ def freebayes_vcf_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
         with open(f'reference_sequences.txt', 'w') as outfile:
             outfile.write('\n'.join('\t'.join(str(i) for i in entry.values()) for entry in sequences))
         # Partitions reference genome
-        npadding = padding_calculator(parse_fasta=sequences, size=partition_size)
-        partitions = partition_chrom(parse_fasta=sequences, size=partition_size, npad=npadding)
-        with open(f'reference_partitions.{partition_size}bp.txt', 'w') as outfile:
+        npadding = padding_calculator(parse_fasta=sequences, size=PARTITION_SIZE)
+        partitions = partition_chrom(parse_fasta=sequences, size=PARTITION_SIZE, npad=npadding)
+        with open(f'reference_partitions.{PARTITION_SIZE}bp.txt', 'w') as outfile:
             outfile.write('\n'.join('\t'.join(str(i) for i in entry.values()) for entry in partitions))
         # Creates list of contigs in reference genome
         contigs = [{'contig': contig['sequence_name']} for contig in sequences]
