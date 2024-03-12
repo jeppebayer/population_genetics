@@ -24,6 +24,8 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 	WORK_DIR: str = config['working_directory_path']
 	OUTPUT_DIR: str = config['output_directory_path']
 	
+	snpeff_directory = f'{os.path.dirname(os.path.realpath(__file__))}/software/snpeff'
+
 	# --------------------------------------------------
 	#                  Workflow
 	# --------------------------------------------------
@@ -41,7 +43,8 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 		template=snpeff_database_build(
 			gtf_annotation_file=GTF,
 			reference_genome_file=REFERENCE,
-			species_name=SPECIES_NAME
+			species_name=SPECIES_NAME,
+			snpeff_directory=snpeff_directory
 		)
 	)
 	
@@ -49,8 +52,8 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 		name=f'{species_abbreviation(SPECIES_NAME)}_snpeff_annotation',
 		template=snpeff_annotation(
 			vcf_file=VCF,
-			reference_genome_file=REFERENCE,
-			snpeff_config_file=database_entry.outputs['config'],
+			snpeff_predictor_file=database_entry.outputs['predictor'],
+			snpeff_config_file=f'{snpeff_directory}/snpEff.config',
 			output_directory=top_dir,
 			species_name=SPECIES_NAME
 		)

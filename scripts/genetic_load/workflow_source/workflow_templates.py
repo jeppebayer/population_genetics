@@ -29,12 +29,11 @@ def snpeff_database_build(gtf_annotation_file: str, reference_genome_file: str, 
 	"""
 	inputs = {'gtf': gtf_annotation_file,
 		   	  'reference': reference_genome_file}
-	outputs = {'config': f'{snpeff_directory}/snpEff.config',
-			   'sequences': f'{snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}/sequences.fa',
-			   'genes': f'{snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}/genes.gtf',
-			   'proteins': f'{snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}/protein.fa',
-			   'cds': f'{snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}/cds.fa',
-			   'predictor': f'{snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}/snpEffectPredictor.bin'}
+	outputs = {'sequences': f'{snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/sequences.fa',
+			   'genes': f'{snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/genes.gtf',
+			   'proteins': f'{snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/protein.fa',
+			   'cds': f'{snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/cds.fa',
+			   'predictor': f'{snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/snpEffectPredictor.bin'}
 	options = {
 		'cores': 1,
 		'memory': '80g',
@@ -63,43 +62,48 @@ def snpeff_database_build(gtf_annotation_file: str, reference_genome_file: str, 
 		echo -e "#---\\n# Centre for Ecological Genetics (AU) - Custom Databases\\n#---\\n" >> "$snpeffconfig"
 	fi
 	
-	echo -e "# {species_name} genome, version {os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}" >> "$snpeffconfig"
-	echo -e "{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}.genome : {species_name}" >> "$snpeffconfig"
-	echo -e "{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}.file_location : {reference_genome_file}" >> "$snpeffconfig"
-	echo -e "{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}.addition_date : $(date +%d'/'%m'/'%Y)\\n" >> "$snpeffconfig"
+	line=$(awk '{{if ($0 ~ /^{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}.genome/) {{print NR; exit}}}}' {snpeff_directory}/snpEff.config)
 
-	[ -d {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]} ] || mkdir -p {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}
+	if [ ! -z "$line" ]; then
+		sed -i "$((line - 1)),$((line + 3))d" {snpeff_directory}/snpEff.config
+	fi
 
-	if [ ! -e {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}/genes.gtf ]; then
+	echo -e "# {species_name} genome, version {os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}" >> "$snpeffconfig"
+	echo -e "{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}.genome : {species_name}" >> "$snpeffconfig"
+	echo -e "{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}.file_location : {reference_genome_file}" >> "$snpeffconfig"
+	echo -e "{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}.addition_date : $(date +%d'/'%m'/'%Y)\\n" >> "$snpeffconfig"
+
+	[ -d {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]} ] || mkdir -p {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}
+
+	if [ ! -e {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/genes.gtf ]; then
 		ln \
 			-s \
 			{gtf_annotation_file} \
-			{snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}/genes.gtf
+			{snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/genes.gtf
 	fi
 
-	if [ ! -e {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}/sequences.fa ]; then
+	if [ ! -e {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/sequences.fa ]; then
 		ln \
 			-s \
 			{reference_genome_file} \
-			{snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}/sequences.fa
+			{snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/sequences.fa
 	fi
 
 	agat_sp_extract_sequences.pl \
 		--gff {gtf_annotation_file} \
 		--fasta {reference_genome_file} \
 		--type cds \
-		--output {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}/cds.prog.fa
+		--output {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/cds.prog.fa
 
 	agat_sp_extract_sequences.pl \
 		--gff {gtf_annotation_file} \
 		--fasta {reference_genome_file} \
 		--type cds \
 		--protein \
-		--table 1 \
-		--output {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}/protein.prog.fa
+		--output {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/protein.prog.fa
 
-	mv {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}/cds.prog.fa {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}/cds.fa
-	mv {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}/protein.prog.fa {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}/protein.fa
+	mv {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/cds.prog.fa {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/cds.fa
+	mv {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/protein.prog.fa {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/protein.fa
 
 	export _JAVA_OPTIONS="-Xmx{options['memory']}"
 
@@ -108,7 +112,7 @@ def snpeff_database_build(gtf_annotation_file: str, reference_genome_file: str, 
 		-config {snpeff_directory}/snpEff.config \
 		-nodownload \
 		-verbose \
-		{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]}
+		{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}
 	
 	rm *.agat.log
 
@@ -117,7 +121,7 @@ def snpeff_database_build(gtf_annotation_file: str, reference_genome_file: str, 
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def snpeff_annotation(vcf_file: str, reference_genome_file: str, snpeff_config_file: str, output_directory: str, species_name: str):
+def snpeff_annotation(vcf_file: str, snpeff_predictor_file: str, snpeff_config_file: str, output_directory: str, species_name: str):
 	"""
 	Template: Annotates :format:`VCF` file with variant function.
 	
@@ -129,10 +133,12 @@ def snpeff_annotation(vcf_file: str, reference_genome_file: str, snpeff_config_f
 	:param
 	"""
 	inputs = {'vcf': vcf_file,
-		   	  'reference': reference_genome_file,
+		   	  'predictor': snpeff_predictor_file,
 			  'config': snpeff_config_file}
-	outputs = {'ann': f'{output_directory}/snpEff/{os.path.splitext(os.path.basename(vcf_file))[0]}.ann.vcf.gz',
-			   'stats': f'{output_directory}/snpEff/{species_abbreviation(species_name)}.snpEff_summary.csv'}
+	outputs = {'ann': f'{output_directory}/snpEff/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith(".vcf") else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.vcf.gz',
+			   'csv': f'{output_directory}/snpEff/{species_abbreviation(species_name)}.snpEff_summary.csv',
+			   'txt': f'{output_directory}/snpEff/{species_abbreviation(species_name)}.snpEff_summary.genes.txt',
+			   'html': f'{output_directory}/snpEff/{species_abbreviation(species_name)}.snpEff_summary.html'}
 	options = {
 		'cores': 18,
 		'memory': '80g',
@@ -154,21 +160,24 @@ def snpeff_annotation(vcf_file: str, reference_genome_file: str, snpeff_config_f
 
 	snpEff ann \
 		-csvStats {output_directory}/snpEff/{species_abbreviation(species_name)}.snpEff_summary.prog.csv \
+		-htmlStats {output_directory}/snpEff/{species_abbreviation(species_name)}.snpEff_summary.prog.html \
 		-nodownload \
 		-config {snpeff_config_file} \
 		-verbose \
 		-i vcf \
 		-o vcf \
-		{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genome")[0]} \
+		{os.path.basename(os.path.dirname(snpeff_predictor_file))} \
 		{vcf_file} \
 	| gzip \
 		--stdout \
 		- \
-		> {output_directory}/snpEff/{os.path.splitext(os.path.basename(vcf_file))[0] if reference_genome_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz
+		> {output_directory}/snpEff/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz
 	
-	mv {output_directory}/snpEff/{os.path.splitext(os.path.basename(vcf_file))[0]}.ann.prog.vcf.gz {outputs['ann']}
-	mv {output_directory}/snpEff/{species_abbreviation(species_name)}.snpEff_summary.prog.csv {outputs['stats']}
-	
+	mv {output_directory}/snpEff/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz {outputs['ann']}
+	mv {output_directory}/snpEff/{species_abbreviation(species_name)}.snpEff_summary.prog.csv {outputs['csv']}
+	mv {output_directory}/snpEff/{species_abbreviation(species_name)}.snpEff_summary.prog.genes.txt {outputs['txt']}
+	mv {output_directory}/snpEff/{species_abbreviation(species_name)}.snpEff_summary.prog.html {outputs['html']}
+
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
