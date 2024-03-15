@@ -43,7 +43,7 @@ def snpeff_database_build(gtf_annotation_file: str, reference_genome_file: str, 
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
 		source /home/"$USER"/.bashrc
-		source activate vcf
+		source activate popgen
 	fi
 	
 	echo "START: $(date)"
@@ -148,7 +148,7 @@ def snpeff_annotation(vcf_file: str, snpeff_predictor_file: str, snpeff_config_f
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
 		source /home/"$USER"/.bashrc
-		source activate vcf
+		source activate popgen
 	fi
 	
 	echo "START: $(date)"
@@ -178,6 +178,75 @@ def snpeff_annotation(vcf_file: str, snpeff_predictor_file: str, snpeff_config_f
 	mv {output_directory}/snpEff/{species_abbreviation(species_name)}.snpEff_summary.prog.genes.txt {outputs['txt']}
 	mv {output_directory}/snpEff/{species_abbreviation(species_name)}.snpEff_summary.prog.html {outputs['html']}
 
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def name_snpgenie(idx: str, target: AnonymousTarget) -> str:
+	return f'snpgenie_{idx}'
+
+def snpgenie(reference_genome_file: str, gtf_annotation_file: str, vcf_file: str, sample_name: str, output_directory: str, min_allele_frequency: int | float = 0, sliding_window_size: int = 9):
+	"""
+	Template: Estimate pi_N/pi_S
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'reference': reference_genome_file,
+		   	  'gtf': gtf_annotation_file,
+			  'vcf': vcf_file}
+	outputs = {'param': f'{output_directory}/snpgenie/{sample_name}_results/SNPGenie_parameters.txt',
+			   'log': f'{output_directory}/snpgenie/{sample_name}_results/SNPGenie_LOG.txt',
+			   'site': f'{output_directory}/snpgenie/{sample_name}_results/site_results.txt',
+			   'codon': f'{output_directory}/snpgenie/{sample_name}_results/codon_results.txt',
+			   'product': f'{output_directory}/snpgenie/{sample_name}_results/product_results.txt',
+			   'summary': f'{output_directory}/snpgenie/{sample_name}_results/population_summary.txt',
+			   'window': f'{output_directory}/snpgenie/{sample_name}_results/sliding_window_length_{sliding_window_size}_results.txt'}
+	options = {
+		'cores': 18,
+		'memory': '30g',
+		'walltime': '24:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/snpgenie/tmp ] || mkdir -p {output_directory}/snpgenie/tmp
+	[ -d {output_directory}/snpgenie/{sample_name}_results ] || mkdir -p {output_directory}/snpgenie/{sample_name}_results
+
+	bcftools view \
+		--samples {sample_name} \
+		--output-type v \
+		--output {output_directory}/snpgenie/tmp/{sample_name}.vcf \
+		{vcf_file}
+
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate snpgenie
+	fi
+
+	snpgenie.pl \
+		--vcfformat=4 \
+		--snpreport={output_directory}/snpgenie/tmp/{sample_name}.vcf \
+		--fastafile={reference_genome_file} \
+		--gtffile {gtf_annotation_file} \
+		--workdir={output_directory}/snpgenie/tmp \
+		--outdir={output_directory}/snpgenie/{sample_name}_results \
+		--minfreq={min_allele_frequency} \
+		--slidingwindow={sliding_window_size}
+	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""

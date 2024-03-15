@@ -165,7 +165,7 @@ def mpileup_parts(bam_files: list, reference_genome_file: str, species_name: str
     # Sources environment
     if [ "$USER" == "jepe" ]; then
         source /home/"$USER"/.bashrc
-        source activate vcf
+        source activate popgen
     fi
     
     echo "START: $(date)"
@@ -226,7 +226,7 @@ def mpileup2sync(mpileup_file: str, output_directory: str, mpileup2sync_script: 
     # Sources environment
     if [ "$USER" == "jepe" ]; then
         source /home/"$USER"/.bashrc
-        source activate vcf
+        source activate popgen
     fi
     
     echo "START: $(date)"
@@ -282,7 +282,7 @@ def max_cov_threshold(mpileup_files: list, contig: str, cutoff: float, output_di
     # Sources environment
     if [ "$USER" == "jepe" ]; then
         source /home/"$USER"/.bashrc
-        source activate vcf
+        source activate popgen
     fi
     
     echo "START: $(date)"
@@ -338,7 +338,7 @@ def max_cov(mpileup_file: str, contig: str, cutoff: float, output_directory: str
     # Sources environment
     if [ "$USER" == "jepe" ]; then
         source /home/"$USER"/.bashrc
-        source activate vcf
+        source activate popgen
     fi
     
     echo "START: $(date)"
@@ -404,7 +404,7 @@ def concat(files: list, output_name: str, output_directory: str = None, compress
     # Sources environment
     if [ "$USER" == "jepe" ]; then
         source /home/"$USER"/.bashrc
-        source activate vcf
+        source activate popgen
     fi
     
     echo "START: $(date)"
@@ -493,7 +493,7 @@ def poolsnp(mpileup_file: str, max_cov_file: str, sample_list: list, reference_g
     # Sources environment
     if [ "$USER" == "jepe" ]; then
         source /home/"$USER"/.bashrc
-        source activate vcf
+        source activate popgen
     fi
     
     echo "START: $(date)"
@@ -588,7 +588,7 @@ def vcf_filter(vcf_file: str, output_directory: str, species_name: str):
     # Sources environment
     if [ "$USER" == "jepe" ]; then
         source /home/"$USER"/.bashrc
-        source activate vcf
+        source activate popgen
     fi
     
     echo "START: $(date)"

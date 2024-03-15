@@ -59,7 +59,7 @@ def index_reference_genome(reference_genome_file: str, output_directory: str):
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
 		source /home/"$USER"/.bashrc
-		source activate mapping
+		source activate popgen
 	fi
 	
 	echo "START: $(date)"
@@ -116,7 +116,7 @@ def adapterremoval_pairedend(sample_name: str, read1_files: list, read2_files: l
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
 		source /home/"$USER"/.bashrc
-		source activate mapping
+		source activate popgen
 	fi
 	
 	echo "START: $(date)"
@@ -174,7 +174,7 @@ def alignment_pairedend(read1_file: str, read2_file: str, reference_genome_file:
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
 		source /home/"$USER"/.bashrc
-		source activate mapping
+		source activate popgen
 	fi
 	
 	echo "START: $(date)"
@@ -226,7 +226,7 @@ def alignment_collapsed(collapsed_read_files: list, reference_genome_file: str, 
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
 		source /home/"$USER"/.bashrc
-		source activate mapping
+		source activate popgen
 	fi
 	
 	echo "START: $(date)"
@@ -276,7 +276,7 @@ def merge_alignments(alignment_files: list, sample_name: str, output_directory: 
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
 		source /home/"$USER"/.bashrc
-		source activate mapping
+		source activate popgen
 	fi
 	
 	echo "START: $(date)"
@@ -323,7 +323,7 @@ def mark_duplicates_samtools(alignment_file: str, sample_name: str, output_direc
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
 		source /home/"$USER"/.bashrc
-		source activate mapping
+		source activate popgen
 	fi
 	
 	echo "START: $(date)"
@@ -388,7 +388,7 @@ def extract_unmapped_reads(alignment_file: str, sample_name: str, output_directo
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
 		source /home/"$USER"/.bashrc
-		source activate mapping
+		source activate popgen
 	fi
 	
 	echo "START: $(date)"
@@ -440,7 +440,7 @@ def samtools_stats(alignment_file: str, output_directory: str):
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
 		source /home/"$USER"/.bashrc
-		source activate mapping
+		source activate popgen
 	fi
 	
 	echo "START: $(date)"
@@ -506,7 +506,7 @@ def samtools_filter(alignment_file: str, sample_name: str, output_directory: str
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
 		source /home/"$USER"/.bashrc
-		source activate mapping
+		source activate popgen
 	fi
 	
 	echo "START: $(date)"
@@ -558,7 +558,7 @@ def qc_qualimap(alignment_file: str, sample_name: str, output_directory: str):
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
 		source /home/"$USER"/.bashrc
-		source activate mapping
+		source activate popgen
 	fi
 	
 	echo "START: $(date)"
@@ -605,7 +605,7 @@ def qualimap_multi(output_directory: str, species_name: str):
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
 		source /home/"$USER"/.bashrc
-		source activate mapping
+		source activate popgen
 	fi
 	
 	echo "START: $(date)"

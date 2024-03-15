@@ -1,0 +1,114 @@
+# Tag identifying file association.
+TAG: jeppebayer:EcoGenetics,population_genetics,freebayes:workflowconfiguration
+# The name of the relevant project account.
+account: EcoGenetics
+# Name of species being analyzed.
+species_name: Entomobrya nicoleti
+# Path to reference genome.
+reference_genome_path: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Entomobrya_nicoleti/EG_EntNic_19022024_genome.fasta
+# Partition size of genome in base pairs
+partition_size: 100000
+# Sample setup. List of dictionaries listing the configuration for each sample.
+sample_list:
+  -
+    # Name of sample.
+    sample_name: EntNic_JEJ-C119
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to BAM file.
+    bam_file: /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Entomobrya_nicoleti/EntNic_JEJ-C119/EntNic_JEJ-C119_filtered.bam
+    # Directory for intermediary files.
+    working_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola
+    # Directory for final output files. (If left empty, output file will be placed within 'working_directory_path')
+    output_directory_path:    
+    # Freebayes settings
+    freebayes_settings:
+      sample_ploidy: 100
+      best_n_alleles: 3
+      min_alternate_fraction: 0
+      min_alternate_count: 2
+  -
+    # Name of sample.
+    sample_name: EntNic_JHJ-C220
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to BAM file.
+    bam_file: /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Entomobrya_nicoleti/EntNic_JHJ-C220/EntNic_JHJ-C220_filtered.bam
+    # Directory for intermediary files.
+    working_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola
+    # Directory for final output files. (If left empty, output file will be placed within 'working_directory_path')
+    output_directory_path:
+    # Freebayes settings
+    freebayes_settings:
+      sample_ploidy: 100
+      best_n_alleles: 3
+      min_alternate_fraction: 0
+      min_alternate_count: 2
+  -
+    # Name of sample.
+    sample_name: EntNic_JoeJ-C252
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to BAM file.
+    bam_file: /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Entomobrya_nicoleti/EntNic_JoeJ-C252/EntNic_JoeJ-C252_filtered.bam
+    # Directory for intermediary files.
+    working_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola
+    # Directory for final output files. (If left empty, output file will be placed within 'working_directory_path')
+    output_directory_path:
+    # Freebayes settings
+    freebayes_settings:
+      sample_ploidy: 100
+      best_n_alleles: 3
+      min_alternate_fraction: 0
+      min_alternate_count: 2
+  -
+    # Name of sample.
+    sample_name: EntNic_KLJ-C127
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to BAM file.
+    bam_file: /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Entomobrya_nicoleti/EntNic_KLJ-C127/EntNic_KLJ-C127_filtered.bam
+    # Directory for intermediary files.
+    working_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola
+    # Directory for final output files. (If left empty, output file will be placed within 'working_directory_path')
+    output_directory_path:
+    # Freebayes settings
+    freebayes_settings:
+      sample_ploidy: 100
+      best_n_alleles: 3
+      min_alternate_fraction: 0
+      min_alternate_count: 2
+  -
+    # Name of sample.
+    sample_name: EntNic_KoeJ-C212
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to BAM file.
+    bam_file: /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Entomobrya_nicoleti/EntNic_KoeJ-C212/EntNic_KoeJ-C212_filtered.bam
+    # Directory for intermediary files.
+    working_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola
+    # Directory for final output files. (If left empty, output file will be placed within 'working_directory_path')
+    output_directory_path:
+    # Freebayes settings
+    freebayes_settings:
+      sample_ploidy: 100
+      best_n_alleles: 3
+      min_alternate_fraction: 0
+      min_alternate_count: 2
+  -
+    # Name of sample.
+    sample_name: EntNic_LEJ-C64
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to BAM file.
+    bam_file: /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Entomobrya_nicoleti/EntNic_LEJ-C64/EntNic_LEJ-C64_filtered.bam
+    # Directory for intermediary files.
+    working_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola
+    # Directory for final output files. (If left empty, output file will be placed within 'working_directory_path')
+    output_directory_path:
+    # Freebayes settings
+    freebayes_settings:
+      sample_ploidy: 100
+      best_n_alleles: 3
+      min_alternate_fraction: 0
+      min_alternate_count: 2

@@ -1,0 +1,20 @@
+# The name of the relevant project account.
+account: EcoGenetics
+# Name of species being analyzed
+species_name: Entomobrya nicoleti
+# List of paths to all BAM files.
+sample_list:
+- /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Entomobrya_nicoleti/EntNic_DSJ-C190/EntNic_DSJ-C190_filtered.bam
+# Path to reference genome.
+reference_genome_path: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Entomobrya_nicoleti/EG_EntNic_19022024_genome.fasta
+# Directory for intermediary files.
+working_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/EntNic_DSJ-C190
+# Directory for final output files.
+output_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/EntNic_DSJ-C190
+# Partition size of genome in base pairs
+partition_size: 100000
+# Freebayes settings
+sample_ploidy: 100
+best_n_alleles: 3
+min_alternate_fraction: 0
+min_alternate_count: 2

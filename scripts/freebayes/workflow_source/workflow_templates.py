@@ -123,7 +123,7 @@ def mpileup_partitions_filelist(partitions: list, top_dir: str, species_name: st
 ########################## Freebayes ##########################
 
 def name_freebayes_chrom(idx: str, target: AnonymousTarget) -> str:
-	return f'{os.path.basename(target.outputs["vcf"])}'
+	return f'{os.path.basename(target.outputs["vcf"].replace("-", "_"))}'
 
 # def freebayes_chrom(reference_genome_file: str, bam_file_list: list, output_directory: str, species_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2):
 # 	"""
@@ -205,7 +205,7 @@ def freebayes_chrom(reference_genome_file: str, bam_file_list: list, output_dire
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
 		source /home/"$USER"/.bashrc
-		source activate vcf
+		source activate popgen
 	fi
 	
 	export _JAVA_OPTIONS="-Xmx{options['memory']}"
@@ -227,6 +227,57 @@ def freebayes_chrom(reference_genome_file: str, bam_file_list: list, output_dire
 	    > {output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf
 	
 	mv {output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf {outputs['vcf']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def freebayes_chrom_single_sample(reference_genome_file: str, bam_file: str, output_directory: str, sample_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2):
+	"""
+	Template: Create VCF file for each 'chromosome' in pooled alignment.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'reference': reference_genome_file,
+		   	  'bam': bam_file}
+	outputs = {'vcf': f'{output_directory}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf'}
+	options = {
+		'cores': 1,
+		'memory': '80g',
+		'walltime': '60:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	export _JAVA_OPTIONS="-Xmx{options['memory']}"
+
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+
+	[ -d {output_directory}/tmp ] || mkdir -p {output_directory}/tmp
+	
+	freebayes \
+		-f {reference_genome_file} \
+		-n {best_n_alleles} \
+		-p {ploidy} \
+		-r {region}:{start}-{end} \
+		--min-alternate-fraction {min_alternate_fraction} \
+		--min-alternate-count {min_alternate_count} \
+		--pooled-discrete \
+        -b {bam_file} \
+	    > {output_directory}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf
+	
+	mv {output_directory}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf {outputs['vcf']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -268,7 +319,7 @@ def concat(files: list, output_name: str, output_directory: str = None, compress
     # Sources environment
     if [ "$USER" == "jepe" ]; then
         source /home/"$USER"/.bashrc
-        source activate vcf
+        source activate popgen
     fi
     
     echo "START: $(date)"
