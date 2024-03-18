@@ -547,8 +547,8 @@ def qc_qualimap(alignment_file: str, sample_name: str, output_directory: str):
 	:param
 	"""
 	inputs = {'alignment': alignment_file}
-	outputs = {'qualimap': f'{output_directory}/{sample_name}_qualimap/{sample_name}.qualimap.pdf',
-			   'raw': f'{output_directory}/{sample_name}_qualimap/genome_results.txt'}
+	outputs = {'qualimap': f'{output_directory}/qualimap/{sample_name}.qualimap.pdf',
+			   'raw': f'{output_directory}/qualimap/genome_results.txt'}
 	options = {
 		'cores': 32,
 		'memory': '300g',
@@ -571,19 +571,19 @@ def qc_qualimap(alignment_file: str, sample_name: str, output_directory: str):
 	qualimap bamqc \
 		-nt {options['cores']} \
 		-bam {alignment_file} \
-		-outdir {output_directory}/{sample_name}_qualimap \
+		-outdir {output_directory}/qualimap \
 		-outformat PDF \
 		-outfile {sample_name}.qualimap.prog.pdf \
 		--java-mem-size={options['memory']}
 
-	mv {output_directory}/{sample_name}_qualimap/{sample_name}.qualimap.prog.pdf {outputs['qualimap']}
+	mv {output_directory}/qualimap/{sample_name}.qualimap.prog.pdf {outputs['qualimap']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def qualimap_multi(output_directory: str, species_name: str):
+def qualimap_multi(data_set: list, output_directory: str, filename: str):
 	"""
 	Template: Compares QC report from multiple runs of :script:`qualimap`.
 	
@@ -594,8 +594,8 @@ def qualimap_multi(output_directory: str, species_name: str):
 	
 	:param
 	"""
-	inputs = {}
-	outputs = {}
+	inputs = {'raw': [i[1] for i in data_set]}
+	outputs = {'pdf': f'{output_directory}/multiqualimap/{filename}.multiqualimap.pdf'}
 	options = {
 		'cores': 32,
 		'memory': '300g',
@@ -612,13 +612,16 @@ def qualimap_multi(output_directory: str, species_name: str):
 	echo "JobID: $SLURM_JOBID"
 	
 	[ -d {output_directory} ] || mkdir -p {output_directory}
-	
+
 	export _JAVA_OPTIONS="-Djava.awt.headless=true -Xmx{options['memory']}"
 
 	qualimap multi-bamqc \
-		
+		-d <(cat "{'\n'.join(['\t'.join(i) for i in data_set])}") \
+		-outdir {output_directory}/multiqualimap \
+		-outfile {filename}.multiqualimap.prog.pdf \
+		-outformat PDF
 	
-	mv
+	mv {output_directory}/multiqualimap/{filename}.multiqualimap.prog.pdf {outputs['pdf']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"

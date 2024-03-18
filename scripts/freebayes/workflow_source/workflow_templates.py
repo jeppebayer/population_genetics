@@ -348,3 +348,68 @@ def concat(files: list, output_name: str, output_directory: str = None, compress
     echo "$(jobinfo "$SLURM_JOBID")"
     """
     return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
+
+def concat_vcf(files: list, output_name: str, output_directory: str = None, compress: bool = False):
+    """
+    Template: Concatenates :format:`VCF` files. Optionally compresses output.
+    
+    Template I/O::
+    
+        inputs = {'files': files}
+        outputs = {'concat_file': output_name.ext | output_name.ext.gzip}
+    
+    :param list files:
+        List containing :format:`VCF` files to concatenate. Can already be gzipped.
+    :param str output_name:
+        Desired name of output file, no extension.
+    :param str output_directory:
+        Path to output directory. Default is directory of 'files[0]'.
+    :param bool compress:
+        Bool indicating whether the output file should be compressed or not.
+    """
+    if not output_directory:
+        output_directory = os.path.dirname(files[0])
+    inputs = {'files': files}
+    if compress:
+        outputs = {'concat_file': f'{output_directory}/{output_name}.vcf.gz'}
+    else:
+        outputs = {'concat_file': f'{output_directory}/{output_name}.vcf'}
+    options = {
+        'cores': 32,
+        'memory': '40g',
+        'walltime': '24:00:00'
+    }
+    protect = outputs['concat_file']
+    spec = f"""
+    # Sources environment
+    if [ "$USER" == "jepe" ]; then
+        source /home/"$USER"/.bashrc
+        source activate popgen
+    fi
+    
+    echo "START: $(date)"
+    echo "JobID: $SLURM_JOBID"
+    
+    [ -d {output_directory} ] || mkdir -p {output_directory}
+    
+    if [ {compress} == 'False' ]; then
+        bcftools concat \
+            --threads {options['cores']} \
+            --output-type v \
+            --output {output_directory}/{output_name}.prog.vcf \
+            {' '.join(files)}
+
+            mv {output_directory}/{output_name}.prog.vcf {outputs['concat_file']}
+    else
+        bcftools concat \
+            --threads {options['cores']} \
+            --output-type z9 \
+            --output {output_directory}/{output_name}.prog.vcf.gz \
+            {' '.join(files)}
+
+            mv {output_directory}/{output_name}.prog.vcf.gz {outputs['concat_file']}
+    
+    echo "END: $(date)"
+    echo "$(jobinfo "$SLURM_JOBID")"
+    """
+    return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)

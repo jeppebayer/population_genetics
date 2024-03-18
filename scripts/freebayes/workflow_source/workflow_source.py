@@ -165,7 +165,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 
         concat_freebayes = gwf.target_from_template(
                 name=f'concatenate_freebayes_{NAME.replace("-", "_")}',
-                template=concat(
+                template=concat_vcf(
                     files=collect(freebayes_parts.outputs, ['vcf'])['vcfs'],
                     output_name=f'{NAME}.freebayes_n{FREEBAYES_SETTINGS['best_n_alleles']}_p{FREEBAYES_SETTINGS['sample_ploidy']}_minaltfrc{FREEBAYES_SETTINGS['min_alternate_fraction']}_minaltcnt{FREEBAYES_SETTINGS['min_alternate_count']}',
                     output_directory=output_dir,
