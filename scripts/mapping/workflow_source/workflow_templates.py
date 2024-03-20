@@ -21,11 +21,11 @@ def get_sample_data(path: str) -> dict:
 		Path to sample directory containing resequencing data."""
 	r1 = ('_1', '_R1')
 	r2 = ('_2', '_R2')
-	extformat = ('.fq', '.fa', '.fasta', 'fastq', '.fn')
+	extformat = ('.fq', '.fa', '.fasta', '.fastq', '.fn')
 	compress = ('', '.gz', '.gzip')
 	reseq = {'sample_name': os.path.basename(path),
-		  	 'read1_files': [os.path.join(path, file) for file in os.listdir(path) if file.endswith(tuple([i+j+k for i in r1 for j in extformat for k in compress]))],
-		  	 'read2_files': [os.path.join(path, file) for file in os.listdir(path) if file.endswith(tuple([i+j+k for i in r2 for j in extformat for k in compress]))]}
+		  	 'read1_files': sorted([os.path.join(path, file) for file in os.listdir(path) if file.endswith(tuple([i+j+k for i in r1 for j in extformat for k in compress]))]),
+		  	 'read2_files': sorted([os.path.join(path, file) for file in os.listdir(path) if file.endswith(tuple([i+j+k for i in r2 for j in extformat for k in compress]))])}
 	return reseq
 
 ########################## Mapping ##########################
@@ -65,7 +65,7 @@ def index_reference_genome(reference_genome_file: str, output_directory: str):
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/reference ] mkdir -p {output_directory}/reference
+	[ -d {output_directory}/reference ] || mkdir -p {output_directory}/reference
 	[ -e {output_directory}/reference/{os.path.basename(reference_genome_file)} ] && rm -f {output_directory}/reference/{os.path.basename(reference_genome_file)}
 	ln -s {reference_genome_file} {output_directory}/reference/{os.path.basename(reference_genome_file)}
 	
@@ -132,7 +132,7 @@ def adapterremoval_pairedend(sample_name: str, read1_files: list, read2_files: l
 		--adapter2 {adapter2} \
 		--minquality {min_qulaity} \
 		--minlength {min_length} \
-		--basename {output_directory}/adapterremoval/{sample_name}.prog \
+		--basename {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog \
 		--trimns \
 		--trimqualities \
 		--collapse
@@ -184,7 +184,7 @@ def alignment_pairedend(read1_file: str, read2_file: str, reference_genome_file:
 	
 	bwa mem \
 		-t {options['cores']} \
-		-R "@RG\tID:{sample_name}\tSM:{sample_name}" \
+		-R "@RG\\tID:{sample_name}\\tSM:{sample_name}" \
 		{reference_genome_file} \
 		{read1_file} \
 		{read2_file} \
@@ -236,7 +236,7 @@ def alignment_collapsed(collapsed_read_files: list, reference_genome_file: str, 
 	
 	bwa mem \
 		-t {options['cores']} \
-		-R "@RG\tID:{sample_name}\tSM:{sample_name}" \
+		-R "@RG\\tID:{sample_name}\\tSM:{sample_name}" \
 		{reference_genome_file} \
 		<(cat {' '.join(collapsed_read_files)}) \
 	| samtools sort \
@@ -583,7 +583,7 @@ def qc_qualimap(alignment_file: str, sample_name: str, output_directory: str):
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def qualimap_multi(data_set: list, output_directory: str, filename: str):
+def qualimap_multi(dataset: list, output_directory: str, filename: str):
 	"""
 	Template: Compares QC report from multiple runs of :script:`qualimap`.
 	
@@ -594,7 +594,8 @@ def qualimap_multi(data_set: list, output_directory: str, filename: str):
 	
 	:param
 	"""
-	inputs = {'raw': [i[1] for i in data_set]}
+	dataset_tabular = '\n'.join(['\t'.join(i) for i in dataset])
+	inputs = {'raw': [i[1] for i in dataset]}
 	outputs = {'pdf': f'{output_directory}/multiqualimap/{filename}.multiqualimap.pdf'}
 	options = {
 		'cores': 32,
@@ -616,7 +617,7 @@ def qualimap_multi(data_set: list, output_directory: str, filename: str):
 	export _JAVA_OPTIONS="-Djava.awt.headless=true -Xmx{options['memory']}"
 
 	qualimap multi-bamqc \
-		-d <(cat "{'\n'.join(['\t'.join(i) for i in data_set])}") \
+		-d <(cat "{dataset_tabular}") \
 		-outdir {output_directory}/multiqualimap \
 		-outfile {filename}.multiqualimap.prog.pdf \
 		-outformat PDF

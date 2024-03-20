@@ -4,7 +4,7 @@ from gwf.workflow import collect
 import os, yaml, glob, sys
 from workflow_templates import *
 
-def mapping_resequencing_data_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
+def mapping_resequencing_data_population_genetics_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 	"""
 	Workflow: Align resequencing data to reference genome and do basic filtering.
 	
@@ -135,7 +135,7 @@ def mapping_resequencing_data_workflow(config_file: str = glob.glob('*config.y*m
 				template=samtools_filter(
 					alignment_file=mark_duplicates.outputs['markdup'],
 					sample_name=sample['sample_name'],
-					output_directory=f'{OUTPUT_DIR}/{group["group_name"].lower()}',
+					output_directory=f'{OUTPUT_DIR}/{group["group_name"].lower()}/{sample["sample_name"]}',
 					flags_excluded=STF_EXCLUDE,
 					flags_required=STF_REQUIRED,
 					min_mq=STF_MIN_MQ
@@ -165,7 +165,7 @@ def mapping_resequencing_data_workflow(config_file: str = glob.glob('*config.y*m
 		within_multi_qualimap = gwf.target_from_template(
 			name=f'{group["group_name"]}_multi_qualimap',
 			template=qualimap_multi(
-				data_set=within_group_qualimap,
+				dataset=within_group_qualimap,
 				output_directory=f'{OUTPUT_DIR}/{group["group_name"].lower()}',
 				filename=group['group_name'].lower()
 			)
@@ -174,7 +174,7 @@ def mapping_resequencing_data_workflow(config_file: str = glob.glob('*config.y*m
 	between_multi_qualimap = gwf.target_from_template(
 		name=f'all_groups_multi_qualimap',
 		template=qualimap_multi(
-			data_set=between_group_qualimap,
+			dataset=between_group_qualimap,
 			output_directory=OUTPUT_DIR,
 			filename='allgroups'
 		)
