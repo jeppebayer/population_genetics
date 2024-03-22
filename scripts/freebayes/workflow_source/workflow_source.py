@@ -77,7 +77,7 @@ def freebayes_vcf_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
     
     concat_freebayes = gwf.target_from_template(
             name='concatenate_freebayes',
-            template=concat(
+            template=concat_vcf(
                 files=collect(freebayes_parts.outputs, ['vcf'])['vcfs'],
                 output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{BESTN}_p{PLOIDY}_minaltfrc{ALT_FRACTION}_minaltcnt{ALT_COUNT}',
                 output_directory=output_dir,
