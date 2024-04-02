@@ -408,6 +408,7 @@ def concat_vcf(files: list, output_name: str, output_directory: str = None, comp
             {' '.join(files)}
 
             mv {output_directory}/{output_name}.prog.vcf.gz {outputs['concat_file']}
+    fi
     
     echo "END: $(date)"
     echo "$(jobinfo "$SLURM_JOBID")"
