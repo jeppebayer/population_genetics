@@ -15,16 +15,19 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 	#                  Configuration
 	# --------------------------------------------------
 	
-	config = yaml.safe_load(open(config_file))
-	ACCOUNT: str = config['account']
-	SPECIES_NAME: str = config['species_name']
-	VCF: str = config['vcf_file']
-	REFERENCE: str = config['reference_genome_path']
-	GTF: str = config['gtf_annotation_file']
-	WORK_DIR: str = config['working_directory_path']
-	OUTPUT_DIR: str = config['output_directory_path']
+	CONFIG = yaml.safe_load(open(config_file))
+	ACCOUNT: str = CONFIG['account']
+	SPECIES_NAME: str = CONFIG['species_name']
+	REFERENCE: str = CONFIG['reference_genome_file']
+	GTF: str = CONFIG['gtf_annotation_file']
+	WORK_DIR: str = CONFIG['working_directory_path']
+	OUTPUT_DIR: str = CONFIG['output_directory_path']
+	SNPGENIE_SETTINGS: dict = CONFIG['snpgenie_settings']
+	SNPGENIE_MINFREQ: float | int = SNPGENIE_SETTINGS['minfreq'] if SNPGENIE_SETTINGS['minfreq'] else 0
+	SNPGENIE_SLIDINGWINDOW: int = SNPGENIE_SETTINGS['slidingwindow'] if SNPGENIE_SETTINGS['slidingwindow'] else 9
+	SAMPLES: list = CONFIG['sample_list']
 	
-	snpeff_directory = f'{os.path.dirname(os.path.realpath(__file__))}/software/snpeff'
+	SNPEFF_DIR = f'{os.path.dirname(os.path.realpath(__file__))}/software/snpeff'
 
 	# --------------------------------------------------
 	#                  Workflow
@@ -35,18 +38,6 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 	)
 
 	top_dir = f'{WORK_DIR}/{SPECIES_NAME.replace(" ", "_")}/genetic_load'
-	if not OUTPUT_DIR:
-		OUTPUT_DIR = top_dir
-
-	if VCF.endswith('.gz'):
-		data = gzip.open(VCF, 'rt')
-	else:
-		data = open(VCF, 'r')
-	with data as infile:
-		for line in infile:
-			if line.startswith('#CHROM'):
-				break
-		samples = [{'sample_name': sample.rstrip()} for sample in line.split(sep='\t')[9:]]
 
 	database_entry = gwf.target_from_template(
 		name=f'{species_abbreviation(SPECIES_NAME)}_snpeff_database_entry',
@@ -54,31 +45,28 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 			gtf_annotation_file=GTF,
 			reference_genome_file=REFERENCE,
 			species_name=SPECIES_NAME,
-			snpeff_directory=snpeff_directory
+			snpeff_directory=SNPEFF_DIR
 		)
 	)
 	
-	variant_annotation = gwf.target_from_template(
-		name=f'{species_abbreviation(SPECIES_NAME)}_snpeff_annotation',
-		template=snpeff_annotation(
-			vcf_file=VCF,
-			snpeff_predictor_file=database_entry.outputs['predictor'],
-			snpeff_config_file=f'{snpeff_directory}/snpEff.config',
-			output_directory=top_dir,
-			species_name=SPECIES_NAME
-		)
+	variant_annotation = gwf.map(
+		name=name_snpeff_annotation,
+		template_func=snpeff_annotation,
+		inputs=SAMPLES,
+		extra={'snpeff_predictor_file': database_entry.outputs['predictor'],
+		 	   'snpeff_config_file': f'{SNPEFF_DIR}/snpEff.config',
+			   'output_directory': top_dir}
 	)
 
 	snpgenie_pi = gwf.map(
 		name=name_snpgenie,
-		template_func=snpgenie,
-		inputs=samples,
+		template_func=snpgenie_withinpool,
+		inputs=SAMPLES,
 		extra={'reference_genome_file': REFERENCE,
-		 	   'gtf_annotation_file': GTF,
-			   'vcf_file': VCF,
+			   'gtf_annotation_file': GTF,
 			   'output_directory': top_dir,
-			   'min_allele_frequency': 0,
-			   'sliding_window_size': 9}
+			   'min_allele_frequency': SNPGENIE_MINFREQ,
+			   'sliding_window_size': SNPGENIE_SLIDINGWINDOW}
 	)
 
 	return gwf

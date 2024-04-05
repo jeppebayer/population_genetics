@@ -1,14 +1,211 @@
+# Tag identifying file association.
+TAG: jeppebayer:EcoGenetics,population_genetics,genetic_load:workflowconfiguration
 # The name of the relevant project account.
 account: EcoGenetics
 # Name of species being analyzed
 species_name: Entomobrya nicoleti
-# Path to VCF file (can be .gz compressed).
-vcf_file: /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Entomobrya_nicoleti/EntNic/vcf_allsites_maxcov0.98_mincov2_mincnt2_minfrq0_missfrc0.001_bq15/EntNic.allsites_maxcov0.98_mincov2_mincnt2_minfrq0_missfrc0.001_bq15.vcf.gz
 # Path to reference genome file.
-reference_genome_path: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Entomobrya_nicoleti/EG_EntNic_19022024_genome.fasta
+reference_genome_file: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Entomobrya_nicoleti/EG_EntNic_19022024_genome.fasta
 # Path to reference annotation file in GTF format.
 gtf_annotation_file: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Entomobrya_nicoleti/annotation/EG_EntNic_19022024_genome.gtf
 # Directory for intermediary files.
 working_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola
-# Directory for final output files.
-output_directory_path: 
+# Directory for final output files. (If left empty, output file will be placed within 'working_directory_path')
+output_directory_path:
+# SNPGenie settings.
+snpgenie_settings:
+  # Minimum SNP frequency to include (proportion)(default 0).
+  minfreq: 0
+  # Length of the (optional) sliding (codon) window used in analysis (default 9)
+  slidingwindow: 9
+# Sample setup. List of dictionaries listing the configuration for each sample.
+sample_list:
+  -
+    # Name of sample.
+    sample_name: EntNic_aaRJ-C225
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_aaRJ-C225_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_aeRoe-C36
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_aeRoe-C36_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_BIJ-C30
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_BIJ-C30_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_BJJ-C34
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_BJJ-C34_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_BRS-C268
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_BRS-C268_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_DoeJ-C27
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_DoeJ-C27_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_DSJ-C190
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_DSJ-C190_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_FHJ-C38
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_FHJ-C38_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_FUR-C230
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_FUR-C230_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_GEJ-C42
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_GEJ-C42_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_GoeJ-C19
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_GoeJ-C19_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_GSJ-C274
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_GSJ-C274_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_GUS-C41
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_GUS-C41_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_HHJ-C162
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_HHJ-C162_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_JEJ-C119
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_JEJ-C119_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_LVJ-C76
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_LVJ-C76_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_MSJ-C2
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_MSJ-C2_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_NOJ-C37
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_NOJ-C37_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_RYJ-C139
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_RYJ-C139_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_SBJ-C52
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_SBJ-C52_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_SHJ-C48
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_SHJ-C48_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_SKJ-C16
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_SKJ-C16_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_SKJ-C216
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_SKJ-C216_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_STF-C266
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_STF-C266_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_ULJ-C60
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_ULJ-C60_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_UTJ-C22
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_UTJ-C22_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
+    sample_name: EntNic_VAJ-C24
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_VAJ-C24_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
