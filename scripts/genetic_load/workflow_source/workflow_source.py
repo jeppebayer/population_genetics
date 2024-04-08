@@ -39,6 +39,8 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 
 	top_dir = f'{WORK_DIR}/{SPECIES_NAME.replace(" ", "_")}/genetic_load'
 
+	sample_sequence_pairs = [{'sample_name': j['sample_name'],'sample_group': j['sample_group'],'vcf_file': j['vcf_file'], 'region': i} for j in SAMPLES for i in sequence_names_fasta(REFERENCE)]
+
 	database_entry = gwf.target_from_template(
 		name=f'{species_abbreviation(SPECIES_NAME)}_snpeff_database_entry',
 		template=snpeff_database_build(
@@ -61,7 +63,7 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 	snpgenie_pi = gwf.map(
 		name=name_snpgenie,
 		template_func=snpgenie_withinpool,
-		inputs=SAMPLES,
+		inputs=sample_sequence_pairs,
 		extra={'reference_genome_file': REFERENCE,
 			   'gtf_annotation_file': GTF,
 			   'output_directory': top_dir,

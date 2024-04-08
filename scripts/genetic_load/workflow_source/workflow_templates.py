@@ -14,6 +14,30 @@ def species_abbreviation(species_name: str) -> str:
 	species = species[0].upper() + species[1:3]
 	return genus + species
 
+def sequence_names_fasta(fasta_file: str):
+    """
+    Parses :format:`FASTA` file returning all sequence names in a list.
+    
+    ::
+    
+        return [str, ...]
+    
+    :param str fasta_file:
+        Sequence file in :format:`FASTA` format.
+    """
+    fasta_list = []
+    seq_name = None
+    with open(fasta_file, 'r') as fasta:
+        for entry in fasta:
+            entry = entry.strip()
+            if entry.startswith(">"):
+                if seq_name:
+                    fasta_list.append(seq_name)
+                entry = entry.split(" ", 1)
+                seq_name = entry[0][1:]
+        fasta_list.append(seq_name)
+    return fasta_list
+
 ########################## SnpEff ##########################
 
 def snpeff_database_build(gtf_annotation_file: str, reference_genome_file: str, species_name: str, snpeff_directory: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/snpeff'):
@@ -186,10 +210,49 @@ def snpeff_annotation(vcf_file: str, snpeff_predictor_file: str, snpeff_config_f
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def name_snpgenie(idx: str, target: AnonymousTarget) -> str:
-	return f'snpgenie_{os.path.basename(os.path.dirname(target.outputs['param'])).replace("-", "_")}'
+def snpeff_summarize(output_directory: str, species_name: str):
+	"""
+	Template: Summarizes annotated variant functions.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {}
+	outputs = {}
+	options = {
+		'cores': 1,
+		'memory': '12g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory} ] || mkdir -p {output_directory}
+	
+	awk 'BEGIN{{FS=OFS="\\t"}} {{if ($0 !~ /^#/) {{print $8}}}}
+	
+	mv
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vcf_file: str, sample_group: str, sample_name: str, output_directory: str, min_allele_frequency: int | float = 0, sliding_window_size: int = 9):
+def name_snpgenie(idx: str, target: AnonymousTarget) -> str:
+	return f'snpgenie_{os.path.basename(os.path.dirname(os.path.dirname(target.outputs['param']))).replace("-", "_")}_{os.path.basename(os.path.dirname(target.outputs['param'])).replace("-", "_")}'
+
+def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vcf_file: str, sample_group: str, sample_name: str, region: str,  output_directory: str, min_allele_frequency: int | float = 0, sliding_window_size: int = 9):
 	"""
 	Template: Estimate pi_N/pi_S
 	
@@ -203,13 +266,13 @@ def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vc
 	inputs = {'reference': reference_genome_file,
 		   	  'gtf': gtf_annotation_file,
 			  'vcf': vcf_file}
-	outputs = {'param': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/SNPGenie_parameters.txt',
-			   'log': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/SNPGenie_LOG.txt',
-			   'site': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/site_results.txt',
-			   'codon': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/codon_results.txt',
-			   'product': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/product_results.txt',
-			   'summary': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/population_summary.txt',
-			   'window': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/sliding_window_length_{sliding_window_size}_results.txt'}
+	outputs = {'param': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/SNPGenie_parameters.txt',
+			   'log': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/SNPGenie_LOG.txt',
+			   'site': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/site_results.txt',
+			   'codon': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/codon_results.txt',
+			   'product': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/product_results.txt',
+			   'summary': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/population_summary.txt',
+			   'window': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/sliding_window_length_{sliding_window_size}_results.txt'}
 	options = {
 		'cores': 18,
 		'memory': '30g',
@@ -229,11 +292,21 @@ def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vc
 
 	snpgenie.pl \
 		--vcfformat=4 \
-		--snpreport={vcf_file} \
-		--fastafile={reference_genome_file} \
+		--snpreport=<(awk -v region={region} \
+                  		'BEGIN{{OFS=FS="\\t"}}
+                        {{if ($0 ~ /^#/ || $1 == region)
+                            {{print}}
+                        }}' \
+                        {vcf_file}) \
+		--fastafile=<(awk -v region={region} \
+						'BEGIN{{RS=">"; ORS=""; FS=OFS="\\t"}}
+                        {{if (NR > 1 && $1 == region)
+                            {{print ">"$0}}
+                        }}'
+						{reference_genome_file}) \
 		--gtffile {gtf_annotation_file} \
-		--workdir={output_directory}/snpgenie/{sample_group}/{sample_name}/tmp \
-		--outdir={output_directory}/snpgenie/{sample_group}/{sample_name} \
+		--workdir={output_directory}/snpgenie/{sample_group}/tmp \
+		--outdir={output_directory}/snpgenie/{sample_group}/{sample_name}/{region} \
 		--minfreq={min_allele_frequency} \
 		--slidingwindow={sliding_window_size}
 	
