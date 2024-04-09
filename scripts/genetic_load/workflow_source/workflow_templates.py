@@ -367,6 +367,7 @@ def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vc
 	echo "JobID: $SLURM_JOBID"
 	
 	[ -d {output_directory}/snpgenie/{sample_group}/{sample_name}/{region} ] && rm -rf {output_directory}/snpgenie/{sample_group}/{sample_name}/{region}
+    [ -d {output_directory}/snpgenie/{sample_group}/{sample_name} ] || mkdir -p {output_directory}/snpgenie/{sample_group}/{sample_name}
 	[ -d {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region} ] || mkdir -p {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}
     
     awk -v region={region} \
