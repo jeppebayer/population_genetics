@@ -39,7 +39,16 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 
 	top_dir = f'{WORK_DIR}/{SPECIES_NAME.replace(" ", "_")}/genetic_load'
 
-	sample_sequence_pairs = [{'sample_name': j['sample_name'],'sample_group': j['sample_group'],'vcf_file': j['vcf_file'], 'region': i} for j in SAMPLES for i in sequence_names_fasta(REFERENCE)]
+	if os.path.exists(f'reference_sequences_{os.path.splitext(os.path.basename(REFERENCE))[0]}.txt'):
+		with open(f'reference_sequences_{os.path.splitext(os.path.basename(REFERENCE))[0]}.txt', 'r') as infile:
+			contigs = [entry.split(sep='\t')[0].strip() for entry in infile]
+	else:
+		sequences = parse_fasta(REFERENCE)
+		with open(f'reference_sequences_{os.path.splitext(os.path.basename(REFERENCE))[0]}.txt', 'w') as outfile:
+			outfile.write('\n'.join('\t'.join(str(i) for i in entry.values()) for entry in sequences))
+		contigs = [contig['sequence_name'] for contig in sequences]
+
+	sample_sequence_pairs = [{'sample_name': j['sample_name'],'sample_group': j['sample_group'],'vcf_file': j['vcf_file'], 'region': i} for j in SAMPLES for i in contigs]
 
 	database_entry = gwf.target_from_template(
 		name=f'{species_abbreviation(SPECIES_NAME)}_snpeff_database_entry',
@@ -58,6 +67,12 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 		extra={'snpeff_predictor_file': database_entry.outputs['predictor'],
 		 	   'snpeff_config_file': f'{SNPEFF_DIR}/snpEff.config',
 			   'output_directory': top_dir}
+	)
+
+	annotation_frequencies = gwf.map(
+		name=name_snpeff_freqs,
+		template_func=snpeff_freqs,
+		inputs=variant_annotation.outputs
 	)
 
 	snpgenie_pi = gwf.map(

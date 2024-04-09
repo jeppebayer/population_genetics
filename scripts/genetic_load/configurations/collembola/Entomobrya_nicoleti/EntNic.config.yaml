@@ -155,6 +155,13 @@ sample_list:
     vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_KoeJ-C212_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
   -
     # Name of sample.
+    sample_name: EntNic_LEJ-C64
+    # Name of sample group.
+    sample_group: Grassland
+    # Path to VCF file.
+    vcf_file: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/freebayes/grassland/filtered_vcfs/EntNic_LEJ-C64_SnpGap_DP300_600_biallelic_AO.freebayes_n3_p100_minaltfrc0_minaltcnt2.vcf
+  -
+    # Name of sample.
     sample_name: EntNic_LVJ-C76
     # Name of sample group.
     sample_group: Grassland
