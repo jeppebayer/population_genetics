@@ -41,14 +41,13 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 
 	if os.path.exists(f'reference_sequences_{os.path.splitext(os.path.basename(REFERENCE))[0]}.txt'):
 		with open(f'reference_sequences_{os.path.splitext(os.path.basename(REFERENCE))[0]}.txt', 'r') as infile:
-			contigs = [entry.split(sep='\t')[0].strip() for entry in infile]
+			sequences = [{'sequence_name': entry.split(sep='\t')[0].strip(), 'sequence_length': entry.split(sep='\t')[1].strip()} for entry in infile]
 	else:
 		sequences = parse_fasta(REFERENCE)
 		with open(f'reference_sequences_{os.path.splitext(os.path.basename(REFERENCE))[0]}.txt', 'w') as outfile:
 			outfile.write('\n'.join('\t'.join(str(i) for i in entry.values()) for entry in sequences))
-		contigs = [contig['sequence_name'] for contig in sequences]
 
-	sample_sequence_pairs = [{'sample_name': j['sample_name'],'sample_group': j['sample_group'],'vcf_file': j['vcf_file'], 'region': i} for j in SAMPLES for i in contigs]
+	sample_sequence_pairs = [{'sample_name': j['sample_name'],'sample_group': j['sample_group'],'vcf_file': j['vcf_file'], 'region': i['sequence_name'], 'region_length': i['sequence_length']} for j in SAMPLES for i in sequences]
 
 	database_entry = gwf.target_from_template(
 		name=f'{species_abbreviation(SPECIES_NAME)}_snpeff_database_entry',
