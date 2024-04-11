@@ -74,6 +74,16 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 		inputs=variant_annotation.outputs
 	)
 
+	site_count = gwf.map(
+		name=name_cds_site_count,
+		template_func=cds_site_count,
+		inputs=SAMPLES,
+		extra={'gtf_annotation_file': GTF,
+			   'output_directory': top_dir,
+			   'min_coverage': 300,
+			   'max_coverage': 600}
+	)
+
 	snpgenie_pi = gwf.map(
 		name=name_snpgenie,
 		template_func=snpgenie_withinpool,

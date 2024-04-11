@@ -176,7 +176,7 @@ def snpeff_database_build(gtf_annotation_file: str, reference_genome_file: str, 
 def name_snpeff_annotation(idx: str, target: AnonymousTarget) -> str:
 	return f'snpeff_{os.path.basename(os.path.dirname(target.outputs['ann'])).replace("-", "_")}'
 
-def snpeff_annotation(vcf_file: str, snpeff_predictor_file: str, snpeff_config_file: str, output_directory: str, sample_group: str, sample_name: str):
+def snpeff_annotation(vcf_file: str, snpeff_predictor_file: str, snpeff_config_file: str, output_directory: str, sample_group: str, sample_name: str, bam_file: str):
 	"""
 	Template: Annotates :format:`VCF` file with variant function.
 	
@@ -271,55 +271,138 @@ def snpeff_freqs(ann: str, csv: str, txt: str, html: str):
 	echo "JobID: $SLURM_JOBID"
 	
 	awk \
-        'BEGIN{{FS=OFS="\\t"}}
-        {{if ($0 !~ /^#/) 
-            {{print $8}}
-        }}' \
-        {annotated_vcf} \
-    | awk \
-        'BEGIN{{FS=";"}}
-        {{
-        id = 0;
-        for (i = 1; i <= NF; i++)
-            {{
-            if ($i ~ /AF=/)
-				{{
-                split($i, af, "=");
-                frq = af[2]
-                }}
-            if ($i ~ /\\|LOW\\|/)
-                {{
-                id = 1
-				}}
-            if ($i ~ /\\|MODERATE\\|/)
-                {{
-                id = 2
-				}}
-            if ($i ~ /\\|HIGH\\|/)
-                {{
-                id = 3
-				}}
-            if (length(effectarray[id]) < 0)
-				{{
-                effectarray[id] = frq
-				}}
-            else
-            	{{
-				effectarray[id] = effectarray[id] "," frq
-				}}
-            id = 0;
-            }}
-        }}
-        END{{
-        for (j = 1; j <= 3; j++)
+        'BEGIN {{
+			FS = OFS = "\\t"
+		}}
+		{{
+			if ($0 !~ /^#/)
 			{{
-            print effectarray[j]
+				chromosome = $1
+				split($8, formatfield, ";")
+				split(formatfield[4], affield, "=")
+				split(formatfield[42], annsection, "|")
+				af = affield[2]
+				effect = annsection[3]
+				if (af == 0)
+				{{
+					next
+				}}
+				if (effect == "LOW" || effect == "MODERATE" || effect == "HIGH")
+				{{
+					if (length(frequencies[chromosome, effect]) == 0)
+					{{
+						frequencies[chromosome, effect] = af
+					}}
+					else
+					{{
+						frequencies[chromosome, effect] = frequencies[chromosome, effect] "," af
+					}}
+				}}
+			}}
+		}}
+		END {{
+			print "chromosome", "effect", "frequencies", "sum_frequencies", "num_frequencies", "mean_frequency"
+			for (i in frequencies)
+			{{
+				split(i, chreffect, "\\034")
+				split(frequencies[i], sumarray, ",")
+				for (j in sumarray)
+				{{
+					n += 1
+					sum += sumarray[j]
+				}}
+				print chreffect[1], chreffect[2] , frequencies[i], sum, n, sum / length(sumarray)
+				sum = 0
+				n = 0
 			}}
 		}}' \
+		{annotated_vcf} \
         > {os.path.dirname(ann)}/effectsummary.prog.csv
 	
 	mv {os.path.dirname(ann)}/effectsummary.prog.csv {outputs['csv']}
 	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def name_cds_site_count(idx: str, target: AnonymousTarget) -> str:
+	return f'cds_site_count_{os.path.basename(target.outputs['sites']).replace("-", "_")}'
+
+def cds_site_count(bam_file: str, gtf_annotation_file: str, output_directory: str, sample_group: str, sample_name: str, vcf_file: str, min_coverage: int = 300, max_coverage: int = 600):
+	"""
+	Template: Count number of potential sites in CDS region within coverage threshold.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'bam': bam_file,
+           	  'gtf': gtf_annotation_file}
+	outputs = {'bed': f'{output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.cds.bed',
+               'sites': f'{output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{sample_name}.sitecount.tsv'}
+	options = {
+		'cores': 18,
+		'memory': '30g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp ] || mkdir -p {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp
+	
+	awk \
+        'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+        {{
+			if ($3 == "CDS") {{
+				if ($7 == "+") {{
+					npos += 1
+					print $1, $4 - 1, $5, "pos" npos, ".", $7
+				}}
+				if ($7 == "-") {{
+					nneg += 1
+					print $1, $4 - 1, $5, "neg" nneg, ".", $7
+				}}
+			}}
+		}} \
+		{gtf_annotation_file} \
+		> {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.cds.bed
+
+    samtools depth \
+		-@ {options['cores'] - 1} \
+        -b {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.cds.bed \
+        {bam_file} \
+    | awk \
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+            if ($3 > {min_coverage} && $3 < {max_coverage}) {{
+				chromosomearray[$1] += 1
+			}}
+		}}
+        END{{
+			print "chromosome", "n_positions"
+			for (i in chromosomearray) {{
+				print i, chromosomearray[i]
+			}}
+		}}' \
+		> {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{sample_name}.sitecount.prog.tsv
+
+	mv {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{sample_name}.sitecount.prog.tsv {outputs['sites']}
+    
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
