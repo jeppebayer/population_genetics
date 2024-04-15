@@ -176,7 +176,7 @@ def snpeff_database_build(gtf_annotation_file: str, reference_genome_file: str, 
 def name_snpeff_annotation(idx: str, target: AnonymousTarget) -> str:
 	return f'snpeff_{os.path.basename(os.path.dirname(target.outputs['ann'])).replace("-", "_")}'
 
-def snpeff_annotation(vcf_file: str, snpeff_predictor_file: str, snpeff_config_file: str, output_directory: str, sample_group: str, sample_name: str, bam_file: str):
+def snpeff_annotation(vcf_file: str, snpeff_predictor_file: str, snpeff_config_file: str, output_directory: str, sample_group: str, sample_name: str):
 	"""
 	Template: Annotates :format:`VCF` file with variant function.
 	
@@ -241,7 +241,7 @@ def snpeff_annotation(vcf_file: str, snpeff_predictor_file: str, snpeff_config_f
 def name_snpeff_freqs(idx: str, target: AnonymousTarget) -> str:
 	return f'snpeff_freqs_{os.path.basename(os.path.dirname(target.inputs['vcf'])).replace("-", "_")}'
 
-def snpeff_freqs(ann: str, csv: str, txt: str, html: str):
+def snpeff_freqs(ann: str):
 	"""
 	Template: Summarizes annotated variant functions.
 	
@@ -329,7 +329,7 @@ def snpeff_freqs(ann: str, csv: str, txt: str, html: str):
 def name_cds_site_count(idx: str, target: AnonymousTarget) -> str:
 	return f'cds_site_count_{os.path.basename(target.outputs['sites']).replace("-", "_")}'
 
-def cds_site_count(bam_file: str, gtf_annotation_file: str, output_directory: str, sample_group: str, sample_name: str, vcf_file: str, min_coverage: int = 300, max_coverage: int = 600):
+def cds_site_count(bam_file: str, gtf_annotation_file: str, output_directory: str, sample_group: str, sample_name: str, min_coverage: int = 300, max_coverage: int = 600):
 	"""
 	Template: Count number of potential sites in CDS region within coverage threshold.
 	
@@ -376,7 +376,7 @@ def cds_site_count(bam_file: str, gtf_annotation_file: str, output_directory: st
 					print $1, $4 - 1, $5, "neg" nneg, ".", $7
 				}}
 			}}
-		}} \
+		}}' \
 		{gtf_annotation_file} \
 		> {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.cds.bed
 
@@ -407,6 +407,164 @@ def cds_site_count(bam_file: str, gtf_annotation_file: str, output_directory: st
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def snpeff_result(effectsummary_file: str, sitecount_file: str, output_directory: str, sample_group: str, sample_name: str, snpeff_calcresult: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/snpeff_calcresult.py'):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'effectsummary': effectsummary_file,
+           	  'sitecount': sitecount_file}
+	outputs = {'tsv': f'{output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/snpeff_results.tsv'}
+	options = {
+		'cores': 1,
+		'memory': '18g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load ] || mkdir -p {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load
+	
+	python {snpeff_calcresult} \
+		{sample_name} \
+		{sample_group} \
+		{effectsummary_file} \
+		{sitecount_file} \
+        {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/snpeff_results.prog.tsv
+	
+	mv {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/snpeff_results.prog.tsv {outputs['tsv']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def concatenate_snpeff_results(files: list, output_name: str, output_directory: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'files': files}
+	outputs = {'concat_file': f'{output_directory}/{output_name}.tsv'}
+	options = {
+		'cores': 1,
+		'memory': '10g',
+		'walltime': '02:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory} ] || mkdir -p {output_directory}
+	
+	awk \
+		'BEGIN{{FS=OFS="\\t"}}
+        {{
+        	if (FNR == 1 && NR != 1)
+				{{next}}
+            else
+				{{print}}
+        }}' \
+        {' '.join(files)} \
+        > {output_directory}/{output_name}.prog.tsv
+        
+    mv {output_directory}/{output_name}.prog.tsv {outputs['concat_file']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def concat(files: list, output_name: str, output_directory: str = None, compress: bool = False):
+    """
+    Template: Name-sorts and concatenates files. Optionally compresses output using :script:`gzip`.
+    
+    Template I/O::
+    
+        inputs = {'files': files}
+        outputs = {'concat_file': output_name.ext | output_name.ext.gzip}
+    
+    :param list files:
+        List containing files to concatenate.
+    :param str output_name:
+        Desired name of output file, no extension.
+    :param str output_directory:
+        Path to output directory. Default is directory of 'files[0]'.
+    :param bool compress:
+        Bool indicating whether the output file should be compressed or not.
+    """
+    if output_directory is None:
+        output_directory = os.path.dirname(files[0])
+    inputs = {'files': files}
+    if compress:
+        outputs = {'concat_file': f'{output_directory}/{output_name}{os.path.splitext(files[0])[1]}.gz'}
+    else:
+        outputs = {'concat_file': f'{output_directory}/{output_name}{os.path.splitext(files[0])[1]}'}
+    options = {
+        'cores': 2,
+        'memory': '16g',
+        'walltime': '24:00:00'
+    }
+    protect = outputs['concat_file']
+    spec = f"""
+    # Sources environment
+    if [ "$USER" == "jepe" ]; then
+        source /home/"$USER"/.bashrc
+        source activate popgen
+    fi
+    
+    echo "START: $(date)"
+    echo "JobID: $SLURM_JOBID"
+    
+    [ -d {output_directory}] || mkdir -p {output_directory}
+
+    if [ {compress} == 'False' ]; then
+        cat \
+            {' '.join(files)} \
+            > {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}
+        
+        mv {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]} {outputs['concat_file']}
+    else
+        cat \
+            {' '.join(files)} \
+        | gzip \
+            -c \
+            - \
+            > {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}.gz
+        
+        mv {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}.gz {outputs['concat_file']}
+    fi
+
+    echo "END: $(date)"
+    echo "$(jobinfo "$SLURM_JOBID")"
+    """
+    return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
 def name_snpgenie(idx: str, target: AnonymousTarget) -> str:
 	return f'snpgenie_{os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(target.outputs['plus']['param'])))).replace("-", "_")}_{os.path.basename(os.path.dirname(os.path.dirname(target.outputs['plus']['param']))).replace("-", "_")}'
@@ -449,7 +607,7 @@ def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vc
 	options = {
 		'cores': 18,
 		'memory': '30g',
-		'walltime': '24:00:00'
+		'walltime': '48:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -476,6 +634,8 @@ def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vc
         {vcf} \
         > {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}.vcf
     
+    [ -e {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}_revcom.vcf ] && rm -f {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}_revcom.vcf
+    
     vcf2revcom.pl \
 		{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}.vcf \
         {region_length}
@@ -488,6 +648,8 @@ def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vc
 		{reference_genome_file} \
 		> {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}.fasta
     
+	[ -e {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}_revcom.fasta ] && rm -f {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}_revcom.fasta
+
     fasta2revcom.pl \
 		{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}.fasta
 
@@ -498,6 +660,8 @@ def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vc
         }}' \
         {gtf_annotation_file} \
         > {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}.gtf
+    
+	[ -e {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}_revcom.gtf ] && rm -f {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}_revcom.gtf
     
     gtf2revcom.pl \
 		{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}.gtf \

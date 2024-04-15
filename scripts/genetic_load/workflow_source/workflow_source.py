@@ -47,7 +47,7 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 		with open(f'reference_sequences_{os.path.splitext(os.path.basename(REFERENCE))[0]}.txt', 'w') as outfile:
 			outfile.write('\n'.join('\t'.join(str(i) for i in entry.values()) for entry in sequences))
 
-	sample_sequence_pairs = [{'sample_name': j['sample_name'],'sample_group': j['sample_group'],'vcf_file': j['vcf_file'], 'region': i['sequence_name'], 'region_length': i['sequence_length']} for j in SAMPLES for i in sequences]
+	# sample_sequence_pairs = [{'sample_name': j['sample_name'],'sample_group': j['sample_group'],'vcf_file': j['vcf_file'], 'region': i['sequence_name'], 'region_length': i['sequence_length']} for j in SAMPLES for i in sequences]
 
 	database_entry = gwf.target_from_template(
 		name=f'{species_abbreviation(SPECIES_NAME)}_snpeff_database_entry',
@@ -59,40 +59,120 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 		)
 	)
 	
-	variant_annotation = gwf.map(
-		name=name_snpeff_annotation,
-		template_func=snpeff_annotation,
-		inputs=SAMPLES,
-		extra={'snpeff_predictor_file': database_entry.outputs['predictor'],
-		 	   'snpeff_config_file': f'{SNPEFF_DIR}/snpEff.config',
-			   'output_directory': top_dir}
+	snpeff_results_list = []
+
+	for sample in SAMPLES:
+		SAMPLE_NAME = sample['sample_name']
+		SAMPLE_GROUP = sample['sample_group']
+		VCF = sample['vcf_file']
+		BAM = sample['bam_file']
+		variant_annotation = gwf.target_from_template(
+			name=f'snpeff_annotation_{SAMPLE_GROUP}_{SAMPLE_NAME.replace("-", "_")}',
+			template=snpeff_annotation(
+				vcf_file=VCF,
+				snpeff_predictor_file=database_entry.outputs['predictor'],
+				snpeff_config_file=f'{SNPEFF_DIR}/snpEff.config',
+				output_directory=top_dir,
+				sample_group=SAMPLE_GROUP,
+				sample_name=SAMPLE_NAME
+			)
+		)
+
+	# variant_annotation = gwf.map(
+	# 	name=name_snpeff_annotation,
+	# 	template_func=snpeff_annotation,
+	# 	inputs=SAMPLES,
+	# 	extra={'snpeff_predictor_file': database_entry.outputs['predictor'],
+	# 	 	   'snpeff_config_file': f'{SNPEFF_DIR}/snpEff.config',
+	# 		   'output_directory': top_dir}
+	# )
+
+		annotation_frequencies = gwf.target_from_template(
+			name=f'snpeff_frequencies_{SAMPLE_GROUP}_{SAMPLE_NAME.replace("-", "_")}',
+			template=snpeff_freqs(
+				ann=variant_annotation.outputs['ann']
+			)
+		)
+
+	# annotation_frequencies = gwf.map(
+	# 	name=name_snpeff_freqs,
+	# 	template_func=snpeff_freqs,
+	# 	inputs=variant_annotation.outputs
+	# )
+
+		site_count = gwf.target_from_template(
+			name=f'cds_site_count_{SAMPLE_GROUP}_{SAMPLE_NAME.replace("-", "_")}',
+			template=cds_site_count(
+				bam_file=BAM,
+				gtf_annotation_file=GTF,
+				output_directory=top_dir,
+				sample_group=SAMPLE_GROUP,
+				sample_name=SAMPLE_NAME,
+				min_coverage=300,
+				max_coverage=600
+			)
+		)
+
+	# site_count = gwf.map(
+	# 	name=name_cds_site_count,
+	# 	template_func=cds_site_count,
+	# 	inputs=SAMPLES,
+	# 	extra={'gtf_annotation_file': GTF,
+	# 		   'output_directory': top_dir,
+	# 		   'min_coverage': 300,
+	# 		   'max_coverage': 600}
+	# )
+ 
+		snpeff_results = gwf.target_from_template(
+			name=f'snpeff_results_{SAMPLE_GROUP}_{SAMPLE_NAME.replace("-", "_")}',
+			template=snpeff_result(
+				effectsummary_file=annotation_frequencies.outputs['csv'],
+				sitecount_file=site_count.outputs['sites'],
+				output_directory=top_dir,
+				sample_group=SAMPLE_GROUP,
+				sample_name=SAMPLE_NAME)
+		)
+
+		snpeff_results_list.append(snpeff_results.outputs['tsv'])
+
+		for sequence in sequences:
+			REGION = sequence['sequence_name']
+			REGION_LENGTH = sequence['sequence_length']
+
+			snpgenie_pi = gwf.target_from_template(
+				name=f'snpgenie_{SAMPLE_GROUP}_{SAMPLE_NAME.replace("-", "_")}_{REGION}',
+				template=snpgenie_withinpool(
+					reference_genome_file=REFERENCE,
+					gtf_annotation_file=GTF,
+					vcf_file=VCF,
+					sample_group=SAMPLE_GROUP,
+					sample_name=SAMPLE_NAME,
+					region=REGION,
+					region_length=REGION_LENGTH,
+					output_directory=top_dir,
+					min_allele_frequency=SNPGENIE_MINFREQ,
+					sliding_window_size=SNPGENIE_SLIDINGWINDOW
+				)
+			)
+
+	concat_snpeff_results = gwf.target_from_template(
+		name=f'snpeff_concatenate_{SPECIES_NAME.replace(" ", "_")}',
+		template=concatenate_snpeff_results(
+			files=snpeff_results_list,
+			output_name=f'{species_abbreviation(SPECIES_NAME)}.snpeff_results',
+			output_directory=f'{top_dir}/snpEff'
+		)
 	)
 
-	annotation_frequencies = gwf.map(
-		name=name_snpeff_freqs,
-		template_func=snpeff_freqs,
-		inputs=variant_annotation.outputs
-	)
-
-	site_count = gwf.map(
-		name=name_cds_site_count,
-		template_func=cds_site_count,
-		inputs=SAMPLES,
-		extra={'gtf_annotation_file': GTF,
-			   'output_directory': top_dir,
-			   'min_coverage': 300,
-			   'max_coverage': 600}
-	)
-
-	snpgenie_pi = gwf.map(
-		name=name_snpgenie,
-		template_func=snpgenie_withinpool,
-		inputs=sample_sequence_pairs,
-		extra={'reference_genome_file': REFERENCE,
-			   'gtf_annotation_file': GTF,
-			   'output_directory': top_dir,
-			   'min_allele_frequency': SNPGENIE_MINFREQ,
-			   'sliding_window_size': SNPGENIE_SLIDINGWINDOW}
-	)
+	# snpgenie_pi = gwf.map(
+	# 	name=name_snpgenie,
+	# 	template_func=snpgenie_withinpool,
+	# 	inputs=sample_sequence_pairs,
+	# 	extra={'reference_genome_file': REFERENCE,
+	# 		   'gtf_annotation_file': GTF,
+	# 		   'output_directory': top_dir,
+	# 		   'min_allele_frequency': SNPGENIE_MINFREQ,
+	# 		   'sliding_window_size': SNPGENIE_SLIDINGWINDOW}
+	# )
 
 	return gwf
