@@ -695,3 +695,63 @@ def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vc
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def snpgenie_summarize_results_population(population_summary_files: list, output_directory: str, species_name: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'summaries': population_summary_files}
+	outputs = {'tsv': f'{output_directory}/snpgenie/{species_abbreviation(species_name)}.snpgenie_results.tsv'}
+	options = {
+		'cores': 1,
+		'memory': '18g',
+		'walltime': '02:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/snpgenie ] || mkdir -p {output_directory}/snpgenie
+	
+	awk \
+		'BEGIN{{
+			FS=OFS="\\t"
+            print "sample", "group", "chromosome", "strand", "piN", "piS", "piN/piS"
+		}}
+        {{
+			if (FNR == 1) {{
+				next
+			}}
+            else {{
+				split(FILENAME, filenamearray, "/")
+                group=filenamearray[13]
+                sample=filenamearray[14]
+                chromosome=filenamearray[15]
+                strand=filenamearray[16]
+                piN=$10
+                piS=$11
+                print sample, group, chromosome, strand, piN, piS, piN_piS
+			}}
+		}}' \
+        {' '.join(population_summary_files)} \
+        > {output_directory}/snpgenie/{species_abbreviation(species_name)}.snpgenie_results.prog.tsv
+	
+	mv {output_directory}/snpgenie/{species_abbreviation(species_name)}.snpgenie_results.prog.tsv {outputs['tsv']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
