@@ -1,16 +1,18 @@
 # METHODS
 
+- [METHODS](#methods)
+	- [Reference genome assembly and annotation](#reference-genome-assembly-and-annotation)
+		- [References](#references)
+	- [Mapping, filtering and variant calling of resequencing data](#mapping-filtering-and-variant-calling-of-resequencing-data)
+		- [References](#references-1)
+
 ## Reference genome assembly and annotation
 
-Order
-HiFiAdapterFilt
+Before the assembly process any potential remaining adapters were removed from the PacBio HiFi sequencing data using HiFiAdapterFilt (Sim et al 2022). A draft genome assembly was carried out using hifiasm (Cheng et al 2021; Cheng et al 2022) with a similarity threshold of 0.1 and an initial purge level of 3 (-s 0.1 -l 3 --primary). Further haplotypic duplication and overlaps were identified using purge_dups (Guan et al 2020) with minimap2 (Li 2018) and the resulting draft genome was assessed with BUSCO (Manni et al 2021) using arthropoda_odb10 before scaffolding the assembled contigs with Hi-C data using the Juicer pipeline (Durand et al 2016¹) (to create a Hi-C contact map) followed by the 3D-DNA pipeline (Dudchenko et al 2017) (to correct misassembles, anchor, order and orient fragments of DNA). The resulting chromosome level assembly was then reviewed and manually curated using Juicebox Assembly Tools (Durand et al 2016²).
 
+Repetitive content in the genome was identified using RepeatMasker (Smit, Hubley & Green 2013-16) combining the results from two seperate runs, with the results from RepeatModeler (Flynn et 2020) and an arthropod dataset from RepBase (Bao, Kojima & Kohany 2015) respectively, and soft-masked using BEDTools (Quinlan & Hall 2010).
 
-The genome assembly was carried out using Hifiasm (REF) (parameters????). We identified and removed haplotypic duplications using purge_dups (REF) before scaffolding assembled contigs with Hi-C data using JUICEBOX (REF).
-
-The protein coding genes were annotated using Braker3 (REF). RNA data was generated for this study, while protein coding amino acid sequences from Orchesella cincta ??? were downloaded from ncbi.
-
-Repetitive content was annotated by ...
+The protein coding gens were annotated using Braker (Bruna, Lomsadze & Borodovsky 2020; Bruna et al 2021; Buchfink, Xie & Huson 2015; Gabriel et al 2021; Gotoh 2008; Hoff et al 2016; Hoff et al 2019; Iwata & Gotoh 2012; Lomsadze et al 2005; Stanke et al 2006; Stanke et al 2008). RNA sequence data was generated for this study and aligned to the genome using STAR (Dobin et al 2013), however Braker found insufficient support for annotation, instead protein coding sequences were extracted using AGAT (Dainat) from Orchesella cincta data downloaded from NCBI (Genome, GCA_001718145.1) and used for the annotation.
 
 ### References
 
@@ -22,26 +24,29 @@ Cheng, H., Concepcion, G.T., Feng, X. *et al.* Haplotype-resolved de novo assemb
 Cheng, H., Jarvis, E.D., Fedrigo, O. *et al.* Haplotype-resolved assembly of diploid genomes without parental data. *Nat Biotechnol* **40**, 1332–1335 (2022). <https://doi.org/10.1038/s41587-022-01261-x>
 
 **BUSCO**  
-Mosè Manni, Matthew R Berkeley, Mathieu Seppey, Felipe A Simão, Evgeny M Zdobnov, BUSCO Update: Novel and Streamlined Workflows along with Broader and Deeper Phylogenetic Coverage for Scoring of Eukaryotic, Prokaryotic, and Viral Genomes, *Molecular Biology and Evolution*, Volume 38, Issue 10, October 2021, Pages 4647–4654, <https://doi.org/10.1093/molbev/msab199>
+Manni, M., Berkeley, M. R., Seppey, M., Simão, F. A., Zdobnov, E. M., BUSCO Update: Novel and Streamlined Workflows along with Broader and Deeper Phylogenetic Coverage for Scoring of Eukaryotic, Prokaryotic, and Viral Genomes, *Molecular Biology and Evolution*, Volume 38, Issue 10, October 2021, Pages 4647–4654, <https://doi.org/10.1093/molbev/msab199>
 
-**purge_dups**
-Dengfeng Guan, Shane A McCarthy, Jonathan Wood, Kerstin Howe, Yadong Wang, Richard Durbin, Identifying and removing haplotypic duplication in primary genome assemblies, *Bioinformatics*, Volume 36, Issue 9, May 2020, Pages 2896–2898. <https://doi.org/10.1093/bioinformatics/btaa025>
+**purge_dups**  
+Guan, D., McCarthy, S. A., Wood, J., Howe, K., Wang, Y., Durbin, R. Identifying and removing haplotypic duplication in primary genome assemblies, *Bioinformatics*, Volume 36, Issue 9, May 2020, Pages 2896–2898. <https://doi.org/10.1093/bioinformatics/btaa025>
+
+**minimap2**  
+Li, H. Minimap2: pairwise alignment for nucleotide sequences, *Bioinformatics*, Volume 34, Issue 18, September 2018, Pages 3094–3100, <https://doi.org/10.1093/bioinformatics/bty191>
 
 **Juicer**  
-Neva C. Durand, Muhammad S. Shamim, Ido Machol, Suhas S. P. Rao, Miriam H. Huntley, Eric S. Lander, and Erez Lieberman Aiden. "Juicer provides a one-click system for analyzing loop-resolution Hi-C experiments." *Cell Systems* 3(1), 2016. <https://doi.org/10.1016/j.cels.2016.07.002>
+Durand¹, N. C., Shamim, M. S., Machol, I, Rao, S. S. P., Huntley, M. H., Lander, E. S., & Aiden, E. L. "Juicer provides a one-click system for analyzing loop-resolution Hi-C experiments." *Cell Systems* 3(1), 2016. <https://doi.org/10.1016/j.cels.2016.07.002>
 
 **3D-DNA**  
 Dudchenko, O., Batra, S.S., Omer, A.D., Nyquist, S.K., Hoeger, M., Durand, N.C., Shamim, M.S., Machol, I., Lander, E.S., Aiden, A.P., et al. (2017). *De novo assembly of the Aedes aegypti genome using Hi-C yields chromosome-length scaffolds*. Science. Apr 7; 356(6333):92-95. doi: <https://doi.org/10.1126/science.aal3327>. Epub 2017 Mar 23.
 
 **JuiceBox**  
-Durand NC, Robinson JT, Shamim MS, Machol I, Mesirov JP, Lander ES, Aiden EL. Juicebox Provides a Visualization System for Hi-C Contact Maps with Unlimited Zoom. *Cell Syst.* 2016 Jul;3(1):99-101. <https://doi.org/10.1016/j.cels.2015.07.012>
+Durand² NC, Robinson JT, Shamim MS, Machol I, Mesirov JP, Lander ES, Aiden EL. Juicebox Provides a Visualization System for Hi-C Contact Maps with Unlimited Zoom. *Cell Syst.* 2016 Jul;3(1):99-101. <https://doi.org/10.1016/j.cels.2015.07.012>
 
 **RepeatModeler**  
- Flynn JM, Hubley R, Goubert C, Rosen J, Clark AG, Feschotte C, Smit AF (2020) RepeatModeler2 for automated genomic discovery of transposable element families. Proceedings of the National Academy of Sciences of the United States of America 117: 9451–9457. <https://doi.org/10.1073/pnas.1921046117>
+Flynn JM, Hubley R, Goubert C, Rosen J, Clark AG, Feschotte C, Smit AF (2020) RepeatModeler2 for automated genomic discovery of transposable element families. Proceedings of the National Academy of Sciences of the United States of America 117: 9451–9457. <https://doi.org/10.1073/pnas.1921046117>
 
 **SeqKit**  
-Wei Shen*, Botond Sipos, and Liuyang Zhao. 2024. SeqKit2: A Swiss Army Knife for Sequence and Alignment Processing. iMeta e191. [doi:10.1002/imt2.191](https://doi.org/10.1002/imt2.191)  
-Wei Shen, Shuai Le, Yan Li*, and Fuquan Hu*. SeqKit: a cross-platform and ultrafast toolkit for FASTA/Q file manipulation. PLOS ONE. [doi:10.1371/journal.pone.0163962](https://doi.org/10.1371/journal.pone.0163962)
+Shen, W., Sipos, B., and Zhao L. 2024. SeqKit2: A Swiss Army Knife for Sequence and Alignment Processing. iMeta e191. [doi:10.1002/imt2.191](https://doi.org/10.1002/imt2.191)  
+Shen, W., Le, S., Li, Y., and Hu, F. SeqKit: a cross-platform and ultrafast toolkit for FASTA/Q file manipulation. PLOS ONE. [doi:10.1371/journal.pone.0163962](https://doi.org/10.1371/journal.pone.0163962)
 
 **RepBase**  
 Bao W, Kojima KK, Kohany O (2015) Repbase Update, a database of repetitive elements in eukaryotic genomes. Mobile DNA-UK 6: 1–11. <https://doi.org/10.1186/s13100-015-0041-9>
@@ -50,12 +55,14 @@ Bao W, Kojima KK, Kohany O (2015) Repbase Update, a database of repetitive eleme
 Smit, AFA, Hubley, R & Green, P. RepeatMasker Open-4.0.
 2013-2015 <http://www.repeatmasker.org>
 
+**BEDTools**  
+Quinlan, A. R. & Hall, I. M. BEDTools: a flexible suite of utilities for comparing genomic features, *Bioinformatics*, Volume 26, Issue 6, March 2010, Pages 841–842, <https://doi.org/10.1093/bioinformatics/btq033>
+
 **STAR**  
 Dobin A, Davis CA, Schlesinger F, Drenkow J, Zaleski C, Jha S, Batut P, Chaisson M, Gingeras TR. STAR: ultrafast universal RNA-seq aligner. Bioinformatics. 2013 Jan 1;29(1):15-21. doi: [10.1093/bioinformatics/bts635](https://doi.org/10.1093/bioinformatics/bts635). Epub 2012 Oct 25. PMID: 23104886; PMCID: [PMC3530905](http://www.ncbi.nlm.nih.gov/pmc/articles/pmc3530905/).
 
 **AGAT** (change to relevant version)  
-Dainat J. AGAT: Another Gff Analysis Toolkit to handle annotations in any GTF/GFF format.  
-(Version v0.8.0). Zenodo. <https://www.doi.org/10.5281/zenodo.3552717>
+Dainat J. AGAT: Another Gff Analysis Toolkit to handle annotations in any GTF/GFF format. (Version v1.2.0). Zenodo. <https://www.doi.org/10.5281/zenodo.3552717>
 
 **BRAKER** (Specific to this run)  
 Hoff, K. J., Lange, S., Lomsadze, A., Borodovsky, M., & Stanke, M. (2016). BRAKER1: unsupervised RNA-Seq-based genome annotation with GeneMark-ET and AUGUSTUS. Bioinformatics, 32(5), 767-769.  
@@ -69,6 +76,9 @@ Iwata, H., & Gotoh, O. (2012). Benchmarking spliced alignment programs including
 Stanke, M., Diekhans, M., Baertsch, R., & Haussler, D. (2008). Using native and syntenically mapped cDNA alignments to improve de novo gene finding. Bioinformatics, 24(5), 637-644.  
 Stanke, M., Schöffmann, O., Morgenstern, B., & Waack, S. (2006). Gene prediction in eukaryotes with a generalized hidden Markov model that uses hints from external sources. BMC Bioinformatics, 7(1), 62.  
 Gabriel, L., Hoff, K. J., Bruna, T., Borodovsky, M., & Stanke, M. (2021). TSEBRA: transcript selector for BRAKER. BMC Bioinformatics, 22:566.
+
+**NCBI Orchesella cincta**  
+Genome [Internet]. Bethesda (MD): National Library of Medicine (US), National Center for Biotechnology Information; 2012 – Accession No. GCA_001718145.1, Orchesella cincta, [LJIJ01](https://www.ncbi.nlm.nih.gov/nuccore/LJIJ00000000.1), 2016 [cited YYYY Mmm DD]. Available from: <https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_001718145.1/>
 
 ## Mapping, filtering and variant calling of resequencing data
 
@@ -86,3 +96,18 @@ For all subsequent analyses we used genomic regions not including protein coding
 
 **BWA**  
 Li H. (2013) Aligning sequence reads, clone sequences and assembly contigs with BWA-MEM. [arXiv:1303.3997v2](http://arxiv.org/abs/1303.3997) [q-bio.GN]
+
+**AdapterRemoval**  
+Schubert, M., Lindgreen, S. & Orlando, L. AdapterRemoval v2: rapid adapter trimming, identification, and read merging. *BMC Res Notes* **9**, 88 (2016). <https://doi.org/10.1186/s13104-016-1900-2>
+
+**Samtools + BCFtools**  
+Petr Danecek, James K Bonfield, Jennifer Liddle, John Marshall, Valeriu Ohan, Martin O Pollard, Andrew Whitwham, Thomas Keane, Shane A McCarthy, Robert M Davies, Heng Li, Twelve years of SAMtools and BCFtools, *GigaScience*, Volume 10, Issue 2, February 2021, giab008, <https://doi.org/10.1093/gigascience/giab008>
+
+**Qualimap**  
+Fernando García-Alcalde, Konstantin Okonechnikov, José Carbonell, Luis M. Cruz, Stefan Götz, Sonia Tarazona, Joaquín Dopazo, Thomas F. Meyer, Ana Conesa, Qualimap: evaluating next-generation sequencing alignment data, *Bioinformatics*, Volume 28, Issue 20, October 2012, Pages 2678–2679, <https://doi.org/10.1093/bioinformatics/bts503>
+
+**Freebayes**  
+Garrison E, Marth G. Haplotype-based variant detection from short-read sequencing. arXiv preprint [arXiv:1207.3907](https://arxiv.org/abs/1207.3907) [q-bio.GN] 2012
+
+**Popoolation2**  
+Robert Kofler, Ram Vinay Pandey, Christian Schlötterer, PoPoolation2: identifying differentiation between populations using sequencing of pooled DNA samples (Pool-Seq), *Bioinformatics*, Volume 27, Issue 24, December 2011, Pages 3435–3436, <https://doi.org/10.1093/bioinformatics/btr589>
