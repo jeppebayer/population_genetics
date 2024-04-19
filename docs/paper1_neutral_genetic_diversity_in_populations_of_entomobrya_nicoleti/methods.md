@@ -27,7 +27,7 @@ Repetitive content in the genome was identified using RepeatMasker (Smit, Hubley
 
 #### Gene annotation
 
-The protein coding gens were annotated using Braker (Bruna, Lomsadze & Borodovsky 2020; Bruna et al 2021; Buchfink, Xie & Huson 2015; Gabriel et al 2021; Gotoh 2008; Hoff et al 2016; Hoff et al 2019; Iwata & Gotoh 2012; Lomsadze et al 2005; Stanke et al 2006; Stanke et al 2008). RNA sequence data was generated for this study and aligned to the genome using STAR (Dobin et al 2013), however Braker found insufficient support for annotation, instead protein coding sequences were extracted using AGAT (Dainat) from Orchesella cincta data downloaded from NCBI (Genome, GCA_001718145.1) and used for the annotation.
+The protein coding genes were annotated using Braker (Bruna, Lomsadze & Borodovsky 2020; Bruna et al 2021; Buchfink, Xie & Huson 2015; Gabriel et al 2021; Gotoh 2008; Hoff et al 2016; Hoff et al 2019; Iwata & Gotoh 2012; Lomsadze et al 2005; Stanke et al 2006; Stanke et al 2008). RNA sequence data was generated for this study and aligned to the genome using STAR (Dobin et al 2013), however Braker found insufficient support for annotation, instead protein coding sequences were extracted using AGAT (Dainat) from Orchesella cincta data downloaded from NCBI (Genome, GCA_001718145.1) and used for the annotation.
 
 ### References
 
