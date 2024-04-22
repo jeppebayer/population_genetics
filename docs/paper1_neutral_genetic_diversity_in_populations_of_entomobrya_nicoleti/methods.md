@@ -12,6 +12,9 @@
 		- [Variant calling and filtering](#variant-calling-and-filtering)
 		- [References](#references-1)
 	- [Acknowledgements](#acknowledgements)
+	- [Issues and complications](#issues-and-complications)
+		- [BRAKER insufficient RNA support](#braker-insufficient-rna-support)
+		- [Re-sequencing data](#re-sequencing-data)
 
 ## Reference genome assembly and annotation
 
@@ -109,3 +112,54 @@ Kofler, R., Pandey, R. V., Schlötterer, C., PoPoolation2: identifying different
 ## Acknowledgements
 
 All of the computing for this project was performed on the [GenomeDK](https://genome.au.dk/) cluster and workflows were created and organized using [gwf](https://gwf.app/). We would like to thank GenomeDK and Aarhus University for providing computational resources and support that contributed to these research results.
+
+## Issues and complications
+
+### BRAKER insufficient RNA support
+
+Error message:
+
+```txt
+FASTA index file /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Entomobrya_nicoleti/annotation/braker3/GeneMark-ETP/data/genome.softmasked.fasta.fai created.
+20-Feb-24 12:07:00 - INFO: Finding masking penalty maximizing the number of correctly predicted reliable exons in range from 0 to 0.2 with step 0.04
+20-Feb-24 12:07:00 - INFO: Running prediction with masking penalty = 0
+error: Program exited due to an error in command: /home/jepe/software/GeneMark-ETP/bin/gmes/gmes_petap.pl --seq /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Entomobrya_nicoleti/annotation/braker3/GeneMark-ETP/proteins.fa/penalty/contigsx0p4329l.fasta --soft_mask 1000 --max_mask 40000  --predict_with /faststorage/project/EcoGenetics/people/Jeppe_Bayer/genome_assembly_and_annotation/steps/collembola/Entomobrya_nicoleti/annotation/braker3/GeneMark-ETP/proteins.fa/model/output.mod --cores 30 --mask_penalty 0
+error, file not found: option --f1 prothint/prothint.gff
+grep: prothint/evidence.gff: No such file or directory
+grep: prothint/evidence.gff: No such file or directory
+Traceback (most recent call last):
+  File "/home/jepe/software/GeneMark-ETP/bin/printRnaAlternatives.py", line 353, in <module>
+    main()
+  File "/home/jepe/software/GeneMark-ETP/bin/printRnaAlternatives.py", line 289, in main
+    candidates = loadIntrons(args.genemark)
+  File "/home/jepe/software/GeneMark-ETP/bin/printRnaAlternatives.py", line 193, in loadIntrons
+    for row in csv.reader(open(inputFile), delimiter='\t'):
+FileNotFoundError: [Errno 2] No such file or directory: 'pred_m/genemark.gtf'
+error, file not found: option --f1 prothint/prothint.gff
+grep: prothint/evidence.gff: No such file or directory
+grep: prothint/evidence.gff: No such file or directory
+error, file/folder not found: pred_m/genemark.gtf
+```
+
+The error file can be found [here](../../../genome_assembly_and_annotation/steps/collembola/Entomobrya_nicoleti/annotation/braker3/errors/GeneMark-ETP.stderr)
+
+"This issue is most likely caused by a lack of RNA-Seq evidence.  
+We currently can't predict how much RNA-Seq data will be enough for a successful run, an open problem that we are trying to solve. But it will take a couple of months, probably.  
+I recommend in this case to perform separate runs of BRAKER1 and BRAKER2, then test whether merging with TSEBRA is beneficial (it might not be with default settings, you might have to enforce the better gene set)."
+
+"Supplying more RNA evidence "fixed" the problem, in the sense that GeneMark-ETP does not fail anymore and I get better end results."
+
+<https://github.com/Gaius-Augustus/BRAKER/issues/643>
+
+### Re-sequencing data
+
+Six population were removed from the setup: JEJ, KoeJ, LVJ, SBJ, VAJ and HHJ. All six population had more than 50% of mapped data removed due to low coverage (less than 301x), see figure 1 (should have contained JEJ and KoeJ as well to further strengthen argument, but would be placed with the other outliers). All showed an elevated number of variant sites despite teh reduced amount of data. JEJ, KoeJ, LVJ and SBJ seem to have infflated measured of genetic loads, most likely attributable to and elevated amount of non-synonymous variants present, see figure 2 and 3.
+
+![data_remaining](../images/issues/EntNic_dataremainingaftercoveragefilter.png)  
+Figure 1.
+
+![inflated_genetic_load_1](../images/issues/EntNic_allimpact_removedmarked.png)  
+Figure 2.
+
+![inflated_genetic_load_2](../images/issues/EntNic_piNpiS_removedmarked.png)  
+Figure 3.
