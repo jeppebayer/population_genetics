@@ -1,0 +1,32 @@
+# Tag identifying file association.
+TAG: jeppebayer:EcoGenetics,population_genetics,mapping:workflowconfiguration
+# The name of the relevant project account.
+account: EcoGenetics
+# Name of species being analyzed
+species_name: Entomobrya nivalis
+# Path to reference genome file in FASTA format
+reference_genome_path: /faststorage/project/EcoGenetics/BACKUP/reference_genomes/Entomobrya_nicoleti/EG_EntNic_19022024_genome.fasta
+# Directory for intermediary files.
+working_directory_path: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola
+# # Directory for final output files. (If left empty, output file will be placed within 'working_directory_path')
+output_directory_path: 
+# AdapterRemoval settings.
+adapterremoval_settings:
+  min_quality: 25
+  min_length: 20
+  adaptersequence1: AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA
+  adaptersequence2: AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG
+# Samtools filter settings.
+filter_settings:
+  flags_excluded: 3844
+  flags_required: 
+  min_mq: 20
+# List of path to sample folders containing resequencing data.
+sample_lists:
+  -
+    group_name: E_nivalis_x_E_nicoleti
+    sample_folder_list:
+      - /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Entomobrya_nivalis/EntNiv_MSJ-C93
+      - /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Entomobrya_nivalis/EntNiv_RYJ-ENNI
+      - /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Entomobrya_nivalis/EntNiv_SBJ-C104
+      - /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Entomobrya_nivalis/EntNiv_ULJ-C124

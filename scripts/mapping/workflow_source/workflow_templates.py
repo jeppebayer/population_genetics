@@ -14,18 +14,24 @@ def species_abbreviation(species_name: str) -> str:
 	species = species[0].upper() + species[1:3]
 	return genus + species
 
-def get_sample_data(path: str) -> dict:
+def get_sample_data(path: str, data_type: int) -> dict:
 	"""Create dictionary of lists each containing all resequencing for for a sample in one read direction.
 	
 	:param str path:
-		Path to sample directory containing resequencing data."""
-	r1 = ('_1', '_R1')
-	r2 = ('_2', '_R2')
+		Path to sample directory containing resequencing data.
+	:param int data_type:
+		Sequencing type, single-end or paired-end (1 | 2)."""
 	extformat = ('.fq', '.fa', '.fasta', '.fastq', '.fn')
 	compress = ('', '.gz', '.gzip')
-	reseq = {'sample_name': os.path.basename(path),
-		  	 'read1_files': sorted([os.path.join(path, file) for file in os.listdir(path) if file.endswith(tuple([i+j+k for i in r1 for j in extformat for k in compress]))]),
-		  	 'read2_files': sorted([os.path.join(path, file) for file in os.listdir(path) if file.endswith(tuple([i+j+k for i in r2 for j in extformat for k in compress]))])}
+	if data_type == 1:
+		reseq = {'sample_name': os.path.basename(path),
+				 'read_files': sorted([os.path.join(path, file) for file in os.listdir(path) if file.endswith(tuple([i+j for i in extformat for j in compress]))])}
+	elif data_type == 2:
+		r1 = ('_1', '_R1')
+		r2 = ('_2', '_R2')
+		reseq = {'sample_name': os.path.basename(path),
+				 'read1_files': sorted([os.path.join(path, file) for file in os.listdir(path) if file.endswith(tuple([i+j+k for i in r1 for j in extformat for k in compress]))]),
+				 'read2_files': sorted([os.path.join(path, file) for file in os.listdir(path) if file.endswith(tuple([i+j+k for i in r2 for j in extformat for k in compress]))])}
 	return reseq
 
 ########################## Mapping ##########################
@@ -144,6 +150,58 @@ def adapterremoval_pairedend(sample_name: str, read1_files: list, read2_files: l
 	mv {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog.collapsed {outputs['collapsed'][0]}
 	mv {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog.collapsed.truncated {outputs['collapsed'][1]}
 	mv {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog.discarded {outputs['misc'][2]}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def adapterremoval_singleend(sample_name: str, read_files: list, output_directory: str, min_qulaity: int = 25, min_length: int = 20, adapter1: str = 'AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA'):
+	"""
+	Template: Remove remnant adapter sequences from read data using :script:`AdapterRemoval`.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'read': read_files}
+	outputs = {'truncated': f'{output_directory}/adapterremoval/{sample_name}/{sample_name}.pair1.truncated',
+			   'misc': [f'{output_directory}/adapterremoval/{sample_name}/{sample_name}.settings',
+			   			f'{output_directory}/adapterremoval/{sample_name}/{sample_name}.discarded']}
+	options = {
+		'cores': 16,
+		'memory': '60g',
+		'walltime': '06:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/adapterremoval/{sample_name} ] || mkdir -p {output_directory}/adapterremoval/{sample_name}
+	
+	AdapterRemoval \
+		--threads {options['cores']} \
+		--file1 {' '.join(read_files)} \
+		--adapter1 {adapter1} \
+		--minquality {min_qulaity} \
+		--minlength {min_length} \
+		--basename {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog \
+		--trimns \
+		--trimqualities \
+		--collapse
+	
+	mv {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog.settings {outputs['misc'][0]}
+	mv {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog.truncated {outputs['truncated']}
+	mv {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog.discarded {outputs['misc'][1]}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -299,6 +357,65 @@ def merge_alignments(alignment_files: list, sample_name: str, output_directory: 
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
+def alignment_singleend(read_file: str, reference_genome_file: str, sample_name: str, output_directory: str, seed_length: int = 16500, missing_fraction: float = 0.1, max_gaps: int = 2):
+	"""
+	Template: Aligns single-end data to reference genome.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'read': read_file,
+			  'reference': reference_genome_file}
+	outputs = {'alignment': f'{output_directory}/alignment/{sample_name}/{sample_name}.single_alignment.bam'}
+	options = {
+		'cores': 18,
+		'memory': '60g',
+		'walltime': '48:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/alignment/{sample_name}/tmp ] || mkdir -p {output_directory}/alignment/{sample_name}/tmp
+	
+	bwa aln \
+		-t {options['cores']} \
+		-l {seed_length} \
+		-n {missing_fraction} \
+		-o {max_gaps} \
+		{reference_genome_file} \
+		{read_file} \
+	| bwa samse \
+		-r "@RG\\tID:{sample_name}\\tSM:{sample_name}" \
+		{reference_genome_file} \
+		- \
+		{read_file} \
+	| samtools sort \
+		--threads {options['cores'] - 1} \
+		-n \
+		--output-fmt BAM \
+		-T {output_directory}/alignment/{sample_name}/tmp \
+		-o {output_directory}/alignment/{sample_name}/{sample_name}.single_alignment.prog.bam \
+		- 
+	
+	mv {output_directory}/alignment/{sample_name}/{sample_name}.single_alignment.prog.bam {outputs['alignment']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+
 def mark_duplicates_samtools(alignment_file: str, sample_name: str, output_directory: str):
 	"""
 	Template: 
@@ -376,8 +493,8 @@ def extract_unmapped_reads(alignment_file: str, sample_name: str, output_directo
 	:param
 	"""
 	inputs = {'alignment': alignment_file}
-	outputs = {'unmapped': f'{output_directory}/{sample_name}.unmapped.bam',
-			   'bai': f'{output_directory}/{sample_name}.unmapped.bam.bai'}
+	outputs = {'unmapped': f'{output_directory}/{sample_name}/{sample_name}.unmapped.bam',
+			   'bai': f'{output_directory}/{sample_name}/{sample_name}.unmapped.bam.bai'}
 	protect = [outputs['unmapped'], outputs['bai']]
 	options = {
 		'cores': 18,
@@ -394,22 +511,22 @@ def extract_unmapped_reads(alignment_file: str, sample_name: str, output_directo
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory} ] || mkdir -p {output_directory}
+	[ -d {output_directory}/{sample_name} ] || mkdir -p {output_directory}/{sample_name}
 	
 	samtools view \
 		--threads {options['cores'] - 1} \
 		--require-flags 4 \
 		--bam \
-		--output {output_directory}/{sample_name}.unmapped.bam \
+		--output {output_directory}/{sample_name}/{sample_name}.unmapped.bam \
 		{alignment_file}
 
 	samtools index \
 		--threads {options['cores'] - 1} \
-		-b \
-		{output_directory}/{sample_name}.unmapped.bam \
-		{output_directory}/{sample_name}.unmapped.prog.bam.bai
+		--bai \
+		--output {output_directory}/{sample_name}/{sample_name}.unmapped.prog.bam.bai \
+		{output_directory}/{sample_name}/{sample_name}.unmapped.bam
 		
-	mv {output_directory}/{sample_name}.unmapped.prog.bam.bai {outputs['bai']}
+	mv {output_directory}/{sample_name}/{sample_name}.unmapped.prog.bam.bai {outputs['bai']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -496,8 +613,8 @@ def samtools_filter(alignment_file: str, sample_name: str, output_directory: str
 	if flags_required:
 		flags.append(f'--require-flags {flags_required}')
 	inputs = {'alignment': alignment_file}
-	outputs = {'filtered': f'{output_directory}/{sample_name}.filtered.bam',
-			   'bai': f'{output_directory}/{sample_name}.filtered.bam.bai'}
+	outputs = {'filtered': f'{output_directory}/{sample_name}/{sample_name}.filtered.bam',
+			   'bai': f'{output_directory}/{sample_name}/{sample_name}.filtered.bam.bai'}
 	options = {
 		'cores': 18,
 		'memory': '60g',
@@ -513,7 +630,7 @@ def samtools_filter(alignment_file: str, sample_name: str, output_directory: str
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory} ] || mkdir -p {output_directory}
+	[ -d {output_directory}/{sample_name} ] || mkdir -p {output_directory}/{sample_name}
 	
 	samtools view \
 		--threads {options['cores'] - 1} \
@@ -525,9 +642,9 @@ def samtools_filter(alignment_file: str, sample_name: str, output_directory: str
 
 	samtools index \
 		--threads {options['cores'] - 1} \
-		-b \
-		{output_directory}/{sample_name}.filtered.bam \
-		> {output_directory}/{sample_name}.filtered.prog.bam.bai
+		--bai \
+		--output {output_directory}/{sample_name}/{sample_name}.filtered.prog.bam.bai \
+		{output_directory}/{sample_name}/{sample_name}.filtered.bam
 	
 	mv {output_directory}/{sample_name}.filtered.prog.bam.bai {outputs['bai']}
 	
@@ -548,8 +665,9 @@ def qc_qualimap(alignment_file: str, sample_name: str, output_directory: str):
 	:param
 	"""
 	inputs = {'alignment': alignment_file}
-	outputs = {'qualimap': f'{output_directory}/qualimap/{sample_name}.qualimap.pdf',
-			   'raw': f'{output_directory}/qualimap/genome_results.txt'}
+	outputs = {'pdf': f'{output_directory}/report.pdf',
+			   'html': f'{output_directory}/qualimapReport.html',
+			   'raw': f'{output_directory}/genome_results.txt'}
 	options = {
 		'cores': 32,
 		'memory': '300g',
@@ -572,12 +690,12 @@ def qc_qualimap(alignment_file: str, sample_name: str, output_directory: str):
 	qualimap bamqc \
 		-nt {options['cores']} \
 		-bam {alignment_file} \
-		-outdir {output_directory}/qualimap \
-		-outformat PDF \
-		-outfile {sample_name}.qualimap.prog.pdf \
+		-outdir {output_directory} \
+		-outformat PDF:HTML \
+		-outfile report.prog.pdf \
 		--java-mem-size={options['memory']}
 
-	mv {output_directory}/qualimap/{sample_name}.qualimap.prog.pdf {outputs['qualimap']}
+	mv {output_directory}/report.prog.pdf {outputs['pdf']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -596,8 +714,9 @@ def qualimap_multi(dataset: list, output_directory: str, filename: str):
 	:param
 	"""
 	dataset_tabular = '\n'.join(['\t'.join(i) for i in dataset])
-	inputs = {'raw': [i[1] for i in dataset]}
-	outputs = {'pdf': f'{output_directory}/multiqualimap/{filename}.multiqualimap.pdf'}
+	inputs = {'raw': [f'{i[1]}/genome_results.txt' for i in dataset]}
+	outputs = {'pdf': f'{output_directory}/report.pdf',
+			   'html': f'{output_directory}/multisampleBamQcReport.html'}
 	options = {
 		'cores': 32,
 		'memory': '300g',
@@ -618,12 +737,12 @@ def qualimap_multi(dataset: list, output_directory: str, filename: str):
 	export _JAVA_OPTIONS="-Djava.awt.headless=true -Xmx{options['memory']}"
 
 	qualimap multi-bamqc \
-		-d <(cat "{dataset_tabular}") \
-		-outdir {output_directory}/multiqualimap \
-		-outfile {filename}.multiqualimap.prog.pdf \
-		-outformat PDF
+		-d <(echo -e "{dataset_tabular}") \
+		-outdir {output_directory} \
+		-outfile report.prog.pdf \
+		-outformat PDF:HTML
 	
-	mv {output_directory}/multiqualimap/{filename}.multiqualimap.prog.pdf {outputs['pdf']}
+	mv {output_directory}/report.prog.pdf {outputs['pdf']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
