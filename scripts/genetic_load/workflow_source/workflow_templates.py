@@ -15,56 +15,56 @@ def species_abbreviation(species_name: str) -> str:
 	return genus + species
 
 def sequence_names_fasta(fasta_file: str):
-    """
-    Parses :format:`FASTA` file returning all sequence names in a list.
-    
-    ::
-    
-        return [str, ...]
-    
-    :param str fasta_file:
-        Sequence file in :format:`FASTA` format.
-    """
-    fasta_list = []
-    seq_name = None
-    with open(fasta_file, 'r') as fasta:
-        for entry in fasta:
-            entry = entry.strip()
-            if entry.startswith(">"):
-                if seq_name:
-                    fasta_list.append(seq_name)
-                entry = entry.split(" ", 1)
-                seq_name = entry[0][1:]
-        fasta_list.append(seq_name)
-    return fasta_list
+	"""
+	Parses :format:`FASTA` file returning all sequence names in a list.
+	
+	::
+	
+		return [str, ...]
+	
+	:param str fasta_file:
+		Sequence file in :format:`FASTA` format.
+	"""
+	fasta_list = []
+	seq_name = None
+	with open(fasta_file, 'r') as fasta:
+		for entry in fasta:
+			entry = entry.strip()
+			if entry.startswith(">"):
+				if seq_name:
+					fasta_list.append(seq_name)
+				entry = entry.split(" ", 1)
+				seq_name = entry[0][1:]
+		fasta_list.append(seq_name)
+	return fasta_list
 
 def parse_fasta(fasta_file: str):
-    """
-    Parses :format:`FASTA` file returning all sequence names and lengths paired in a list of dictionaries.
-    
-    ::
-    
-        return [{'sequence_name': str, 'sequence_length': int}, ...]
-    
-    :param str fasta_file:
-        Sequence file in :format:`FASTA` format.
-    """
-    fasta_list = []
-    seq_name = None
-    length = 0
-    with open(fasta_file, 'r') as fasta:
-        for entry in fasta:
-            entry = entry.strip()
-            if entry.startswith(">"):
-                if seq_name:
-                    fasta_list.append({'sequence_name': seq_name, 'sequence_length': length})
-                    length = 0
-                entry = entry.split(" ", 1)
-                seq_name = entry[0][1:]
-            else:
-                length += len(entry)
-        fasta_list.append({'sequence_name': seq_name, 'sequence_length': length})
-    return fasta_list
+	"""
+	Parses :format:`FASTA` file returning all sequence names and lengths paired in a list of dictionaries.
+	
+	::
+	
+		return [{'sequence_name': str, 'sequence_length': int}, ...]
+	
+	:param str fasta_file:
+		Sequence file in :format:`FASTA` format.
+	"""
+	fasta_list = []
+	seq_name = None
+	length = 0
+	with open(fasta_file, 'r') as fasta:
+		for entry in fasta:
+			entry = entry.strip()
+			if entry.startswith(">"):
+				if seq_name:
+					fasta_list.append({'sequence_name': seq_name, 'sequence_length': length})
+					length = 0
+				entry = entry.split(" ", 1)
+				seq_name = entry[0][1:]
+			else:
+				length += len(entry)
+		fasta_list.append({'sequence_name': seq_name, 'sequence_length': length})
+	return fasta_list
 
 ########################## SnpEff ##########################
 
@@ -271,7 +271,7 @@ def snpeff_freqs(ann: str):
 	echo "JobID: $SLURM_JOBID"
 	
 	awk \
-        'BEGIN {{
+		'BEGIN {{
 			FS = OFS = "\\t"
 		}}
 		{{
@@ -317,7 +317,7 @@ def snpeff_freqs(ann: str):
 			}}
 		}}' \
 		{annotated_vcf} \
-        > {os.path.dirname(ann)}/effectsummary.prog.csv
+		> {os.path.dirname(ann)}/effectsummary.prog.csv
 	
 	mv {os.path.dirname(ann)}/effectsummary.prog.csv {outputs['csv']}
 	
@@ -341,9 +341,9 @@ def cds_site_count(bam_file: str, gtf_annotation_file: str, output_directory: st
 	:param
 	"""
 	inputs = {'bam': bam_file,
-           	  'gtf': gtf_annotation_file}
+		   	  'gtf': gtf_annotation_file}
 	outputs = {'bed': f'{output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.cds.bed',
-               'sites': f'{output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{sample_name}.sitecount.tsv'}
+			   'sites': f'{output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{sample_name}.sitecount.tsv'}
 	options = {
 		'cores': 18,
 		'memory': '30g',
@@ -362,10 +362,10 @@ def cds_site_count(bam_file: str, gtf_annotation_file: str, output_directory: st
 	[ -d {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp ] || mkdir -p {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp
 	
 	awk \
-        'BEGIN{{
+		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
-        {{
+		{{
 			if ($3 == "CDS") {{
 				if ($7 == "+") {{
 					npos += 1
@@ -380,20 +380,20 @@ def cds_site_count(bam_file: str, gtf_annotation_file: str, output_directory: st
 		{gtf_annotation_file} \
 		> {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.cds.bed
 
-    samtools depth \
+	samtools depth \
 		-@ {options['cores'] - 1} \
-        -b {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.cds.bed \
-        {bam_file} \
-    | awk \
+		-b {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.cds.bed \
+		{bam_file} \
+	| awk \
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
 		{{
-            if ($3 > {min_coverage} && $3 < {max_coverage}) {{
+			if ($3 > {min_coverage} && $3 < {max_coverage}) {{
 				chromosomearray[$1] += 1
 			}}
 		}}
-        END{{
+		END{{
 			print "chromosome", "n_positions"
 			for (i in chromosomearray) {{
 				print i, chromosomearray[i]
@@ -402,7 +402,7 @@ def cds_site_count(bam_file: str, gtf_annotation_file: str, output_directory: st
 		> {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{sample_name}.sitecount.prog.tsv
 
 	mv {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{sample_name}.sitecount.prog.tsv {outputs['sites']}
-    
+	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
@@ -420,7 +420,7 @@ def snpeff_result(effectsummary_file: str, sitecount_file: str, output_directory
 	:param
 	"""
 	inputs = {'effectsummary': effectsummary_file,
-           	  'sitecount': sitecount_file}
+		   	  'sitecount': sitecount_file}
 	outputs = {'tsv': f'{output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/snpeff_results.tsv'}
 	options = {
 		'cores': 1,
@@ -444,7 +444,7 @@ def snpeff_result(effectsummary_file: str, sitecount_file: str, output_directory
 		{sample_group} \
 		{effectsummary_file} \
 		{sitecount_file} \
-        {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/snpeff_results.prog.tsv
+		{output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/snpeff_results.prog.tsv
 	
 	mv {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/snpeff_results.prog.tsv {outputs['tsv']}
 	
@@ -485,16 +485,16 @@ def concatenate_snpeff_results(files: list, output_name: str, output_directory: 
 	
 	awk \
 		'BEGIN{{FS=OFS="\\t"}}
-        {{
-        	if (FNR == 1 && NR != 1)
+		{{
+			if (FNR == 1 && NR != 1)
 				{{next}}
-            else
+			else
 				{{print}}
-        }}' \
-        {' '.join(files)} \
-        > {output_directory}/{output_name}.prog.tsv
-        
-    mv {output_directory}/{output_name}.prog.tsv {outputs['concat_file']}
+		}}' \
+		{' '.join(files)} \
+		> {output_directory}/{output_name}.prog.tsv
+		
+	mv {output_directory}/{output_name}.prog.tsv {outputs['concat_file']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -502,69 +502,69 @@ def concatenate_snpeff_results(files: list, output_name: str, output_directory: 
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
 def concat(files: list, output_name: str, output_directory: str = None, compress: bool = False):
-    """
-    Template: Name-sorts and concatenates files. Optionally compresses output using :script:`gzip`.
-    
-    Template I/O::
-    
-        inputs = {'files': files}
-        outputs = {'concat_file': output_name.ext | output_name.ext.gzip}
-    
-    :param list files:
-        List containing files to concatenate.
-    :param str output_name:
-        Desired name of output file, no extension.
-    :param str output_directory:
-        Path to output directory. Default is directory of 'files[0]'.
-    :param bool compress:
-        Bool indicating whether the output file should be compressed or not.
-    """
-    if output_directory is None:
-        output_directory = os.path.dirname(files[0])
-    inputs = {'files': files}
-    if compress:
-        outputs = {'concat_file': f'{output_directory}/{output_name}{os.path.splitext(files[0])[1]}.gz'}
-    else:
-        outputs = {'concat_file': f'{output_directory}/{output_name}{os.path.splitext(files[0])[1]}'}
-    options = {
-        'cores': 2,
-        'memory': '16g',
-        'walltime': '24:00:00'
-    }
-    protect = outputs['concat_file']
-    spec = f"""
-    # Sources environment
-    if [ "$USER" == "jepe" ]; then
-        source /home/"$USER"/.bashrc
-        source activate popgen
-    fi
-    
-    echo "START: $(date)"
-    echo "JobID: $SLURM_JOBID"
-    
-    [ -d {output_directory}] || mkdir -p {output_directory}
+	"""
+	Template: Name-sorts and concatenates files. Optionally compresses output using :script:`gzip`.
+	
+	Template I/O::
+	
+		inputs = {'files': files}
+		outputs = {'concat_file': output_name.ext | output_name.ext.gzip}
+	
+	:param list files:
+		List containing files to concatenate.
+	:param str output_name:
+		Desired name of output file, no extension.
+	:param str output_directory:
+		Path to output directory. Default is directory of 'files[0]'.
+	:param bool compress:
+		Bool indicating whether the output file should be compressed or not.
+	"""
+	if output_directory is None:
+		output_directory = os.path.dirname(files[0])
+	inputs = {'files': files}
+	if compress:
+		outputs = {'concat_file': f'{output_directory}/{output_name}{os.path.splitext(files[0])[1]}.gz'}
+	else:
+		outputs = {'concat_file': f'{output_directory}/{output_name}{os.path.splitext(files[0])[1]}'}
+	options = {
+		'cores': 2,
+		'memory': '16g',
+		'walltime': '24:00:00'
+	}
+	protect = outputs['concat_file']
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}] || mkdir -p {output_directory}
 
-    if [ {compress} == 'False' ]; then
-        cat \
-            {' '.join(files)} \
-            > {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}
-        
-        mv {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]} {outputs['concat_file']}
-    else
-        cat \
-            {' '.join(files)} \
-        | gzip \
-            -c \
-            - \
-            > {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}.gz
-        
-        mv {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}.gz {outputs['concat_file']}
-    fi
+	if [ {compress} == 'False' ]; then
+		cat \
+			{' '.join(files)} \
+			> {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}
+		
+		mv {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]} {outputs['concat_file']}
+	else
+		cat \
+			{' '.join(files)} \
+		| gzip \
+			-c \
+			- \
+			> {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}.gz
+		
+		mv {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}.gz {outputs['concat_file']}
+	fi
 
-    echo "END: $(date)"
-    echo "$(jobinfo "$SLURM_JOBID")"
-    """
-    return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
 def name_snpgenie(idx: str, target: AnonymousTarget) -> str:
 	return f'snpgenie_{os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(target.outputs['plus']['param'])))).replace("-", "_")}_{os.path.basename(os.path.dirname(os.path.dirname(target.outputs['plus']['param']))).replace("-", "_")}'
@@ -585,7 +585,7 @@ def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vc
 		   	  'gtf': gtf_annotation_file,
 			  'vcf': vcf_file}
 	outputs = {'plus': {'vcf': f'{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}.vcf',
-                        'reference': f'{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}.fasta',
+						'reference': f'{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}.fasta',
 						'gtf': f'{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}.gtf',
 						'param': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/plus/SNPGenie_parameters.txt',
 						'log': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/plus/SNPGenie_LOG.txt',
@@ -594,8 +594,8 @@ def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vc
 						'product': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/plus/product_results.txt',
 						'summary': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/plus/population_summary.txt',
 						'window': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/plus/sliding_window_length{sliding_window_size}_results.txt'},
-               'minus': {'vcf': f'{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}_revcom.vcf',
-                         'reference': f'{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}_revcom.fasta',
+			   'minus': {'vcf': f'{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}_revcom.vcf',
+						 'reference': f'{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}_revcom.fasta',
 						 'gtf': f'{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}_revcom.gtf',
 						 'param': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/minus/SNPGenie_parameters.txt',
 						 'log': f'{output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/minus/SNPGenie_LOG.txt',
@@ -620,55 +620,55 @@ def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vc
 	echo "JobID: $SLURM_JOBID"
 	
 	[ -d {output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/plus ] && rm -rf {output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/plus
-    [ -d {output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/minus ] && rm -rf {output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/minus
-    [ -d {output_directory}/snpgenie/{sample_group}/{sample_name}/{region} ] || mkdir -p {output_directory}/snpgenie/{sample_group}/{sample_name}/{region}
+	[ -d {output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/minus ] && rm -rf {output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/minus
+	[ -d {output_directory}/snpgenie/{sample_group}/{sample_name}/{region} ] || mkdir -p {output_directory}/snpgenie/{sample_group}/{sample_name}/{region}
 	[ -d {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region} ] || mkdir -p {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}
-    
-    cd {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}
-      
-    awk -v region={region} \
-        'BEGIN{{OFS=FS="\\t"}}
-        {{if ($0 ~ /^#/ || $1 == region)
-            {{print}}
-        }}' \
-        {vcf} \
-        > {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}.vcf
-    
-    [ -e {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}_revcom.vcf ] && rm -f {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}_revcom.vcf
-    
-    vcf2revcom.pl \
+	
+	cd {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}
+	  
+	awk -v region={region} \
+		'BEGIN{{OFS=FS="\\t"}}
+		{{if ($0 ~ /^#/ || $1 == region)
+			{{print}}
+		}}' \
+		{vcf} \
+		> {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}.vcf
+	
+	[ -e {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}_revcom.vcf ] && rm -f {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}_revcom.vcf
+	
+	vcf2revcom.pl \
 		{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}.vcf \
-        {region_length}
-      
-    awk -v region={region} \
+		{region_length}
+	  
+	awk -v region={region} \
 		'BEGIN{{RS=">"; ORS=""; FS=OFS="\\n"}}
-        {{if (NR > 1 && $1 == region)
-            {{print ">"$0}}
-        }}' \
+		{{if (NR > 1 && $1 == region)
+			{{print ">"$0}}
+		}}' \
 		{reference_genome_file} \
 		> {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}.fasta
-    
+	
 	[ -e {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}_revcom.fasta ] && rm -f {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}_revcom.fasta
 
-    fasta2revcom.pl \
+	fasta2revcom.pl \
 		{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}.fasta
 
-    awk -v region={region} \
-        'BEGIN{{OFS=FS="\\t"}}
-        {{if ($1 == region)
-            {{print}}
-        }}' \
-        {gtf_annotation_file} \
-        > {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}.gtf
-    
+	awk -v region={region} \
+		'BEGIN{{OFS=FS="\\t"}}
+		{{if ($1 == region)
+			{{print}}
+		}}' \
+		{gtf_annotation_file} \
+		> {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}.gtf
+	
 	[ -e {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}_revcom.gtf ] && rm -f {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}_revcom.gtf
-    
-    gtf2revcom.pl \
+	
+	gtf2revcom.pl \
 		{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}.gtf \
-        {region_length}
+		{region_length}
 
-    echo -e "#########################\\n# Processing '+' strand #\\n#########################"
-    
+	echo -e "#########################\\n# Processing '+' strand #\\n#########################"
+	
 	snpgenie.pl \
 		--vcfformat=2 \
 		--snpreport={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}.vcf \
@@ -679,9 +679,9 @@ def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vc
 		--minfreq={min_allele_frequency} \
 		--slidingwindow={sliding_window_size}
 	
-    echo -e "#########################\\n# Processing '-' strand #\\n#########################"
+	echo -e "#########################\\n# Processing '-' strand #\\n#########################"
 
-    snpgenie.pl \
+	snpgenie.pl \
 		--vcfformat=2 \
 		--snpreport={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}_revcom.vcf \
 		--fastafile={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}_revcom.fasta \
@@ -729,27 +729,178 @@ def snpgenie_summarize_results_population(population_summary_files: list, output
 	awk \
 		'BEGIN{{
 			FS=OFS="\\t"
-            print "sample", "group", "chromosome", "strand", "piN", "piS", "piN/piS"
+			print "sample", "group", "chromosome", "strand", "piN", "piS", "piN/piS"
 		}}
-        {{
+		{{
 			if (FNR == 1) {{
 				next
 			}}
-            else {{
+			else {{
 				split(FILENAME, filenamearray, "/")
-                group=filenamearray[13]
-                sample=filenamearray[14]
-                chromosome=filenamearray[15]
-                strand=filenamearray[16]
-                piN=$10
-                piS=$11
-                print sample, group, chromosome, strand, piN, piS, piN_piS
+				group=filenamearray[13]
+				sample=filenamearray[14]
+				chromosome=filenamearray[15]
+				strand=filenamearray[16]
+				piN=$10
+				piS=$11
+				print sample, group, chromosome, strand, piN, piS, piN_piS
 			}}
 		}}' \
-        {' '.join(population_summary_files)} \
-        > {output_directory}/snpgenie/{species_abbreviation(species_name)}.snpgenie_results.prog.tsv
+		{' '.join(population_summary_files)} \
+		> {output_directory}/snpgenie/{species_abbreviation(species_name)}.snpgenie_results.prog.tsv
 	
 	mv {output_directory}/snpgenie/{species_abbreviation(species_name)}.snpgenie_results.prog.tsv {outputs['tsv']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def gtf2gene_bed(gtf_annotation_file: str, output_directory: str):
+	"""
+	Template: Create :format:`BED6` file of 'gene' regions from :format:`GTF` file.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'gtf': gtf_annotation_file}
+	outputs = {'bed': f'{output_directory}/DoS/bed/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.gene.bed'}
+	options = {
+		'cores': 1,
+		'memory': '10g',
+		'walltime': '06:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/DoS/bed ] || mkdir -p {output_directory}/DoS/bed
+	
+	awk \
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			if ($3 == "gene") {{
+				if ($7 == "+") {{
+					npos += 1
+					print $1, $4 - 1, $5, "pos" npos, ".", $7
+				}}
+				if ($7 == "-") {{
+					nneg += 1
+					print $1, $4 - 1, $5, "neg" nneg, ".", $7
+				}}
+			}}
+		}}' \
+		{gtf_annotation_file} \
+		> {output_directory}/DoS/bed/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.gene.prog.bed
+
+	mv {output_directory}/DoS/bed/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.gene.prog.bed
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def dos_count_polymorphic_sites(snpeff_annotated_vcf_file: str, gene_bed_file: str, output_directory: str, sample_group: str, sample_name: str):
+	"""
+	Template: Count the number of non-synonymous and synonymous polymorphisms in gene regions in a pooled :format:`VCF` file.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {}
+	outputs = {}
+	options = {
+		'cores': 1,
+		'memory': '10g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+
+	[ -d {output_directory}/DoS/{sample_group}/{sample_name}/tmp ] || mkdir -p {output_directory}/DoS/{sample_group}/{sample_name}/tmp
+	
+	bcftools view \
+		--regions_file {gene_bed_file} \
+	| awk \
+		'BEGIN{{
+			FS = OFS = "\\t"
+			print "chromosome", "position", "gene", "variant_type"
+		}}
+		{{
+			if ($0 !~ /^#/)
+			{{
+				chromosome = $1
+				position = $2
+				split($8, formatfield, ";")
+				split(formatfield[4], affield, "=")
+				split(formatfield[42], annsection, "|")
+				af = affield[2]
+				variant_type = annsection[2]
+				gene = annsection[5]
+				if (af == 0)
+				{{
+					next
+				}}
+				print chromosome, position, gene, variant_type
+			}}
+		}}' \
+		> {output_directory}/DoS/{sample_group}/{sample_name}/tmp/variants.tsv
+
+	awk \
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			if (NR == 1)
+			{{
+				next
+			}}
+			gene = $3
+			variant_type = $4
+			if (variant_type == "missense_variant")
+			{{
+				polymorphismarray[gene, Pn] += 1
+			}}
+			if (variant_type == "synonymous_variant")
+			{{
+				polymorphismarray[gene, Ps] += 1
+			}}
+		}}
+		END{{
+			print "gene_name", "Pn", "Ps"
+			for (i in polymorphismarray)
+			{{
+				split(i, , "\\034")
+				print chreffect[1], chreffect[2] , frequencies[i], sum, n, sum / length(sumarray)
+				sum = 0
+				n = 0
+			}}
+		}}
+	
+	mv
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"

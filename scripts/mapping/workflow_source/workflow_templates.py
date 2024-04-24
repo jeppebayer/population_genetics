@@ -636,7 +636,7 @@ def samtools_filter(alignment_file: str, sample_name: str, output_directory: str
 		--threads {options['cores'] - 1} \
 		--bam \
 		--min-MQ {min_mq} \
-		--output {output_directory}/{sample_name}.filtered.bam \
+		--output {output_directory}/{sample_name}/{sample_name}.filtered.bam \
 		{' '.join(flags)} \
 		{alignment_file}
 
@@ -646,7 +646,7 @@ def samtools_filter(alignment_file: str, sample_name: str, output_directory: str
 		--output {output_directory}/{sample_name}/{sample_name}.filtered.prog.bam.bai \
 		{output_directory}/{sample_name}/{sample_name}.filtered.bam
 	
-	mv {output_directory}/{sample_name}.filtered.prog.bam.bai {outputs['bai']}
+	mv {output_directory}/{sample_name}/{sample_name}.filtered.prog.bam.bai {outputs['bai']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
