@@ -57,6 +57,14 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 		)
 	)
 	
+	gene_bed = gwf.target_from_template(
+		name=f'{species_abbreviation(SPECIES_NAME)}_gene_bed',
+		template=gtf2gene_bed(
+			gtf_annotation_file=GTF,
+			output_directory=top_dir
+		)
+	)
+
 	snpeff_results_list = []
 	snpgenie_results_list = []
 
@@ -131,6 +139,17 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 
 			snpgenie_results_list.append(snpgenie_pi.outputs['plus']['summary'])
 			snpgenie_results_list.append(snpgenie_pi.outputs['minus']['summary'])
+
+		dos_polymorphic = gwf.target_from_template(
+			name=f'dos_polymorphic_site_count_{SAMPLE_GROUP}_{SAMPLE_NAME.replace("-", "_")}',
+			template=dos_count_polymorphic_sites(
+				snpeff_annotated_vcf_file=variant_annotation.outputs['ann'],
+				gene_bed_file=gene_bed.outputs['bed'],
+				output_directory=top_dir,
+				sample_group=SAMPLE_GROUP,
+				sample_name=SAMPLE_NAME
+			)
+		)
 
 	concat_snpeff_results = gwf.target_from_template(
 		name=f'snpeff_concatenate_{SPECIES_NAME.replace(" ", "_")}',

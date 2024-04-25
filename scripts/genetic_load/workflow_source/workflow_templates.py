@@ -191,6 +191,7 @@ def snpeff_annotation(vcf_file: str, snpeff_predictor_file: str, snpeff_config_f
 		   	  'predictor': snpeff_predictor_file,
 			  'config': snpeff_config_file}
 	outputs = {'ann': f'{output_directory}/snpEff/{sample_group}/{sample_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith(".vcf") else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.vcf.gz',
+			   'index': f'{output_directory}/snpEff/{sample_group}/{sample_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.vcf.gz.csi',
 			   'csv': f'{output_directory}/snpEff/{sample_group}/{sample_name}/{sample_name}.snpEff_summary.csv',
 			   'txt': f'{output_directory}/snpEff/{sample_group}/{sample_name}/{sample_name}.snpEff_summary.genes.txt',
 			   'html': f'{output_directory}/snpEff/{sample_group}/{sample_name}/{sample_name}.snpEff_summary.html'}
@@ -223,12 +224,14 @@ def snpeff_annotation(vcf_file: str, snpeff_predictor_file: str, snpeff_config_f
 		-o vcf \
 		{os.path.basename(os.path.dirname(snpeff_predictor_file))} \
 		{vcf_file} \
-	| gzip \
-		--stdout \
-		- \
-		> {output_directory}/snpEff/{sample_group}/{sample_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz
+	| bcftools view \
+		--output-type z \
+		--output {output_directory}/snpEff/{sample_group}/{sample_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz
+		--write-index \
+		-
 	
 	mv {output_directory}/snpEff/{sample_group}/{sample_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz {outputs['ann']}
+	mv {output_directory}/snpEff/{sample_group}/{sample_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz.csi {outputs['index']}
 	mv {output_directory}/snpEff/{sample_group}/{sample_name}/{sample_name}.snpEff_summary.prog.csv {outputs['csv']}
 	mv {output_directory}/snpEff/{sample_group}/{sample_name}/{sample_name}.snpEff_summary.prog.genes.txt {outputs['txt']}
 	mv {output_directory}/snpEff/{sample_group}/{sample_name}/{sample_name}.snpEff_summary.prog.html {outputs['html']}
@@ -823,8 +826,10 @@ def dos_count_polymorphic_sites(snpeff_annotated_vcf_file: str, gene_bed_file: s
 	
 	:param
 	"""
-	inputs = {}
-	outputs = {}
+	inputs = {'vcf': snpeff_annotated_vcf_file,
+		   	  'bed': gene_bed_file}
+	outputs = {'poly': f'{output_directory}/DoS/{sample_group}/{sample_name}/tmp/polymorphisms.tsv',
+			   'var': f'{output_directory}/DoS/{sample_group}/{sample_name}/tmp/polymorphism_variants.tsv'}
 	options = {
 		'cores': 1,
 		'memory': '10g',
@@ -844,6 +849,7 @@ def dos_count_polymorphic_sites(snpeff_annotated_vcf_file: str, gene_bed_file: s
 	
 	bcftools view \
 		--regions_file {gene_bed_file} \
+		{snpeff_annotated_vcf_file} \
 	| awk \
 		'BEGIN{{
 			FS = OFS = "\\t"
@@ -867,7 +873,7 @@ def dos_count_polymorphic_sites(snpeff_annotated_vcf_file: str, gene_bed_file: s
 				print chromosome, position, gene, variant_type
 			}}
 		}}' \
-		> {output_directory}/DoS/{sample_group}/{sample_name}/tmp/variants.tsv
+		> {output_directory}/DoS/{sample_group}/{sample_name}/tmp/polymorphism_variants.tsv
 
 	awk \
 		'BEGIN{{
@@ -880,27 +886,239 @@ def dos_count_polymorphic_sites(snpeff_annotated_vcf_file: str, gene_bed_file: s
 			}}
 			gene = $3
 			variant_type = $4
+			genearray[gene] = 1
 			if (variant_type == "missense_variant")
 			{{
-				polymorphismarray[gene, Pn] += 1
+				nonsynarray[gene] += 1
 			}}
 			if (variant_type == "synonymous_variant")
 			{{
-				polymorphismarray[gene, Ps] += 1
+				synarray[gene] += 1
 			}}
 		}}
 		END{{
 			print "gene_name", "Pn", "Ps"
-			for (i in polymorphismarray)
+			for (i in genearray)
 			{{
-				split(i, , "\\034")
-				print chreffect[1], chreffect[2] , frequencies[i], sum, n, sum / length(sumarray)
-				sum = 0
-				n = 0
+				print i, nonsynarray[i] , synarray[i]
+			}}
+		}}' \
+		{output_directory}/DoS/{sample_group}/{sample_name}/tmp/polymorphism_variants.tsv \
+		> {output_directory}/DoS/{sample_group}/{sample_name}/tmp/polymorphisms.prog.tsv
+	
+	mv {output_directory}/DoS/{sample_group}/{sample_name}/tmp/polymorphisms.prog.tsv {outputs['poly']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def dos_count_substitution_sites(snpeff_annotated_vcf_file: str, gene_bed_file: str, polymorphism_variants_file: str, output_directory: str, sample_group: str, sample_name: str):
+	"""
+	Template: Count the number of non-synonymous and synonymous substitutions in gene regions in a pooled :format:`VCF` file.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'vcf': snpeff_annotated_vcf_file,
+		   	  'bed': gene_bed_file,
+			  'polymorphisms': polymorphism_variants_file}
+	outputs = {'sub': f'{output_directory}/DoS/{sample_group}/{sample_name}/tmp/substitutions.tsv',
+			   'var': f'{output_directory}/DoS/{sample_group}/{sample_name}/tmp/substitution_variants.tsv',
+			   'fixed': f'{output_directory}/DoS/{sample_group}/{sample_name}/tmp/fixed_substitution_variants.tsv'}
+	options = {
+		'cores': 1,
+		'memory': '20g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+
+	[ -d {output_directory}/DoS/{sample_group}/{sample_name}/tmp ] || mkdir -p {output_directory}/DoS/{sample_group}/{sample_name}/tmp
+	
+	bcftools view \
+		--regions_file {gene_bed_file} \
+		{snpeff_annotated_vcf_file} \
+	| awk \
+		'BEGIN{{
+			FS = OFS = "\\t"
+			print "chromosome", "position", "gene", "variant_type"
+		}}
+		{{
+			if ($0 !~ /^#/)
+			{{
+				chromosome = $1
+				position = $2
+				split($8, formatfield, ";")
+				split(formatfield[4], affield, "=")
+				split(formatfield[42], annsection, "|")
+				af = affield[2]
+				variant_type = annsection[2]
+				gene = annsection[5]
+				if (af != 1)
+				{{
+					next
+				}}
+				print chromosome, position, gene, variant_type
+			}}
+		}}' \
+		> {output_directory}/DoS/{sample_group}/{sample_name}/tmp/substitution_variants.tsv
+
+	awk \
+		'BEGIN{{
+			FS = OFS = "\\t"
+			print "chromosome", "position", "gene", "variant_type"
+		}}
+		{{
+			if (FNR == 1)
+			{{
+				next
+			}}
+			if (FNR == NR)
+			{{
+				linearray[$1, $2]
+				next
+			}}
+			if ($1"\\034"$2 in linearray)
+			{{
+				next
+			}}
+			else
+			{{
+				print $0
+			}}
+		}}' \
+		{polymorphism_variants_file} \
+		{output_directory}/DoS/{sample_group}/{sample_name}/tmp/substitution_variants.tsv \
+		> {output_directory}/DoS/{sample_group}/{sample_name}/tmp/fixed_substitution_variants.tsv
+
+	awk \
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			if (NR == 1)
+			{{
+				next
+			}}
+			gene = $3
+			variant_type = $4
+			genearray[gene]
+			if (variant_type == "missense_variant")
+			{{
+				nonsynarray[gene] += 1
+			}}
+			if (variant_type == "synonymous_variant")
+			{{
+				synarray[gene] += 1
 			}}
 		}}
+		END{{
+			print "gene_name", "Dn", "Ds"
+			for (i in genearray)
+			{{
+				print i, nonsynarray[i] , synarray[i]
+			}}
+		}}' \
+		{output_directory}/DoS/{sample_group}/{sample_name}/tmp/fixed_substitution_variants.tsv \
+		> {output_directory}/DoS/{sample_group}/{sample_name}/tmp/substitutions.prog.tsv
 	
-	mv
+	mv {output_directory}/DoS/{sample_group}/{sample_name}/tmp/substitutions.prog.tsv {outputs['sub']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def dos_combine_d_p(polymorphisms_file: str, fixed_substitutions_file: str, output_directory: str, sample_group: str, sample_name: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {}
+	outputs = {}
+	options = {
+		'cores': 1,
+		'memory': '10g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate pogen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/DoS/{sample_group}/{sample_name}/tmp ] || mkdir -p {output_directory}/DoS/{sample_group}/{sample_name}/tmp
+	
+	awk \
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			if (FNR == 1)
+			{{
+				next
+			}}
+			gene = $1
+			genearray[gene]
+			if (FNR == NR)
+			{{
+				substitutionarray[gene] = $2","$3
+				next
+			}}
+			polymorphismarray[gene] = $2","$3
+		}}
+		END{{
+			print "gene_name", "Dn", "Pn", "Ds", "Ps"
+			for (i in genearray)
+			{{
+				split(substitutionarray[i], d, ",")
+				split(polymorphismarray[i], p, ",")
+				if (length(d[1]) == 0)
+				{{
+					d[1] = 0
+				}}
+				if (length(d[2]) == 0)
+				{{
+					d[2] = 0
+				}}
+				if (length(p[1]) == 0)
+				{{
+					p[1] = 0
+				}}
+				if (length(p[2]) == 0)
+				{{
+					p[2] = 0
+				}}
+				print i, d[1], p[1], d[2], p[2]
+			}}
+		}}'
+		{fixed_substitutions_file} \
+		{polymorphisms_file} \
+		> {output_directory}/DoS/{sample_group}/{sample_name}/tmp/
+	
+	mv {output_directory}/DoS/{sample_group}/{sample_name}/tmp
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
