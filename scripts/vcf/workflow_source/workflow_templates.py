@@ -280,12 +280,13 @@ def freebayes_chrom_single_sample(reference_genome_file: str, bam_file: str, out
 		-b {bam_file} \
 	| bcftools view \
 		--output-type z \
-		--output {output_directory}/raw_vcf/{sample_group}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz
+		--output {output_directory}/raw_vcf/{sample_group}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz \
 		--write-index \
 		-
 	
 	mv {output_directory}/raw_vcf/{sample_group}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz {outputs['vcf']}
-	mv {output_directory}/raw_vcf/{sample_group}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz.csi {output_directory}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz.csi
+	mv {output_directory}/raw_vcf/{sample_group}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz.csi \
+		{output_directory}/raw_vcf/{sample_group}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz.csi
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"

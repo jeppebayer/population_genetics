@@ -187,6 +187,7 @@ def snpeff_annotation(vcf_file: str, snpeff_predictor_file: str, snpeff_config_f
 	
 	:param
 	"""
+	vcf = f'<(zcat {vcf_file})' if vcf_file.endswith('.gz') else vcf_file
 	inputs = {'vcf': vcf_file,
 		   	  'predictor': snpeff_predictor_file,
 			  'config': snpeff_config_file}
@@ -223,7 +224,7 @@ def snpeff_annotation(vcf_file: str, snpeff_predictor_file: str, snpeff_config_f
 		-i vcf \
 		-o vcf \
 		{os.path.basename(os.path.dirname(snpeff_predictor_file))} \
-		{vcf_file} \
+		{vcf} \
 	| bcftools view \
 		--output-type z \
 		--output {output_directory}/snpEff/{sample_group}/{sample_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz
@@ -731,7 +732,7 @@ def snpgenie_summarize_results_population(population_summary_files: list, output
 	
 	awk \
 		'BEGIN{{
-			FS=OFS="\\t"
+			FS = OFS = "\\t"
 			print "sample", "group", "chromosome", "strand", "piN", "piS", "piN/piS"
 		}}
 		{{
@@ -1076,8 +1077,9 @@ def dos_combine_d_p(polymorphisms_file: str, fixed_substitutions_file: str, outp
 	
 	:param
 	"""
-	inputs = {}
-	outputs = {}
+	inputs = {'poly': polymorphisms_file,
+		   	  'fixed': fixed_substitutions_file}
+	outputs = {'combined': f'{output_directory}/DoS/{sample_group}/{sample_name}/tmp/combined_polymorphisms_substitutions.tsv'}
 	options = {
 		'cores': 1,
 		'memory': '10g',
@@ -1140,9 +1142,124 @@ def dos_combine_d_p(polymorphisms_file: str, fixed_substitutions_file: str, outp
 		}}'
 		{fixed_substitutions_file} \
 		{polymorphisms_file} \
-		> {output_directory}/DoS/{sample_group}/{sample_name}/tmp/
+		> {output_directory}/DoS/{sample_group}/{sample_name}/tmp/combined_polymorphisms_substitutions.prog.tsv
 	
-	mv {output_directory}/DoS/{sample_group}/{sample_name}/tmp
+	mv {output_directory}/DoS/{sample_group}/{sample_name}/tmp/combined_polymorphisms_substitutions.prog.tsv {outputs['combined']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def dos_results(combined_file: str, output_directory: str, sample_group: str, sample_name: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'combined': combined_file}
+	outputs = {'dos': f'{output_directory}/DoS/{sample_group}/{sample_name}/DoS.tsv'}
+	options = {
+		'cores': 1,
+		'memory': '20g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/DoS/{sample_group}/{sample_name} ] || mkdir -p {output_directory}/DoS/{sample_group}/{sample_name}
+	
+	awk \
+		'BEGIN{{
+			FS = OFS = "\\t"
+			print "gene_name", "Dn", "Pn", "Ds", "Ps", "DoS"
+		}}
+		{{
+			if (FNR == 1)
+			{{
+				next
+			}}
+			if ($2 + $4 == 0 || $3 + $5 == 0)
+			{{
+				next
+			}}
+			if ($2 + $3 < 4)
+			{{
+				next
+			}}
+			print $1, $2, $3, $4, $5, ($2 / ($2 + $4)) - ($3 / ($3 + $5))
+		}}' \
+		{combined_file} \
+		> {output_directory}/DoS/{sample_group}/{sample_name}/DoS.prog.tsv
+	
+	mv {output_directory}/DoS/{sample_group}/{sample_name}/DoS.prog.tsv {outputs['dos']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def dos_concat_results(dos_results_files: list, output_directory: str, species_name: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'files': dos_results_files}
+	outputs = {'tsv': f'{output_directory}/DoS/{species_abbreviation(species_name)}.DoS_results.tsv'}
+	options = {
+		'cores': 1,
+		'memory': '20g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/DoS ] || mkdir -p {output_directory}/DoS
+	
+	awk \
+		'BEGIN{{
+			FS = OFS = "\\t"
+			print "sample", "group", "gene", "Dn", "Pn", "Ds", "Ps", "DoS"
+		}}
+		{{
+			if (FNR == 1)
+			{{
+				next
+			}}
+			split(FILENAME, filenamearray, "/")
+			sample = filenamearray[14]
+			group = filenamearray[13]
+			print sample, group, $1, $2, $3, $4, $5, $6
+		}}' \
+		{' '.join(dos_results_files)} \
+		> {output_directory}/DoS/{species_abbreviation(species_name)}.DoS_results.prog.tsv
+	
+	mv {output_directory}/DoS/{species_abbreviation(species_name)}.DoS_results.prog.tsv {outputs['tsv']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"

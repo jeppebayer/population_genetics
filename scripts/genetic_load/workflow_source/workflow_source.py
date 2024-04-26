@@ -58,7 +58,7 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 	)
 	
 	gene_bed = gwf.target_from_template(
-		name=f'{species_abbreviation(SPECIES_NAME)}_gene_bed',
+		name=f'gene_bed_{species_abbreviation(SPECIES_NAME)}',
 		template=gtf2gene_bed(
 			gtf_annotation_file=GTF,
 			output_directory=top_dir
