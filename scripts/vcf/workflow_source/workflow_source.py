@@ -98,12 +98,22 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
     #                  Configuration
     # --------------------------------------------------
     
-    config = yaml.safe_load(open(config_file))
-    ACCOUNT: str = config['account']
-    SPECIES_NAME: str = config['species_name']
-    REFERENCE_GENOME: str = config['reference_genome_path']
-    SAMPLE_LIST: list = config['sample_list']
-    PARTITION_SIZE: int = config['partition_size']
+    CONFIG = yaml.safe_load(open(config_file))
+    ACCOUNT: str = CONFIG['account']
+    SPECIES_NAME: str = CONFIG['species_name']
+    REFERENCE_GENOME: str = CONFIG['reference_genome_path']
+    WORK_DIR: str = CONFIG['working_directory_path']
+    OUTPUT_DIR: str = CONFIG['output_directory_path']
+    PARTITION_SIZE: int = CONFIG['partition_size']
+    FREEBAYES_SETTINGS: dict = CONFIG['freebayes_settings']
+    FREEBAYES_PLOIDY: int = FREEBAYES_SETTINGS['sample_ploidy']
+    FREEBAYES_BESTN: int = FREEBAYES_SETTINGS['best_n_alleles']
+    FREEBAYES_MINALTFRC: float | int = FREEBAYES_SETTINGS['min_alternate_fraction']
+    FREEBAYES_MINALTCNT: int = FREEBAYES_SETTINGS['min_alternate_count']
+    FILTERING: dict = CONFIG['filtering']
+    FILTERING_MINDP: int = FILTERING['minimum_depth']
+    FILTERING_MAXDP: int = FILTERING['maximum_depth']
+    SAMPLE_LIST: list = CONFIG['sample_list']
 
     # --------------------------------------------------
     #                  Workflow
@@ -135,42 +145,48 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
         # Creates list of contigs in reference genome
         contigs = [{'contig': contig['sequence_name']} for contig in sequences]
 
-    for sample in SAMPLE_LIST:
-        NAME: str = sample['sample_name']
-        GROUP: str = sample['sample_group'].lower()
-        BAM: str = sample['bam_file']
-        WORK_DIR: str = sample['working_directory_path']
-        OUTPUT_DIR: str = sample['output_directory_path']
-        FREEBAYES_SETTINGS: dict = sample['freebayes_settings']
+    top_dir = f'{WORK_DIR}/{SPECIES_NAME.replace(" ", "_")}/vcf'
 
-        top_dir = f'{WORK_DIR}/{SPECIES_NAME.replace(" ", "_")}/freebayes/{GROUP}/{NAME}'
-        if not OUTPUT_DIR:
-            output_dir = f'{top_dir}'
-        else:
-            output_dir = f'{OUTPUT_DIR}/{SPECIES_NAME.replace(" ", "_")}/{GROUP}/{NAME}'
+    for sample in SAMPLE_LIST:
+        SAMPLE_NAME: str = sample['sample_name']
+        SAMPLE_GROUP: str = sample['sample_group'].lower()
+        BAM: str = sample['bam_file']
 
         freebayes_parts = gwf.map(
-            name=name_freebayes_chrom,
+            name=name_freebayes_chrom_single_sample,
             template_func=freebayes_chrom_single_sample,
             inputs=partitions,
             extra={'reference_genome_file': REFERENCE_GENOME,
                    'bam_file': BAM,
                    'output_directory': top_dir,
-                   'sample_name': NAME,
-                   'ploidy': FREEBAYES_SETTINGS['sample_ploidy'],
-                   'best_n_alleles': FREEBAYES_SETTINGS['best_n_alleles'],
-                   'min_alternate_fraction': FREEBAYES_SETTINGS['min_alternate_fraction'],
-                   'min_alternate_count': FREEBAYES_SETTINGS['min_alternate_count']}
+                   'sample_group': SAMPLE_GROUP,
+                   'sample_name': SAMPLE_NAME,
+                   'ploidy': FREEBAYES_PLOIDY,
+                   'best_n_alleles': FREEBAYES_BESTN,
+                   'min_alternate_fraction': FREEBAYES_MINALTFRC,
+                   'min_alternate_count': FREEBAYES_MINALTCNT}
         )
 
         concat_freebayes = gwf.target_from_template(
-                name=f'concatenate_freebayes_{NAME.replace("-", "_")}',
+                name=f'concatenate_freebayes_vcf_{SAMPLE_GROUP}_{SAMPLE_NAME.replace("-", "_")}',
                 template=concat_vcf(
                     files=collect(freebayes_parts.outputs, ['vcf'])['vcfs'],
-                    output_name=f'{NAME}.freebayes_n{FREEBAYES_SETTINGS['best_n_alleles']}_p{FREEBAYES_SETTINGS['sample_ploidy']}_minaltfrc{FREEBAYES_SETTINGS['min_alternate_fraction']}_minaltcnt{FREEBAYES_SETTINGS['min_alternate_count']}',
-                    output_directory=output_dir,
+                    output_name=f'{SAMPLE_NAME}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}',
+                    output_directory=f'{top_dir}/raw_vcf/{SAMPLE_GROUP}/{SAMPLE_NAME}',
                     compress=True
                 )
+        )
+
+        filtering = gwf.target_from_template(
+            name=f'filter_vcf_{SAMPLE_GROUP}_{SAMPLE_NAME.replace("-", "_")}',
+            template=filter_vcf(
+                vcf_file=concat_freebayes.outputs['concat_file'],
+                output_directory=f'{OUTPUT_DIR}' if OUTPUT_DIR else f'{top_dir}/filtered_vcf',
+                sample_group=SAMPLE_GROUP,
+                sample_name=SAMPLE_NAME,
+                min_depth=FILTERING_MINDP,
+                max_depth=FILTERING_MAXDP
+            )
         )
     
     return gwf

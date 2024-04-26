@@ -808,7 +808,7 @@ def gtf2gene_bed(gtf_annotation_file: str, output_directory: str):
 		{gtf_annotation_file} \
 		> {output_directory}/DoS/bed/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.gene.prog.bed
 
-	mv {output_directory}/DoS/bed/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.gene.prog.bed
+	mv {output_directory}/DoS/bed/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.gene.prog.bed {outputs['bed']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -848,7 +848,7 @@ def dos_count_polymorphic_sites(snpeff_annotated_vcf_file: str, gene_bed_file: s
 	[ -d {output_directory}/DoS/{sample_group}/{sample_name}/tmp ] || mkdir -p {output_directory}/DoS/{sample_group}/{sample_name}/tmp
 	
 	bcftools view \
-		--regions_file {gene_bed_file} \
+		--regions-file {gene_bed_file} \
 		{snpeff_annotated_vcf_file} \
 	| awk \
 		'BEGIN{{
@@ -886,12 +886,12 @@ def dos_count_polymorphic_sites(snpeff_annotated_vcf_file: str, gene_bed_file: s
 			}}
 			gene = $3
 			variant_type = $4
-			genearray[gene] = 1
-			if (variant_type == "missense_variant")
+			genearray[gene]
+			if (variant_type ~ /missense_variant/)
 			{{
 				nonsynarray[gene] += 1
 			}}
-			if (variant_type == "synonymous_variant")
+			if (variant_type ~ /synonymous_variant/)
 			{{
 				synarray[gene] += 1
 			}}
@@ -900,7 +900,19 @@ def dos_count_polymorphic_sites(snpeff_annotated_vcf_file: str, gene_bed_file: s
 			print "gene_name", "Pn", "Ps"
 			for (i in genearray)
 			{{
-				print i, nonsynarray[i] , synarray[i]
+				if (length(nonsynarray[i]) == 0)
+				{{
+					nonsynarray[i] = 0
+				}}
+				if (length(synarray[i]) == 0)
+				{{
+					synarray[i] = 0
+				}}
+				if (nonsynarray[i] + synarray[i] == 0)
+				{{
+					continue
+				}}
+				print i, nonsynarray[i], synarray[i]
 			}}
 		}}' \
 		{output_directory}/DoS/{sample_group}/{sample_name}/tmp/polymorphism_variants.tsv \
@@ -948,7 +960,7 @@ def dos_count_substitution_sites(snpeff_annotated_vcf_file: str, gene_bed_file: 
 	[ -d {output_directory}/DoS/{sample_group}/{sample_name}/tmp ] || mkdir -p {output_directory}/DoS/{sample_group}/{sample_name}/tmp
 	
 	bcftools view \
-		--regions_file {gene_bed_file} \
+		--regions-file {gene_bed_file} \
 		{snpeff_annotated_vcf_file} \
 	| awk \
 		'BEGIN{{
@@ -1015,11 +1027,11 @@ def dos_count_substitution_sites(snpeff_annotated_vcf_file: str, gene_bed_file: 
 			gene = $3
 			variant_type = $4
 			genearray[gene]
-			if (variant_type == "missense_variant")
+			if (variant_type ~ /missense_variant/)
 			{{
 				nonsynarray[gene] += 1
 			}}
-			if (variant_type == "synonymous_variant")
+			if (variant_type ~ /synonymous_variant/)
 			{{
 				synarray[gene] += 1
 			}}
@@ -1028,6 +1040,18 @@ def dos_count_substitution_sites(snpeff_annotated_vcf_file: str, gene_bed_file: 
 			print "gene_name", "Dn", "Ds"
 			for (i in genearray)
 			{{
+				if (length(nonsynarray[i]) == 0)
+				{{
+					nonsynarray[i] = 0
+				}}
+				if (length(synarray[i]) == 0)
+				{{
+					synarray[i] = 0
+				}}
+				if (nonsynarray[i] + synarray[i] == 0)
+				{{
+					continue
+				}}
 				print i, nonsynarray[i] , synarray[i]
 			}}
 		}}' \
