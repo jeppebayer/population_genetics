@@ -18,6 +18,14 @@ snpgenie_settings:
   minfreq: 0
   # Length of the (optional) sliding (codon) window used in analysis (default 9)
   slidingwindow: 9
+  #VCF format type in accordance with SNPGenie (1 | 2 | 3 | 4)
+  vcf_format: 4
+# DoS measure settings.
+dos_settings:
+  # Name of outgroup.
+  outgroup_name: 
+  # Outgroup alignment VCF.
+  outgroup_vcf: 
 # Sample setup. List of dictionaries listing the configuration for each sample.
 sample_list:
   -
@@ -28,4 +36,4 @@ sample_list:
     # Path to VCF file.
     vcf_file: /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir/vcf_allsites_maxcov0.98_mincov2_mincnt2_minfrq0_missfrc0.001_bq15/IsoVir.allsites_maxcov0.98_mincov2_mincnt2_minfrq0_missfrc0.001_bq15.biallelic.vcf.gz
     # Path to BAM file.
-    bam_file: /faststorage/project/EcoGenetics/BACKUP/population_genetics/collembola/Isotoma_viridis/IsoVir_BJJ-C98/IsoVir_BJJ-C98_filtered.bam
+    bam_file: 

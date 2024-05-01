@@ -187,7 +187,6 @@ def snpeff_annotation(vcf_file: str, snpeff_predictor_file: str, snpeff_config_f
 	
 	:param
 	"""
-	vcf = f'<(zcat {vcf_file})' if vcf_file.endswith('.gz') else vcf_file
 	inputs = {'vcf': vcf_file,
 		   	  'predictor': snpeff_predictor_file,
 			  'config': snpeff_config_file}
@@ -224,10 +223,10 @@ def snpeff_annotation(vcf_file: str, snpeff_predictor_file: str, snpeff_config_f
 		-i vcf \
 		-o vcf \
 		{os.path.basename(os.path.dirname(snpeff_predictor_file))} \
-		{vcf} \
+		{vcf_file} \
 	| bcftools view \
 		--output-type z \
-		--output {output_directory}/snpEff/{sample_group}/{sample_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz
+		--output {output_directory}/snpEff/{sample_group}/{sample_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz \
 		--write-index \
 		-
 	
@@ -236,6 +235,71 @@ def snpeff_annotation(vcf_file: str, snpeff_predictor_file: str, snpeff_config_f
 	mv {output_directory}/snpEff/{sample_group}/{sample_name}/{sample_name}.snpEff_summary.prog.csv {outputs['csv']}
 	mv {output_directory}/snpEff/{sample_group}/{sample_name}/{sample_name}.snpEff_summary.prog.genes.txt {outputs['txt']}
 	mv {output_directory}/snpEff/{sample_group}/{sample_name}/{sample_name}.snpEff_summary.prog.html {outputs['html']}
+
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def snpeff_annotation_outgroup(vcf_file: str, snpeff_predictor_file: str, snpeff_config_file: str, output_directory: str, outgroup_name: str):
+	"""
+	Template: Annotates :format:`VCF` file with variant function.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'vcf': vcf_file,
+		   	  'predictor': snpeff_predictor_file,
+			  'config': snpeff_config_file}
+	outputs = {'ann': f'{output_directory}/snpEff/outgroup/{outgroup_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith(".vcf") else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.vcf.gz',
+			   'index': f'{output_directory}/snpEff/outgroup/{outgroup_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.vcf.gz.csi',
+			   'csv': f'{output_directory}/snpEff/outgroup/{outgroup_name}/{outgroup_name}.snpEff_summary.csv',
+			   'txt': f'{output_directory}/snpEff/outgroup/{outgroup_name}/{outgroup_name}.snpEff_summary.genes.txt',
+			   'html': f'{output_directory}/snpEff/outgroup/{outgroup_name}/{outgroup_name}.snpEff_summary.html'}
+	options = {
+		'cores': 18,
+		'memory': '80g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/snpEff/outgroup/{outgroup_name} ] || mkdir -p {output_directory}/snpEff/outgroup/{outgroup_name}
+	
+	export _JAVA_OPTIONS="-Xmx{options['memory']}"
+
+	snpEff ann \
+		-csvStats {output_directory}/snpEff/outgroup/{outgroup_name}/{outgroup_name}.snpEff_summary.prog.csv \
+		-htmlStats {output_directory}/snpEff/outgroup/{outgroup_name}/{outgroup_name}.snpEff_summary.prog.html \
+		-nodownload \
+		-config {snpeff_config_file} \
+		-verbose \
+		-i vcf \
+		-o vcf \
+		{os.path.basename(os.path.dirname(snpeff_predictor_file))} \
+		{vcf_file} \
+	| bcftools view \
+		--output-type z \
+		--output {output_directory}/snpEff/outgroup/{outgroup_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz \
+		--write-index \
+		-
+	
+	mv {output_directory}/snpEff/outgroup/{outgroup_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz {outputs['ann']}
+	mv {output_directory}/snpEff/outgroup/{outgroup_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz.csi {outputs['index']}
+	mv {output_directory}/snpEff/outgroup/{outgroup_name}/{outgroup_name}.snpEff_summary.prog.csv {outputs['csv']}
+	mv {output_directory}/snpEff/outgroup/{outgroup_name}/{outgroup_name}.snpEff_summary.prog.genes.txt {outputs['txt']}
+	mv {output_directory}/snpEff/outgroup/{outgroup_name}/{outgroup_name}.snpEff_summary.prog.html {outputs['html']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -457,7 +521,7 @@ def snpeff_result(effectsummary_file: str, sitecount_file: str, output_directory
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def concatenate_snpeff_results(files: list, output_name: str, output_directory: str):
+def snpeff_concatenate_results(files: list, output_name: str, output_directory: str):
 	"""
 	Template: template_description
 	
@@ -573,7 +637,7 @@ def concat(files: list, output_name: str, output_directory: str = None, compress
 def name_snpgenie(idx: str, target: AnonymousTarget) -> str:
 	return f'snpgenie_{os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(target.outputs['plus']['param'])))).replace("-", "_")}_{os.path.basename(os.path.dirname(os.path.dirname(target.outputs['plus']['param']))).replace("-", "_")}'
 
-def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vcf_file: str, sample_group: str, sample_name: str, region: str, region_length: int,  output_directory: str, min_allele_frequency: int | float = 0, sliding_window_size: int = 9):
+def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vcf_file: str, sample_group: str, sample_name: str, region: str, region_length: int,  output_directory: str, min_allele_frequency: int | float = 0, sliding_window_size: int = 9, vcf_format: int = 2):
 	"""
 	Template: Estimate pi_N/pi_S for each chromosome, separately for 'x' and '-' strand
 	
@@ -674,7 +738,7 @@ def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vc
 	echo -e "#########################\\n# Processing '+' strand #\\n#########################"
 	
 	snpgenie.pl \
-		--vcfformat=2 \
+		--vcfformat={vcf_format} \
 		--snpreport={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}.vcf \
 		--fastafile={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}.fasta \
 		--gtffile={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}.gtf \
@@ -686,7 +750,7 @@ def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vc
 	echo -e "#########################\\n# Processing '-' strand #\\n#########################"
 
 	snpgenie.pl \
-		--vcfformat=2 \
+		--vcfformat={vcf_format} \
 		--snpreport={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}_revcom.vcf \
 		--fastafile={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}_revcom.fasta \
 		--gtffile={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}_revcom.gtf \
@@ -1066,7 +1130,7 @@ def dos_count_substitution_sites(snpeff_annotated_vcf_file: str, gene_bed_file: 
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def dos_combine_d_p(polymorphisms_file: str, fixed_substitutions_file: str, output_directory: str, sample_group: str, sample_name: str):
+def dos_combine_d_p(polymorphisms_file: str, substitutions_file: str, output_directory: str, sample_group: str, sample_name: str):
 	"""
 	Template: template_description
 	
@@ -1078,7 +1142,7 @@ def dos_combine_d_p(polymorphisms_file: str, fixed_substitutions_file: str, outp
 	:param
 	"""
 	inputs = {'poly': polymorphisms_file,
-		   	  'fixed': fixed_substitutions_file}
+		   	  'fixed': substitutions_file}
 	outputs = {'combined': f'{output_directory}/DoS/{sample_group}/{sample_name}/tmp/combined_polymorphisms_substitutions.tsv'}
 	options = {
 		'cores': 1,
@@ -1089,7 +1153,7 @@ def dos_combine_d_p(polymorphisms_file: str, fixed_substitutions_file: str, outp
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
 		source /home/"$USER"/.bashrc
-		source activate pogen
+		source activate popgen
 	fi
 	
 	echo "START: $(date)"
@@ -1139,8 +1203,8 @@ def dos_combine_d_p(polymorphisms_file: str, fixed_substitutions_file: str, outp
 				}}
 				print i, d[1], p[1], d[2], p[2]
 			}}
-		}}'
-		{fixed_substitutions_file} \
+		}}' \
+		{substitutions_file} \
 		{polymorphisms_file} \
 		> {output_directory}/DoS/{sample_group}/{sample_name}/tmp/combined_polymorphisms_substitutions.prog.tsv
 	
@@ -1211,7 +1275,7 @@ def dos_results(combined_file: str, output_directory: str, sample_group: str, sa
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def dos_concat_results(dos_results_files: list, output_directory: str, species_name: str):
+def dos_concatenate_results(dos_results_files: list, output_directory: str, species_name: str):
 	"""
 	Template: template_description
 	
@@ -1260,6 +1324,235 @@ def dos_concat_results(dos_results_files: list, output_directory: str, species_n
 		> {output_directory}/DoS/{species_abbreviation(species_name)}.DoS_results.prog.tsv
 	
 	mv {output_directory}/DoS/{species_abbreviation(species_name)}.DoS_results.prog.tsv {outputs['tsv']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def outgroup_consensus_sequence(outgroup_bam_file: str, output_directory: str, outgroup_name: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'bam': outgroup_bam_file}
+	outputs = {'consensus': f'{output_directory}/DoS/outgroup_consensus/{outgroup_name.replace(' ', '_')}.consensus.fna.gz'}
+	options = {
+		'cores': 28,
+		'memory': '30g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/DoS/outgroup_consensus ] || mkdir -p {output_directory}/DoS/outgroup_consensus
+	
+	samtools consensus \
+		--threads {options['cores']} \
+		--format FASTA \
+		--line-len 60 \
+		--mode bayesian \
+		-aa \
+		--show-del no \
+		--show-ins no \
+		{outgroup_bam_file} \
+	| bgzip \
+		--threads {options['cores']} \
+		-c \
+		- \
+		> {output_directory}/DoS/outgroup_consensus/{outgroup_name.replace(' ', '_')}.consensus.prog.fna.gz
+	
+	mv {output_directory}/DoS/outgroup_consensus/{outgroup_name.replace(' ', '_')}.consensus.prog.fna.gz {outputs['consensus']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def outgroup_consensus_pileup(outgroup_bam_file: str, output_directory: str, outgroup_name: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'bam': outgroup_bam_file}
+	outputs = {'consensus': f'{output_directory}/DoS/outgroup_consensus/{outgroup_name.replace(' ', '_')}.consensus.pileup.gz'}
+	options = {
+		'cores': 28,
+		'memory': '30g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/DoS/outgroup_consensus ] || mkdir -p {output_directory}/DoS/outgroup_consensus
+	
+	samtools consensus \
+		--threads {options['cores']} \
+		--format pileup \
+		--mode bayesian \
+		-aa \
+		--show-del no \
+		--show-ins no \
+		{outgroup_bam_file} \
+	| bgzip \
+		--threads {options['cores']} \
+		-c \
+		- \
+		> {output_directory}/DoS/outgroup_consensus/{outgroup_name.replace(' ', '_')}.consensus.prog.pileup.gz
+	
+	mv {output_directory}/DoS/outgroup_consensus/{outgroup_name.replace(' ', '_')}.consensus.prog.pileup.gz {outputs['consensus']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def ancestral_allele_information(outgroup_vcf_file: str, output_directory: str, outgroup_name: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'vcf': outgroup_vcf_file}
+	outputs = {'info': f'{output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.variantinfo.tsv',
+			   'aa': f'{output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.ancestralallele.tsv.gz',
+			   'index': f'{output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.ancestralallele.tsv.gz.tbi'}
+	options = {
+		'cores': 1,
+		'memory': '20g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/DoS/ancestral_allele/outgroup ] || mkdir -p {output_directory}/DoS/ancestral_allele/outgroup
+	
+	bcftools query \
+		-f '%CHROM\\t%POS\\t%REF\\t%ALT[\\t%GT]\\n' \
+		{outgroup_vcf_file} \
+		> {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.variantinfo.tsv
+
+	awk \
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			split($5, gt, "/")
+			sum = 0
+			for (i in gt)
+			{{
+				sum += i
+			}}
+			if (sum < 50)
+			{{
+				print $1, $2, $3, $4, $3
+			}}
+			if (sum >= 50)
+			{{
+				print $1, $2, $3, $4, $4
+			}}
+		}}' \
+		{output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.variantinfo.tsv \
+	| bgzip \
+		-c \
+		- \
+		> {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.ancestralallele.prog.tsv.gz
+	
+	mv {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.ancestralallele.prog.tsv.gz {outputs['aa']}
+	
+	tabix \
+		-s 1 \
+		-b 2 \
+		-e 2 \
+		{outputs['aa']}
+
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def update_ancestral_allele(ancestral_allele_file: str, vcf_file: str, output_directory: str, sample_group: str, sample_name: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'aa_file': ancestral_allele_file,
+		   	  'vcf': vcf_file}
+	outputs = {'aa_vcf': f'{output_directory}/DoS/ancestral_allele/{sample_group}/{sample_name}/{os.path.basename(os.path.splitext(os.path.splitext(vcf_file)[0])[0])}.aa.vcf.gz',
+			   'index': f'{output_directory}/DoS/ancestral_allele/{sample_group}/{sample_name}/{os.path.basename(os.path.splitext(os.path.splitext(vcf_file)[0])[0])}.aa.vcf.gz.csi'}
+	options = {
+		'cores': 18,
+		'memory': '20g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/DoS/ancestral_allele/{sample_group}/{sample_name} ] || mkdir -p {output_directory}/DoS/ancestral_allele/{sample_group}/{sample_name}
+	
+	bcftools annotate \
+		--threads {options['cores']} \
+		--header-line '##INFO=<ID=AA,Number=1,Type=Character,Description="Ancestral allele">' \
+		--annotations {ancestral_allele_file} \
+		--columns CHROM,POS,REF,ALT,INFO/AA \
+		--output-type z \
+		--output {output_directory}/DoS/ancestral_allele/{sample_group}/{sample_name}/{os.path.basename(os.path.splitext(os.path.splitext(vcf_file)[0])[0])}.aa.prog.vcf.gz \
+		--write-index \
+		{vcf_file}
+	
+	mv {output_directory}/DoS/ancestral_allele/{sample_group}/{sample_name}/{os.path.basename(os.path.splitext(os.path.splitext(vcf_file)[0])[0])}.aa.prog.vcf.gz {outputs['aa_vcf']}
+	mv {output_directory}/DoS/ancestral_allele/{sample_group}/{sample_name}/{os.path.basename(os.path.splitext(os.path.splitext(vcf_file)[0])[0])}.aa.prog.vcf.gz.csi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
