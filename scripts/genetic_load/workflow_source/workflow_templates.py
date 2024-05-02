@@ -1433,7 +1433,7 @@ def outgroup_consensus_pileup(outgroup_bam_file: str, output_directory: str, out
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def ancestral_allele_information(outgroup_vcf_file: str, output_directory: str, outgroup_name: str):
+def ancestral_allele_information(outgroup_vcf_file: str, reference_genome_file: str, output_directory: str, outgroup_name: str):
 	"""
 	Template: template_description
 	
@@ -1444,13 +1444,16 @@ def ancestral_allele_information(outgroup_vcf_file: str, output_directory: str, 
 	
 	:param
 	"""
-	inputs = {'vcf': outgroup_vcf_file}
-	outputs = {'info': f'{output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.variantinfo.tsv',
+	inputs = {'vcf': outgroup_vcf_file,
+		   	  'reference': reference_genome_file}
+	outputs = {'var': f'{output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.variantinfo.tsv.gz',
+			   'partial': f'{output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.partialancestral.tsv.gz',
+			   'position': f'{output_directory}/DoS/ancestral_allele/outgroup/{os.path.basename(os.path.splitext(reference_genome_file)[0])}.position.tsv.gz',
 			   'aa': f'{output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.ancestralallele.tsv.gz',
 			   'index': f'{output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.ancestralallele.tsv.gz.tbi'}
 	options = {
 		'cores': 1,
-		'memory': '20g',
+		'memory': '60g',
 		'walltime': '12:00:00'
 	}
 	spec = f"""
@@ -1466,9 +1469,12 @@ def ancestral_allele_information(outgroup_vcf_file: str, output_directory: str, 
 	[ -d {output_directory}/DoS/ancestral_allele/outgroup ] || mkdir -p {output_directory}/DoS/ancestral_allele/outgroup
 	
 	bcftools query \
-		-f '%CHROM\\t%POS\\t%REF\\t%ALT[\\t%GT]\\n' \
+		-f '%CHROM\\t%POS\\t%REF\\t%ALT\\t%INFO/AF\\n' \
 		{outgroup_vcf_file} \
-		> {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.variantinfo.tsv
+	| bgzip \
+		-c \
+		- \
+		> {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.variantinfo.tsv.gz
 
 	awk \
 		'BEGIN{{
@@ -1481,28 +1487,88 @@ def ancestral_allele_information(outgroup_vcf_file: str, output_directory: str, 
 			{{
 				sum += i
 			}}
-			if (sum < 50)
-			{{
-				print $1, $2, $3, $4, $3
-			}}
-			if (sum >= 50)
+			if ($5 == 1)
 			{{
 				print $1, $2, $3, $4, $4
 			}}
+			if ($5 == 0)
+			{{
+				print $1, $2, $3, $4, $3
+			}}
+			if ($5 > 0 && $5 < 100)
+			{{
+				print $1, $2, $3, $4, "NA"
+			}}
 		}}' \
-		{output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.variantinfo.tsv \
+		<(zcat {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.variantinfo.tsv.gz) \
+	| bgzip \
+		-c \
+		- \
+		> {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.partialancestral.tsv.gz
+	
+	awk \
+		'BEGIN{{
+			FS = ""
+			OFS = "\\t"
+		}}
+		{{
+			if ($0 ~ /^>/)
+			{{
+				chromosome = substr($0, 2)
+				linenum = 0
+				next
+			}}
+			for (i=1; i<=NF; i++)
+			{{
+				linenum += 1
+				print chromosome, linenum, $i
+			}}
+		}}' \
+		{reference_genome_file} \
+	| bgzip \
+		-c \
+		- \
+		> {output_directory}/DoS/ancestral_allele/outgroup/{os.path.basename(os.path.splitext(reference_genome_file)[0])}.position.tsv.gz
+
+	awk \
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			if (NR == FNR)
+			{{
+				ancestralarray[$1, $2] = $5
+				next
+			}}
+			chromosome = $1
+			position = $2
+			reference = $3
+			if (length(ancestralarray[chromosome, position]) == 0)
+			{{
+				print chromosome, position, reference, "NA", reference
+				next
+			}}
+			if (length(ancestralarray[chromosome, position]) > 0)
+			{{
+				print chromosome, position, reference, ancestralarray[$1, $2], ancestralarray[$1, $2]
+				next
+			}}
+		}}' \
+		<(zcat {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.partialancestral.tsv.gz) \
+		<(zcat {output_directory}/DoS/ancestral_allele/outgroup/{os.path.basename(os.path.splitext(reference_genome_file)[0])}.position.tsv.gz) \
 	| bgzip \
 		-c \
 		- \
 		> {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.ancestralallele.prog.tsv.gz
-	
-	mv {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.ancestralallele.prog.tsv.gz {outputs['aa']}
-	
+
 	tabix \
 		-s 1 \
 		-b 2 \
 		-e 2 \
-		{outputs['aa']}
+		{output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.ancestralallele.prog.tsv.gz
+
+	mv {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.ancestralallele.prog.tsv.gz {outputs['aa']}
+	mv {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.ancestralallele.prog.tsv.gz.tbi {outputs['index']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"

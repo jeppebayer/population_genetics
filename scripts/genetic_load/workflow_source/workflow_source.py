@@ -111,6 +111,7 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 			name=f'ancestral_allele_information',
 			template=ancestral_allele_information(
 				outgroup_vcf_file=DOS_OUTGROUP_VCF,
+				reference_genome_file=REFERENCE,
 				output_directory=top_dir,
 				outgroup_name=DOS_OUTGROUP_NAME
 			)
