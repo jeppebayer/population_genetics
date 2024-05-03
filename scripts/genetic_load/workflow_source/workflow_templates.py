@@ -1497,7 +1497,7 @@ def ancestral_allele_information(outgroup_vcf_file: str, reference_genome_file: 
 			}}
 			if ($5 > 0 && $5 < 100)
 			{{
-				print $1, $2, $3, $4, "NA"
+				print $1, $2, $3, $4, "."
 			}}
 		}}' \
 		<(zcat {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.variantinfo.tsv.gz) \
@@ -1545,7 +1545,7 @@ def ancestral_allele_information(outgroup_vcf_file: str, reference_genome_file: 
 			reference = $3
 			if (length(ancestralarray[chromosome, position]) == 0)
 			{{
-				print chromosome, position, reference, "NA", reference
+				print chromosome, position, reference, ".", reference
 				next
 			}}
 			if (length(ancestralarray[chromosome, position]) > 0)
@@ -1611,7 +1611,7 @@ def update_ancestral_allele(ancestral_allele_file: str, vcf_file: str, output_di
 		--threads {options['cores']} \
 		--header-line '##INFO=<ID=AA,Number=1,Type=Character,Description="Ancestral allele">' \
 		--annotations {ancestral_allele_file} \
-		--columns CHROM,POS,REF,ALT,INFO/AA \
+		--columns CHROM,POS,-,-,INFO/AA \
 		--output-type z \
 		--output {output_directory}/DoS/ancestral_allele/{sample_group}/{sample_name}/{os.path.basename(os.path.splitext(os.path.splitext(vcf_file)[0])[0])}.aa.prog.vcf.gz \
 		--write-index \
