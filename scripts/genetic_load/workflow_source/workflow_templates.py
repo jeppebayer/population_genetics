@@ -1227,7 +1227,8 @@ def dos_results(combined_file: str, output_directory: str, sample_group: str, sa
 	:param
 	"""
 	inputs = {'combined': combined_file}
-	outputs = {'dos': f'{output_directory}/DoS/{sample_group}/{sample_name}/DoS.tsv'}
+	outputs = {'dos': f'{output_directory}/DoS/{sample_group}/{sample_name}/DoS.tsv',
+			   'genelist': f'{output_directory}/DoS/{sample_group}/{sample_name}/DoS.genelist.tsv'}
 	options = {
 		'cores': 1,
 		'memory': '20g',
@@ -1266,16 +1267,65 @@ def dos_results(combined_file: str, output_directory: str, sample_group: str, sa
 			print $1, $2, $3, $4, $5, ($2 / ($2 + $4)) - ($3 / ($3 + $5))
 		}}' \
 		{combined_file} \
-		> {output_directory}/DoS/{sample_group}/{sample_name}/DoS.prog.tsv
-	
-	mv {output_directory}/DoS/{sample_group}/{sample_name}/DoS.prog.tsv {outputs['dos']}
-	
+		> {output_directory}/DoS/{sample_group}/{sample_name}/DoS.tsv
+
+	awk \
+		-v ngenes=$(($(wc -l < {output_directory}/DoS/{sample_group}/{sample_name}/DoS.tsv) - 1)) \
+		'BEGIN{{
+			FS = OFS = "\\t"
+			if ((ngenes * 0.1) - int(ngenes * 0.1) >= 0.5)
+			{{
+				upper_threshold = int(ngenes * 0.1) + 1
+			}}
+			else
+			{{
+				upper_threshold = int(ngenes * 0.1)
+			}}
+			if ((ngenes * 0.9) - int(ngenes * 0.9) >= 0.5)
+			{{
+				lower_threshold = int(ngenes * 0.9) + 1
+			}}
+			else
+			{{
+				lower_threshold = int(ngenes * 0.9)
+			}}
+		}}
+		{{
+			if (NR == upper_threshold)
+			{{
+				dosarray[upper_threshold] = $6
+			}}
+			if (NR == lower_threshold)
+			{{
+				dosarray[lower_threshold] = $6
+			}}
+			genearray[$1] = $6
+		}}
+		END{{
+			print "gene_name", "DoS", "class", "threshold_value"
+			for (i in genearray)
+			{{
+				if (genearray[i] >= dosarray[upper_threshold])
+				{{
+					print i, genearray[i], "adaptive", dosarray[upper_threshold]
+				}}
+				if (genearray[i] <= dosarray[lower_threshold])
+				{{
+					print i, genearray[i], "deleterious", dosarray[lower_threshold]
+				}}
+			}}
+		}}' \
+		<(tail -n +2 {output_directory}/DoS/{sample_group}/{sample_name}/DoS.tsv | sort -r -n -k 6) \
+		> {output_directory}/DoS/{sample_group}/{sample_name}/DoS.genelist.prog.tsv
+
+	mv {output_directory}/DoS/{sample_group}/{sample_name}/DoS.genelist.prog.tsv {outputs['genelist']}
+
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def dos_concatenate_results(dos_results_files: list, output_directory: str, species_name: str):
+def dos_concatenate_results(dos_results_files: dict, output_directory: str, species_name: str):
 	"""
 	Template: template_description
 	
@@ -1286,8 +1336,10 @@ def dos_concatenate_results(dos_results_files: list, output_directory: str, spec
 	
 	:param
 	"""
-	inputs = {'files': dos_results_files}
-	outputs = {'tsv': f'{output_directory}/DoS/{species_abbreviation(species_name)}.DoS_results.tsv'}
+	inputs = {'dos': dos_results_files['dos'],
+		      'genelist': dos_results_files['genelist']}
+	outputs = {'dos': f'{output_directory}/DoS/{species_abbreviation(species_name)}.DoS_results.tsv',
+			   'genelist': f'{output_directory}/DoS/{species_abbreviation(species_name)}.DoS_genelist.tsv'}
 	options = {
 		'cores': 1,
 		'memory': '20g',
@@ -1320,11 +1372,31 @@ def dos_concatenate_results(dos_results_files: list, output_directory: str, spec
 			group = filenamearray[13]
 			print sample, group, $1, $2, $3, $4, $5, $6
 		}}' \
-		{' '.join(dos_results_files)} \
+		{' '.join(dos_results_files['dos'])} \
 		> {output_directory}/DoS/{species_abbreviation(species_name)}.DoS_results.prog.tsv
 	
-	mv {output_directory}/DoS/{species_abbreviation(species_name)}.DoS_results.prog.tsv {outputs['tsv']}
+	mv {output_directory}/DoS/{species_abbreviation(species_name)}.DoS_results.prog.tsv {outputs['dos']}
 	
+	awk \
+		'BEGIN{{
+			FS = OFS = "\\t"
+			print "sample", "group", "gene", "DoS", "class", "threshold_value"
+		}}
+		{{
+			if (FNR == 1)
+			{{
+				next
+			}}
+			split(FILENAME, filenamearray, "/")
+			sample = filenamearray[14]
+			group = filenamearray[13]
+			print sample, group, $1, $2, $3, $4
+		}}' \
+		{' '.join(dos_results_files['genelist'])} \
+		> {output_directory}/DoS/{species_abbreviation(species_name)}.DoS_genelist.prog.tsv
+
+	mv {output_directory}/DoS/{species_abbreviation(species_name)}.DoS_genelist.prog.tsv {outputs['genelist']}
+
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""

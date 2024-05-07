@@ -120,7 +120,7 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 	# Initialize lists to hold output files
 	snpeff_results_list = []
 	snpgenie_results_list = []
-	dos_results_list = []
+	dos_results_lists = {'dos': [], 'genelist': []}
 
 	# Iterates through all supplied samples.
 	for sample in SAMPLES:
@@ -254,7 +254,8 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 				)
 			)
 
-			dos_results_list.append(dos_result.outputs['dos'])
+			dos_results_lists['dos'].append(dos_result.outputs['dos'])
+			dos_results_lists['genelist'].append(dos_result.outputs['genelist'])
 
 			update_aa = gwf.target_from_template(
 				name=f'update_ancestral_allele_{SAMPLE_GROUP}_{SAMPLE_NAME.replace("-", "_")}',
@@ -289,11 +290,11 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 	)
 
 	# Concatenates results from different populations into one file.
-	if len(dos_results_list) >= 1:
+	if len(dos_results_lists['dos']) >= 1:
 		concat_dos_results = gwf.target_from_template(
 			name=f'dos_concatenate_{SPECIES_NAME.replace(" ", "_")}',
 			template=dos_concatenate_results(
-				dos_results_files=dos_results_list,
+				dos_results_files=dos_results_lists,
 				output_directory=top_dir,
 				species_name=SPECIES_NAME
 			)
