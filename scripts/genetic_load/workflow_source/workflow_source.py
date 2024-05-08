@@ -257,6 +257,30 @@ def genetic_load_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
 			dos_results_lists['dos'].append(dos_result.outputs['dos'])
 			dos_results_lists['genelist'].append(dos_result.outputs['genelist'])
 
+			dos_adaptive_bed = gwf.target_from_template(
+				name=f'dos_adaptive_bed_{SAMPLE_GROUP}_{SAMPLE_NAME.replace("-", "_")}',
+				template=dos_create_gene_bed(
+					dos_genelist=dos_result.outputs['genelist'],
+					gtf_annotation_file=GTF,
+					gene_class="adaptive",
+					output_directory=top_dir,
+					sample_group=SAMPLE_GROUP,
+					sample_name=SAMPLE_NAME
+				)
+			)
+
+			dos_deleterious_bed = gwf.target_from_template(
+				name=f'dos_deleterious_bed_{SAMPLE_GROUP}_{SAMPLE_NAME.replace("-", "_")}',
+				template=dos_create_gene_bed(
+					dos_genelist=dos_result.outputs['genelist'],
+					gtf_annotation_file=GTF,
+					gene_class="deleterious",
+					output_directory=top_dir,
+					sample_group=SAMPLE_GROUP,
+					sample_name=SAMPLE_NAME
+				)
+			)
+
 			update_aa = gwf.target_from_template(
 				name=f'update_ancestral_allele_{SAMPLE_GROUP}_{SAMPLE_NAME.replace("-", "_")}',
 				template=update_ancestral_allele(

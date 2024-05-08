@@ -1696,3 +1696,123 @@ def update_ancestral_allele(ancestral_allele_file: str, vcf_file: str, output_di
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def dos_create_gene_bed(dos_genelist: str, gtf_annotation_file: str, gene_class: str, output_directory: str, sample_group: str, sample_name: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'genelist': dos_genelist,
+		   	  'gtf': gtf_annotation_file}
+	outputs = {'bed': f'{output_directory}/DoS/{sample_group}/{sample_name}/{gene_class}.bed'}
+	options = {
+		'cores': 1,
+		'memory': '20g',
+		'walltime': '06:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/DoS/{sample_group}/{sample_name} ] || mkdir -p {output_directory}/DoS/{sample_group}/{sample_name}
+	
+	awk \
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			if (FNR == NR && $3 == "{gene_class}")
+			{{
+				targetarray[$1]
+				next
+			}}
+			for (gene in targetarray)
+			{{
+				pattern="gene_id \\"" gene "\\""
+				if ($3 == "CDS" && $9 ~ pattern)
+				{{
+					if ($7 == "+") {{
+						npos += 1
+						print $1, $4 - 1, $5, "pos" npos, ".", $7
+					}}
+					if ($7 == "-") {{
+						nneg += 1
+						print $1, $4 - 1, $5, "neg" nneg, ".", $7
+					}}
+				}}
+			}}
+		}}' \
+		{dos_genelist} \
+		{gtf_annotation_file} \
+		> {output_directory}/DoS/{sample_group}/{sample_name}/{gene_class}.prog.bed
+	
+	mv {output_directory}/DoS/{sample_group}/{sample_name}/{gene_class}.prog.bed {outputs['bed']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def dos_ndel_ldrift(ancestral_allele_vcf_file: str, deleterious_bed_file: str, output_directory: str, species_name: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {}
+	outputs = {}
+	options = {
+		'cores': 1,
+		'memory': '20g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory} ] || mkdir -p {output_directory}
+	
+	bcftools query \
+		-R {deleterious_bed_file} \
+		-f '%CHROM\\t%POS\\t%REF\\t%ALT\\t%INFO/AA\\t%INFO/AF\\n' \
+	| awk \
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			if ($5 != "." && $6 > 0)
+			{{
+				ndelarray[$1] += 1
+				if ()
+			}}
+		}}'
+	
+	mv
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
