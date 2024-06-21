@@ -167,7 +167,7 @@ def mapping_resequencing_data_population_genetics_workflow(config_file: str = gl
 			name=f'{GROUP_NAME}_multi_qualimap',
 			template=qualimap_multi(
 				dataset=within_group_qualimap,
-				output_directory=f'{top_out}/{GROUP_NAME}/group_bamqc' if OUTPUT_DIR else f'{top_dir}/bamqc/group/{GROUP_NAME}'
+				output_directory=f'{top_out}/{GROUP_NAME}/group_multibamqc' if OUTPUT_DIR else f'{top_dir}/bamqc/group/{GROUP_NAME}'
 			)
 		)
 	
@@ -175,7 +175,7 @@ def mapping_resequencing_data_population_genetics_workflow(config_file: str = gl
 		name=f'all_groups_multi_qualimap',
 		template=qualimap_multi(
 			dataset=between_group_qualimap,
-			output_directory=f'{top_out}/species_bamqc' if OUTPUT_DIR else f'{top_dir}/bamqc/all'
+			output_directory=f'{top_out}/species_multibamqc' if OUTPUT_DIR else f'{top_dir}/bamqc/all'
 		)
 	)
 
