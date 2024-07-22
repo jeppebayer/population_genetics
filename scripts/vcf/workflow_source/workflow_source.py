@@ -15,18 +15,18 @@ def freebayes_vcf_workflow(config_file: str = glob.glob('*config.y*ml')[0]):
     #                  Configuration
     # --------------------------------------------------
     
-    config = yaml.safe_load(open(config_file))
-    ACCOUNT: str = config['account']
-    SPECIES_NAME: str = config['species_name']
-    SAMPLE_LIST: list = config['sample_list']
-    REFERENCE_GENOME: str = config['reference_genome_path']
-    OUTPUT_DIR: str = config['output_directory_path']
-    WORK_DIR: str = config['working_directory_path']
-    PARTITION_SIZE: int = config['partition_size']
-    PLOIDY: int = config['sample_ploidy']
-    BESTN: int = config['best_n_alleles']
-    ALT_FRACTION: float | int = config['min_alternate_fraction']
-    ALT_COUNT: int = config['min_alternate_count']
+    CONFIG = yaml.safe_load(open(config_file))
+    ACCOUNT: str = CONFIG['account']
+    SPECIES_NAME: str = CONFIG['species_name']
+    SAMPLE_LIST: list = CONFIG['sample_list']
+    REFERENCE_GENOME: str = CONFIG['reference_genome_path']
+    OUTPUT_DIR: str = CONFIG['output_directory_path']
+    WORK_DIR: str = CONFIG['working_directory_path']
+    PARTITION_SIZE: int = CONFIG['partition_size']
+    PLOIDY: int = CONFIG['sample_ploidy']
+    BESTN: int = CONFIG['best_n_alleles']
+    ALT_FRACTION: float | int = CONFIG['min_alternate_fraction']
+    ALT_COUNT: int = CONFIG['min_alternate_count']
 
     # --------------------------------------------------
     #                  Workflow
