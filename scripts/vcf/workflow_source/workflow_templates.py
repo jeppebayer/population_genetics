@@ -233,12 +233,12 @@ def freebayes_chrom(reference_genome_file: str, bam_file_list: list, output_dire
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def name_freebayes_chrom_single_sample(idx: str, target: AnonymousTarget) -> str:
-	return f'freebayes_part_{os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(target.outputs['vcf'])))).replace("-", "_")}_{os.path.basename(target.outputs['vcf']).replace("-", "_")}'
+def name_freebayes_partition_single(idx: str, target: AnonymousTarget) -> str:
+	return f'freebayes_part_single_{os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(target.outputs['vcf'])))).replace("-", "_")}_{os.path.basename(target.outputs['vcf']).replace("-", "_")}'
 
-def freebayes_chrom_single_sample(reference_genome_file: str, bam_file: str, output_directory: str, sample_group: str, sample_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2):
+def freebayes_partition_single(reference_genome_file: str, bam_file: str, output_directory: str, group_name: str, sample_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2):
 	"""
-	Template: Create VCF file for each 'chromosome' in pooled alignment.
+	Template: Create VCF file for each partition in a single pooled alignment.
 	
 	Template I/O::
 	
@@ -249,7 +249,8 @@ def freebayes_chrom_single_sample(reference_genome_file: str, bam_file: str, out
 	"""
 	inputs = {'reference': reference_genome_file,
 		   	  'bam': bam_file}
-	outputs = {'vcf': f'{output_directory}/raw_vcf/{sample_group}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz'}
+	outputs = {'vcf': f'{output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz',
+			   'index': f'{output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz.csi'}
 	options = {
 		'cores': 1,
 		'memory': '80g',
@@ -267,7 +268,7 @@ def freebayes_chrom_single_sample(reference_genome_file: str, bam_file: str, out
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 
-	[ -d {output_directory}/raw_vcf/{sample_group}/{sample_name}/tmp ] || mkdir -p {output_directory}/raw_vcf/{sample_group}/{sample_name}/tmp
+	[ -d {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp ] || mkdir -p {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp
 	
 	freebayes \
 		-f {reference_genome_file} \
@@ -280,13 +281,132 @@ def freebayes_chrom_single_sample(reference_genome_file: str, bam_file: str, out
 		-b {bam_file} \
 	| bcftools view \
 		--output-type z \
-		--output {output_directory}/raw_vcf/{sample_group}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz \
+		--output {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz \
 		--write-index \
 		-
 	
-	mv {output_directory}/raw_vcf/{sample_group}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz {outputs['vcf']}
-	mv {output_directory}/raw_vcf/{sample_group}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz.csi \
-		{output_directory}/raw_vcf/{sample_group}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz.csi
+	mv {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz {outputs['vcf']}
+	mv {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz.csi {outputs['index']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def name_freebayes_partition_group(idx: str, target: AnonymousTarget) -> str:
+	return f'freebayes_part_group_{os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(target.outputs['vcf'])))).replace("-", "_")}_{os.path.basename(target.outputs['vcf']).replace("-", "_")}'
+
+def freebayes_partition_group(reference_genome_file: str, bam_files: list, output_directory: str, species_name: str, group_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2):
+	"""
+	Template: Create VCF file for each partition in a group of pooled alignments.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'reference': reference_genome_file,
+		   	  'bam': bam_files}
+	outputs = {'vcf': f'{output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz',
+			   'index': f'{output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz.csi'}
+	options = {
+		'cores': 1,
+		'memory': '150g',
+		'walltime': '120:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	export _JAVA_OPTIONS="-Xmx{options['memory']}"
+
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+
+	[ -d {output_directory}/raw_vcf/{group_name}/tmp ] || mkdir -p {output_directory}/raw_vcf/{group_name}/tmp
+	
+	freebayes \
+		-f {reference_genome_file} \
+		-n {best_n_alleles} \
+		-p {ploidy} \
+		-r {region}:{start}-{end} \
+		--min-alternate-fraction {min_alternate_fraction} \
+		--min-alternate-count {min_alternate_count} \
+		--pooled-discrete \
+		-b {' -b '.join(bam_files)} \
+	| bcftools view \
+		--output-type z \
+		--output {output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz \
+		--write-index \
+		-
+	
+	mv {output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz {outputs['vcf']}
+	mv {output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz.csi {outputs['index']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def name_freebayes_partition_all(idx: str, target: AnonymousTarget) -> str:
+	return f'freebayes_part_all_{os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(target.outputs['vcf'])))).replace("-", "_")}_{os.path.basename(target.outputs['vcf']).replace("-", "_")}'
+
+def freebayes_partition_all(reference_genome_file: str, bam_files: list, output_directory: str, species_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2):
+	"""
+	Template: Create VCF file for each partition in a large set of pooled alignments.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'reference': reference_genome_file,
+		   	  'bam': bam_files}
+	outputs = {'vcf': f'{output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz',
+			   'index': f'{output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz.csi'}
+	options = {
+		'cores': 1,
+		'memory': '150g',
+		'walltime': '120:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	export _JAVA_OPTIONS="-Xmx{options['memory']}"
+
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+
+	[ -d {output_directory}/raw_vcf/all/tmp ] || mkdir -p {output_directory}/raw_vcf/all/tmp
+	
+	freebayes \
+		-f {reference_genome_file} \
+		-n {best_n_alleles} \
+		-p {ploidy} \
+		-r {region}:{start}-{end} \
+		--min-alternate-fraction {min_alternate_fraction} \
+		--min-alternate-count {min_alternate_count} \
+		--pooled-discrete \
+		-b {' -b '.join(bam_files)} \
+	| bcftools view \
+		--output-type z \
+		--output {output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz \
+		--write-index \
+		-
+	
+	mv {output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz {outputs['vcf']}
+	mv {output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz.csi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"

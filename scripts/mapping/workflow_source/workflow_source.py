@@ -41,7 +41,7 @@ def mapping_resequencing_data_population_genetics_workflow(config_file: str = gl
 		defaults={'account': ACCOUNT}
 	)
 	
-	top_dir = f'{WORK_DIR}/{SPECIES_NAME.replace(" ", "_")}/{TAXONOMY.replace(" ", "_")}/mapping'
+	top_dir = f'{WORK_DIR}/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}/mapping'
 	top_out = f'{OUTPUT_DIR}/alignments/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}'
 	
 	index = gwf.target_from_template(
