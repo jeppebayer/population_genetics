@@ -62,7 +62,7 @@ def index_reference_genome(reference_genome_file: str, output_directory: str):
 	options = {
 		'cores': 1,
 		'memory': '10g',
-		'walltime': '04:00:00'
+		'walltime': '08:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -133,7 +133,7 @@ def adapterremoval_pairedend(sample_name: str, read1_files: list, read2_files: l
 	options = {
 		'cores': 16,
 		'memory': '60g',
-		'walltime': '06:00:00'
+		'walltime': '12:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -202,7 +202,7 @@ def adapterremoval_singleend(sample_name: str, read_files: list, output_director
 	options = {
 		'cores': 16,
 		'memory': '60g',
-		'walltime': '06:00:00'
+		'walltime': '12:00:00'
 	}
 	spec = f"""
 	# Sources environment
