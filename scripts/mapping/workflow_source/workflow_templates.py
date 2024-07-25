@@ -30,8 +30,8 @@ def get_sample_data(path: str, data_type: int) -> dict:
 		r1 = ('_1', '_R1')
 		r2 = ('_2', '_R2')
 		reseq = {'sample_name': os.path.basename(path),
-				 'read1_files': sorted([os.path.join(path, file) for file in os.listdir(path) if file.endswith(tuple([i+j+k for i in r1 for j in extformat for k in compress]))]),
-				 'read2_files': sorted([os.path.join(path, file) for file in os.listdir(path) if file.endswith(tuple([i+j+k for i in r2 for j in extformat for k in compress]))])}
+				 'read1_files': sorted([os.path.join(path, file) for file in os.listdir(path) if file.endswith(tuple([i+j+k for i in r1 for j in extformat for k in compress])) and os.path.isfile(os.path.join(path, file))]),
+				 'read2_files': sorted([os.path.join(path, file) for file in os.listdir(path) if file.endswith(tuple([i+j+k for i in r2 for j in extformat for k in compress])) and os.path.isfile(os.path.join(path, file))])}
 	return reseq
 
 ########################## Mapping ##########################
