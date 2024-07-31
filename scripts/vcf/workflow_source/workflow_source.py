@@ -100,11 +100,11 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 	
 	CONFIG = yaml.safe_load(open(config_file))
 	ACCOUNT: str = CONFIG['account']
-	TAXONOMY: str = CONFIG['taxonomic_group'].lower()
+	TAXONOMY: str = CONFIG['taxonomic_group'].lower() if CONFIG['taxonomic_group'] else None
 	SPECIES_NAME: str = CONFIG['species_name']
 	REFERENCE_GENOME: str = CONFIG['reference_genome_path']
 	WORK_DIR: str = CONFIG['working_directory_path'][:len(CONFIG['working_directory_path']) - 1] if CONFIG['working_directory_path'].endswith('/') else CONFIG['working_directory_path']
-	OUTPUT_DIR: str = CONFIG['output_directory_path'][:len(CONFIG['output_directory_path']) - 1] if CONFIG['output_directory_path'].endswith('/') else CONFIG['output_directory_path']
+	OUTPUT_DIR: str = (CONFIG['output_directory_path'][:len(CONFIG['output_directory_path']) - 1] if CONFIG['output_directory_path'].endswith('/') else CONFIG['output_directory_path']) if CONFIG['output_directory_path'] else None
 	PARTITION_SIZE: int | None = CONFIG['partition_size'] if CONFIG['partition_size'] else 500000
 	FREEBAYES_SETTINGS: dict = CONFIG['freebayes_settings']
 	FREEBAYES_PLOIDY: int | None = FREEBAYES_SETTINGS['sample_ploidy'] if FREEBAYES_SETTINGS['sample_ploidy'] else 100
@@ -147,8 +147,8 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 		# Creates list of contigs in reference genome
 		contigs = [{'contig': contig['sequence_name']} for contig in sequences]
 
-	top_dir = f'{WORK_DIR}f/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}/vcf'
-	top_out = f'{OUTPUT_DIR}/vcf/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}'
+	top_dir = f'{WORK_DIR}/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}/vcf' if TAXONOMY else f'{WORK_DIR}/{SPECIES_NAME.replace(" ", "_")}/vcf'
+	top_out = f'{OUTPUT_DIR}/vcf/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}' if TAXONOMY else f'{OUTPUT_DIR}/vcf/{SPECIES_NAME.replace(" ", "_")}'
 	full_bam_list = []
 
 	for GROUP in SAMPLE_LIST:
@@ -220,7 +220,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 			concat_freebayes_group = gwf.target_from_template(
 				name=f'cocatenate_freebayes_vcf_group',
 				template=concat_vcf(
-					files=collect(freebayes_parts_group.outputs['vcf'])['vcfs'],
+					files=collect(freebayes_parts_group.outputs, ['vcf'])['vcfs'],
 					output_name=f'{species_abbreviation(SPECIES_NAME)}_{GROUP_NAME}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}',
 					output_directory=f'{top_out}/{GROUP_NAME}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf/{GROUP_NAME}'
 				)
@@ -245,7 +245,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 		concat_freebayes_all = gwf.target_from_template(
 			name=f'concatenate_freebayes_vcf_all',
 			template=concat_vcf(
-				files=collect(freebayes_parts_all.outputs['vcf'])['vcfs'],
+				files=collect(freebayes_parts_all.outputs, ['vcf'])['vcfs'],
 				output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}',
 				output_directory=f'{top_out}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf',
 				compress=True
