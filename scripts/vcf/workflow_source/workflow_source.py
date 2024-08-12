@@ -147,6 +147,10 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 		# Creates list of contigs in reference genome
 		contigs = [{'contig': contig['sequence_name']} for contig in sequences]
 
+	npartitions = len(partitions)
+	segmentsize = 10000
+	nsegments = int(round(npartitions / segmentsize, 0))
+
 	top_dir = f'{WORK_DIR}/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}/vcf' if TAXONOMY else f'{WORK_DIR}/{SPECIES_NAME.replace(" ", "_")}/vcf'
 	top_out = f'{OUTPUT_DIR}/vcf/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}' if TAXONOMY else f'{OUTPUT_DIR}/vcf/{SPECIES_NAME.replace(" ", "_")}'
 	full_bam_list = []
@@ -178,7 +182,8 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 						   'min_alternate_count': FREEBAYES_MINALTCNT}
 				)
 
-				concat_freebayes_single = gwf.target_from_template(
+				if nsegments <= 1:
+					concat_freebayes_single = gwf.target_from_template(
 						name=f'concatenate_freebayes_vcf_{GROUP_NAME}_{SAMPLE_NAME.replace("-", "_")}',
 						template=concat_vcf(
 							files=collect(freebayes_parts_single.outputs, ['vcf'])['vcfs'],
@@ -186,7 +191,42 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 							output_directory=f'{top_out}/{GROUP_NAME}/{SAMPLE_NAME}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf/{GROUP_NAME}/{SAMPLE_NAME}',
 							compress=True
 						)
-				)
+					)
+
+				else:
+					segmentlist = []
+					start = 0
+					end = segmentsize
+					collection = collect(freebayes_parts_single.outputs, ['vcf'])['vcfs']
+
+					for i in range(nsegments):
+						concat_freebayes_single = gwf.target_from_template(
+							name=f'concatenate_freebayes_vcf_{GROUP_NAME}_{SAMPLE_NAME.replace("-", "_")}_segment_{i+1}',
+							template=concat_vcf(
+								files=collection[start : end],
+								output_name=f'{SAMPLE_NAME}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}.segment{i+1}',
+								output_directory=f'{top_dir}/raw_vcf/{GROUP_NAME}/{SAMPLE_NAME}/tmp',
+								compress=True
+							)
+						)
+
+						segmentlist.append(concat_freebayes_single.outputs['concat_file'])
+						if i < nsegments - 1:
+							start = end
+							end += segmentsize
+						elif i == nsegments - 1:
+							start = end
+							end = npartitions
+
+					concat_freebayes_single_complete = gwf.target_from_template(
+						name=f'concatenate_freebayes_vcf_{GROUP_NAME}_{SAMPLE_NAME.replace("-", "_")}_complete',
+						template=concat_vcf(
+							files=segmentlist,
+							output_name=f'{SAMPLE_NAME}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}',
+							output_directory=f'{top_out}/{GROUP_NAME}/{SAMPLE_NAME}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf/{GROUP_NAME}/{SAMPLE_NAME}',
+							compress=True
+						)
+					)
 
 				# filtering = gwf.target_from_template(
 				# 	name=f'filter_vcf_{GROUP_NAME}_{SAMPLE_NAME.replace("-", "_")}',
@@ -216,15 +256,49 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 				   	   'min_alternate_fraction': FREEBAYES_MINALTFRC,
 				   	   'min_alternate_count': FREEBAYES_MINALTCNT}
 			)
-		
-			concat_freebayes_group = gwf.target_from_template(
-				name=f'cocatenate_freebayes_vcf_group',
-				template=concat_vcf(
-					files=collect(freebayes_parts_group.outputs, ['vcf'])['vcfs'],
-					output_name=f'{species_abbreviation(SPECIES_NAME)}_{GROUP_NAME}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}',
-					output_directory=f'{top_out}/{GROUP_NAME}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf/{GROUP_NAME}'
+
+			if nsegments <= 1:
+				concat_freebayes_group = gwf.target_from_template(
+					name=f'concatenate_freebayes_vcf_group_{GROUP_NAME}',
+					template=concat_vcf(
+						files=collect(freebayes_parts_group.outputs, ['vcf'])['vcfs'],
+						output_name=f'{species_abbreviation(SPECIES_NAME)}_{GROUP_NAME}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}',
+						output_directory=f'{top_out}/{GROUP_NAME}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf/{GROUP_NAME}'
+					)
 				)
-			)
+
+			else:
+				segmentlist = []
+				start = 0
+				end = segmentsize
+				collection = collect(freebayes_parts_group.outputs, ['vcf'])['vcfs']
+
+				for i in range(nsegments):
+					concat_freebayes_group = gwf.target_from_template(
+						name=f'concatenate_freebayes_vcf_group_{GROUP_NAME}_segment_{i+1}',
+						template=concat_vcf(
+							files=collection[start : end],
+							output_name=f'{species_abbreviation(SPECIES_NAME)}_{GROUP_NAME}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}.segment{i+1}',
+							output_directory=f'{top_dir}/raw_vcf/{GROUP_NAME}/tmp'
+						)
+					)
+
+					segmentlist.append(concat_freebayes_group.outputs['concat_file'])
+					if i < nsegments - 1:
+						start = end
+						end += segmentsize
+					elif i == nsegments - 1:
+						start = end
+						end = npartitions
+
+				concat_freebayes_group = gwf.target_from_template(
+					name=f'concatenate_freebayes_vcf_group_{GROUP_NAME}_complete',
+					template=concat_vcf(
+						files=segmentlist,
+						output_name=f'{species_abbreviation(SPECIES_NAME)}_{GROUP_NAME}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}',
+						output_directory=f'{top_out}/{GROUP_NAME}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf/{GROUP_NAME}'
+					)
+				)
 	
 	# One VCF file containing all sample files.
 	if MODE == 3 or MODE == 4:
@@ -242,14 +316,50 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 				   'min_alternate_count': FREEBAYES_MINALTCNT}
 		)
 
-		concat_freebayes_all = gwf.target_from_template(
-			name=f'concatenate_freebayes_vcf_all',
-			template=concat_vcf(
-				files=collect(freebayes_parts_all.outputs, ['vcf'])['vcfs'],
-				output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}',
-				output_directory=f'{top_out}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf',
-				compress=True
+		if nsegments <= 1:
+			concat_freebayes_all = gwf.target_from_template(
+				name=f'concatenate_freebayes_vcf_all',
+				template=concat_vcf(
+					files=collect(freebayes_parts_all.outputs, ['vcf'])['vcfs'],
+					output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}',
+					output_directory=f'{top_out}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf',
+					compress=True
+				)
 			)
-		)
+		
+		else:
+			segmentlist = []
+			start = 0
+			end = segmentsize
+			collection = collect(freebayes_parts_all.outputs, ['vcf'])['vcfs']
+
+			for i in range(nsegments):
+				concat_freebayes_all = gwf.target_from_template(
+					name=f'concatenate_freebayes_vcf_all_segment_{i+1}',
+					template=concat_vcf(
+						files=collection[start : end],
+						output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}.segment{i+1}',
+						output_directory=f'{top_dir}/raw_vcf/tmp',
+						compress=True
+					)
+				)
+
+				segmentlist.append(concat_freebayes_all.outputs['concat_file'])
+				if i < nsegments - 1:
+					start = end
+					end += segmentsize
+				elif i == nsegments - 1:
+					start = end
+					end = npartitions
+
+			concat_freebayes_all = gwf.target_from_template(
+				name=f'concatenate_freebayes_vcf_all_complete',
+				template=concat_vcf(
+					files=segmentlist,
+					output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}',
+					output_directory=f'{top_out}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf',
+					compress=True
+				)
+			)
 	
 	return gwf

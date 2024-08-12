@@ -63,7 +63,7 @@ sample_lists:
   -
     group_name: Conservation_agriculture
     sample_folder_list:
-      - /faststorage/project/EcoGenetics/BACKUP/population_genetics/fastq/collembola/Entomobrya_nicoleti/EntNic_CA_ST_6J-C84
+      - /faststorage/project/EcoGenetics/BACKUP/population_genetics/fastq/collembola/Entomobrya_nicoleti/EntNic_CA-ST-6J-C84
   -
     group_name: Conventional_agriculture
     sample_folder_list:

@@ -374,7 +374,7 @@ def freebayes_partition_all(reference_genome_file: str, bam_files: list, output_
 	options = {
 		'cores': 1,
 		'memory': '150g',
-		'walltime': '120:00:00'
+		'walltime': '48:00:00'
 	}
 	spec = f"""
 	# Sources environment
