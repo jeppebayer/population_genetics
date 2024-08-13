@@ -233,6 +233,63 @@ def freebayes_chrom(reference_genome_file: str, bam_file_list: list, output_dire
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
+def index_reference_genome(reference_genome_file: str, output_directory: str):
+	"""
+	Template: Index reference genome with :script:`bwa index` and :script:`samtools faidx`.
+	
+	Template I/O::
+	
+		inputs = {'reference': reference_genome_file}
+		outputs = {'symlink': *, 'bwa': [*.amb, *.ann, *.pac, *.bwt, *.sa], 'fai': *.fai}
+	
+	:param str reference_genome_file:
+		Path to reference genome.
+	:param str output_directory:
+		Path to output directory.
+	"""
+	inputs = {'reference': reference_genome_file}
+	outputs = {'symlink': f'{output_directory}/reference/{os.path.basename(reference_genome_file)}',
+			   'bwa': [f'{output_directory}/reference/{os.path.basename(reference_genome_file)}.amb',
+					   f'{output_directory}/reference/{os.path.basename(reference_genome_file)}.ann',
+					   f'{output_directory}/reference/{os.path.basename(reference_genome_file)}.pac',
+					   f'{output_directory}/reference/{os.path.basename(reference_genome_file)}.bwt',
+					   f'{output_directory}/reference/{os.path.basename(reference_genome_file)}.sa'],
+			   'fai': f'{output_directory}/reference/{os.path.basename(reference_genome_file)}.fai'}
+	protect = [outputs['symlink'], outputs['bwa'][0], outputs['bwa'][1], outputs['bwa'][2], outputs['bwa'][3], outputs['bwa'][4], outputs['fai']]
+	options = {
+		'cores': 1,
+		'memory': '10g',
+		'walltime': '04:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/reference ] || mkdir -p {output_directory}/reference
+	[ -e {output_directory}/reference/{os.path.basename(reference_genome_file)} ] && rm -f {output_directory}/reference/{os.path.basename(reference_genome_file)}
+	ln -s {reference_genome_file} {output_directory}/reference/{os.path.basename(reference_genome_file)}
+	
+	bwa index \
+		-p {output_directory}/reference/{os.path.basename(reference_genome_file)} \
+		{output_directory}/reference/{os.path.basename(reference_genome_file)}
+	
+	samtools faidx \
+		-o {output_directory}/reference/{os.path.basename(reference_genome_file)}.prog.fai \
+		{output_directory}/reference/{os.path.basename(reference_genome_file)}
+	
+	mv {output_directory}/reference/{os.path.basename(reference_genome_file)}.prog.fai {outputs['fai']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+
 def name_freebayes_partition_single(idx: str, target: AnonymousTarget) -> str:
 	return f'freebayes_part_single_{os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(target.outputs["vcf"])))).replace("-", "_")}_{os.path.basename(target.outputs["vcf"]).replace("-", "_")}'
 

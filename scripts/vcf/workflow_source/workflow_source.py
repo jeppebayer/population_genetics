@@ -149,11 +149,19 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 
 	npartitions = len(partitions)
 	segmentsize = 10000
-	nsegments = int(round(npartitions / segmentsize, 0))
+	nsegments = 2 if (npartitions / segmentsize > 1) and (npartitions / segmentsize < 2) else int(round(npartitions / segmentsize, 0))
 
 	top_dir = f'{WORK_DIR}/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}/vcf' if TAXONOMY else f'{WORK_DIR}/{SPECIES_NAME.replace(" ", "_")}/vcf'
 	top_out = f'{OUTPUT_DIR}/vcf/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}' if TAXONOMY else f'{OUTPUT_DIR}/vcf/{SPECIES_NAME.replace(" ", "_")}'
 	full_bam_list = []
+
+	index_reference = gwf.target_from_template(
+		name=f'index_reference_genome_{SPECIES_NAME.replace(" ", "_")}',
+		template=index_reference_genome(
+			reference_genome_file=REFERENCE_GENOME,
+			output_directory=f'{top_dir}'
+		)
+	)
 
 	for GROUP in SAMPLE_LIST:
 		if not GROUP['bam_file_list']:
@@ -171,7 +179,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 					name=name_freebayes_partition_single,
 					template_func=freebayes_partition_single,
 					inputs=partitions,
-					extra={'reference_genome_file': REFERENCE_GENOME,
+					extra={'reference_genome_file': index_reference.outputs['symlink'],
 						   'bam_file': SAMPLE,
 						   'output_directory': top_dir,
 						   'group_name': GROUP_NAME,
@@ -246,7 +254,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 				name=name_freebayes_partition_group,
 				template_func=freebayes_partition_group,
 				inputs=partitions,
-				extra={'reference_genome_file': REFERENCE_GENOME,
+				extra={'reference_genome_file': index_reference.outputs['symlink'],
 		  		   	   'bam_files': GROUP['bam_file_list'],
 				   	   'output_directory': top_dir,
 					   'species_name': SPECIES_NAME,
@@ -306,7 +314,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 			name=name_freebayes_partition_all,
 			template_func=freebayes_partition_all,
 			inputs=partitions,
-			extra={'reference_genome_file': REFERENCE_GENOME,
+			extra={'reference_genome_file': index_reference.outputs['symlink'],
 		  		   'bam_files': full_bam_list,
 				   'output_directory': top_dir,
 				   'species_name': SPECIES_NAME,
