@@ -290,6 +290,86 @@ def index_reference_genome(reference_genome_file: str, output_directory: str):
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
+def depth_distribution_all(bam_files: list, output_directory: str, species_name: str):
+	"""
+	Template: Calculate the per site depth distribution across all populations using :script:`samtools depth`.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'bam': bam_files}
+	outputs = {'depth': f'{output_directory}/depth_distribution/{species_abbreviation(species_name)}.depth'}
+	options = {
+		'cores': 30,
+		'memory': '20g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/depth_distribution ] || mkdir -p {output_directory}/depth_distribution
+	
+	samtools depth \
+		--threads {options['cores']} \
+		-o {output_directory}/depth_distribution/{species_abbreviation(species_name)}.prog.depth \
+		{' '.join(bam_files)}
+	
+	mv {output_directory}/depth_distribution/{species_abbreviation(species_name)}.prog.depth {outputs['depth']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def depth_distribution_plot_all(depth_distribution_file: str, min_coverage_threshold: int, plot_depth_distribution: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/depthdistribution.py'):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'depth': depth_distribution_file}
+	outputs = {'plot': f'{depth_distribution_file}.png',
+			   'tsv': f'{depth_distribution_file}.tsv'}
+	options = {
+		'cores': 1,
+		'memory': '400g',
+		'walltime': '04:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	python {plot_depth_distribution} \
+		{min_coverage_threshold} \
+		{depth_distribution_file}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
 def name_freebayes_partition_single(idx: str, target: AnonymousTarget) -> str:
 	return f'freebayes_part_single_{os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(target.outputs["vcf"])))).replace("-", "_")}_{os.path.basename(target.outputs["vcf"]).replace("-", "_")}'
 

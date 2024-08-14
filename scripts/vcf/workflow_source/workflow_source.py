@@ -112,8 +112,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 	FREEBAYES_MINALTFRC: float | int | None = FREEBAYES_SETTINGS['min_alternate_fraction'] if FREEBAYES_SETTINGS['min_alternate_fraction'] else 0
 	FREEBAYES_MINALTCNT: int | None = FREEBAYES_SETTINGS['min_alternate_count'] if FREEBAYES_SETTINGS['min_alternate_count'] else 2
 	FILTERING: dict = CONFIG['filtering']
-	FILTERING_MINDP: int | None = FILTERING['minimum_depth'] if FILTERING['minimum_depth'] else 300
-	FILTERING_MAXDP: int | None = FILTERING['maximum_depth'] if FILTERING['maximum_depth'] else 600
+	FILTERING_MINDP: int | None = FILTERING['minimum_depth'] if FILTERING['minimum_depth'] else 200
 	MODE: int = CONFIG['mode']
 	SAMPLE_LIST: list = CONFIG['sample_list']
 
@@ -147,9 +146,12 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 		# Creates list of contigs in reference genome
 		contigs = [{'contig': contig['sequence_name']} for contig in sequences]
 
+	# When the argument line for any command becomes too long it cannot be executed. This can become an issue when jobs have too many dependencies.
+	# For this workflow in can occur when cancatenating massively parallellised task, eg. create the VCF parts.
+	# To alleviate the issue, multiple concatenation jobs will be created so that no concatenation  has more than 10000 dependencies.
 	npartitions = len(partitions)
 	segmentsize = 10000
-	nsegments = 2 if (npartitions / segmentsize > 1) and (npartitions / segmentsize < 2) else int(round(npartitions / segmentsize, 0))
+	nsegments = int(round(npartitions / segmentsize, 0) + 1) if (npartitions / segmentsize > round(npartitions / segmentsize, 0)) else int(round(npartitions / segmentsize, 0))
 
 	top_dir = f'{WORK_DIR}/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}/vcf' if TAXONOMY else f'{WORK_DIR}/{SPECIES_NAME.replace(" ", "_")}/vcf'
 	top_out = f'{OUTPUT_DIR}/vcf/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}' if TAXONOMY else f'{OUTPUT_DIR}/vcf/{SPECIES_NAME.replace(" ", "_")}'
@@ -369,5 +371,22 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 					compress=True
 				)
 			)
+		
+		# depth_all = gwf.target_from_template(
+		# 	name=f'depth_distribution_all',
+		# 	template=depth_distribution_all(
+		# 		bam_files=full_bam_list,
+		# 		output_directory=top_dir,
+		# 		species_name=SPECIES_NAME
+		# 	)
+		# )
+
+		# depth_plot_all = gwf.target_from_template(
+		# 	name=f'depth_distribution_plot_all',
+		# 	template=depth_distribution_plot_all(
+		# 		depth_distribution_file=depth_all.outputs['depth'],
+		# 		min_coverage_threshold=FILTERING_MINDP
+		# 	)
+		# )
 	
 	return gwf
