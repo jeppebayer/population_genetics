@@ -290,7 +290,7 @@ def index_reference_genome(reference_genome_file: str, output_directory: str):
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def depth_distribution_all(bam_files: list, output_directory: str, species_name: str):
+def depth_distribution(bam_files: list, output_directory: str, species_name: str):
 	"""
 	Template: Calculate the per site depth distribution across all populations using :script:`samtools depth`.
 	
@@ -332,7 +332,7 @@ def depth_distribution_all(bam_files: list, output_directory: str, species_name:
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def depth_distribution_plot_all(depth_distribution_file: str, min_coverage_threshold: int, plot_depth_distribution: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/depthdistribution.py'):
+def depth_distribution_plot(depth_distribution_file: str, min_coverage_threshold: int, plot_depth_distribution: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/depthdistribution.py'):
 	"""
 	Template: template_description
 	
@@ -370,6 +370,62 @@ def depth_distribution_plot_all(depth_distribution_file: str, min_coverage_thres
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
+def shared_sites_within_threshold_bed(depth_distribution_file: str, depth_distribution_tsv: str, output_directory: str, species_name: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'depth_file': depth_distribution_file,
+		   	  'depth_tsv': depth_distribution_tsv}
+	outputs = {'bed': f'{output_directory}/depth_distribution/{species_abbreviation(species_name)}.depththreshold.bed'}
+	options = {
+		'cores': 1,
+		'memory': '10g',
+		'walltime': '02:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/depth_distribution ] || mkdir -p {output_directory}/depth_distribution
+	
+	bedtools merge \
+		-i <(awk \
+		-v maxthreshold = $(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depth_distribution_tsv}) \
+		-v minthreshold = $(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $6; exit}}}}' {depth_distribution_tsv}) \
+		'BEGIN{{FS = OFS = "\\t"}}
+		checksum = 0
+		{{
+		for (i = 1; i <= NF, i++)
+			{{
+			if ($i >= minthreshold && $i <= maxthreshold)
+				{{checksum += 1}}
+			}}
+		if (checksum == NF)
+			{{print $1, $2 - 1, $2}}
+		}}' \
+		{depth_distribution_file}) \
+		> {output_directory}/depth_distribution/{species_abbreviation(species_name)}.depththreshold.prog.bed
+	
+	mv {output_directory}/depth_distribution/{species_abbreviation(species_name)}.depththreshold.prog.bed {outputs['bed']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
 def name_freebayes_partition_single(idx: str, target: AnonymousTarget) -> str:
 	return f'freebayes_part_single_{os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(target.outputs["vcf"])))).replace("-", "_")}_{os.path.basename(target.outputs["vcf"]).replace("-", "_")}'
 
@@ -391,7 +447,7 @@ def freebayes_partition_single(reference_genome_file: str, bam_file: str, output
 	options = {
 		'cores': 1,
 		'memory': '80g',
-		'walltime': '60:00:00'
+		'walltime': '96:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -451,7 +507,7 @@ def freebayes_partition_group(reference_genome_file: str, bam_files: list, outpu
 	options = {
 		'cores': 1,
 		'memory': '150g',
-		'walltime': '120:00:00'
+		'walltime': '96:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -511,7 +567,7 @@ def freebayes_partition_all(reference_genome_file: str, bam_files: list, output_
 	options = {
 		'cores': 1,
 		'memory': '150g',
-		'walltime': '48:00:00'
+		'walltime': '96:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -615,7 +671,7 @@ def concat(files: list, output_name: str, output_directory: str = None, compress
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def concat_vcf(files: list, output_name: str, output_directory: str = None, compress: bool = False):
+def concat_vcf(files: list, output_name: str, output_directory: str = None, compress: bool = True):
 	"""
 	Template: Concatenates :format:`VCF` files. Optionally compresses output.
 	

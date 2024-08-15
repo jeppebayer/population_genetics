@@ -237,18 +237,6 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 							compress=True
 						)
 					)
-
-				# filtering = gwf.target_from_template(
-				# 	name=f'filter_vcf_{GROUP_NAME}_{SAMPLE_NAME.replace("-", "_")}',
-				# 	template=filter_vcf(
-				# 		vcf_file=concat_freebayes_single.outputs['concat_file'],
-				# 		output_directory=f'{OUTPUT_DIR}' if OUTPUT_DIR else f'{top_dir}/filtered_vcf',
-				# 		sample_group=GROUP_NAME,
-				# 		sample_name=SAMPLE_NAME,
-				# 		min_depth=FILTERING_MINDP,
-				# 		max_depth=FILTERING_MAXDP
-				# 	)
-				# )
 		
 		# One VCF file per sample group.
 		if MODE == 2 or MODE == 4:
@@ -372,21 +360,31 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 				)
 			)
 		
-		# depth_all = gwf.target_from_template(
-		# 	name=f'depth_distribution_all',
-		# 	template=depth_distribution_all(
-		# 		bam_files=full_bam_list,
-		# 		output_directory=top_dir,
-		# 		species_name=SPECIES_NAME
-		# 	)
-		# )
+	depth = gwf.target_from_template(
+		name=f'depth_distribution',
+		template=depth_distribution(
+			bam_files=full_bam_list,
+			output_directory=top_dir,
+			species_name=SPECIES_NAME
+		)
+	)
 
-		# depth_plot_all = gwf.target_from_template(
-		# 	name=f'depth_distribution_plot_all',
-		# 	template=depth_distribution_plot_all(
-		# 		depth_distribution_file=depth_all.outputs['depth'],
-		# 		min_coverage_threshold=FILTERING_MINDP
-		# 	)
-		# )
+	depth_plot = gwf.target_from_template(
+		name=f'depth_distribution_plot',
+		template=depth_distribution_plot(
+			depth_distribution_file=depth.outputs['depth'],
+			min_coverage_threshold=FILTERING_MINDP
+		)
+	)
+
+	depth_threshold = gwf.target_from_template(
+		name=f'depth_threshold_bed',
+		template=shared_sites_within_threshold_bed(
+			depth_distribution_file=depth.outputs['depth'],
+			depth_distribution_tsv=depth_plot.outputs['tsv'],
+			output_directory=top_dir,
+			species_name=SPECIES_NAME
+		)
+	)
 	
 	return gwf
