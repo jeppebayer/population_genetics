@@ -464,10 +464,10 @@ def freebayes_partition_single(reference_genome_file: str, bam_file: str, output
 	[ -d {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp ] || mkdir -p {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp
 	
 	freebayes \
-		-f {reference_genome_file} \
-		-n {best_n_alleles} \
-		-p {ploidy} \
-		-r {region}:{start}-{end} \
+		--fasta-reference {reference_genome_file} \
+		--use-best-n-alleles {best_n_alleles} \
+		--ploidy {ploidy} \
+		--region {region}:{start}-{end} \
 		--min-alternate-fraction {min_alternate_fraction} \
 		--min-alternate-count {min_alternate_count} \
 		--pooled-discrete \
@@ -524,10 +524,10 @@ def freebayes_partition_group(reference_genome_file: str, bam_files: list, outpu
 	[ -d {output_directory}/raw_vcf/{group_name}/tmp ] || mkdir -p {output_directory}/raw_vcf/{group_name}/tmp
 	
 	freebayes \
-		-f {reference_genome_file} \
-		-n {best_n_alleles} \
-		-p {ploidy} \
-		-r {region}:{start}-{end} \
+		--fasta-reference {reference_genome_file} \
+		--use-best-n-alleles {best_n_alleles} \
+		--ploidy {ploidy} \
+		--region {region}:{start}-{end} \
 		--min-alternate-fraction {min_alternate_fraction} \
 		--min-alternate-count {min_alternate_count} \
 		--pooled-discrete \
@@ -584,10 +584,10 @@ def freebayes_partition_all(reference_genome_file: str, bam_files: list, output_
 	[ -d {output_directory}/raw_vcf/all/tmp ] || mkdir -p {output_directory}/raw_vcf/all/tmp
 	
 	freebayes \
-		-f {reference_genome_file} \
-		-n {best_n_alleles} \
-		-p {ploidy} \
-		-r {region}:{start}-{end} \
+		--fasta-reference {reference_genome_file} \
+		--use-best-n-alleles {best_n_alleles} \
+		--ploidy {ploidy} \
+		--region {region}:{start}-{end} \
 		--min-alternate-fraction {min_alternate_fraction} \
 		--min-alternate-count {min_alternate_count} \
 		--pooled-discrete \
@@ -738,6 +738,51 @@ def concat_vcf(files: list, output_name: str, output_directory: str = None, comp
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
+
+def merge_vcf(vcf_files: list, output_directory: str, species_name: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'vcfs': vcf_files}
+	outputs = {'vcf': f'{output_directory}/{species_abbreviation(species_name)}.{os.path.splitext(os.path.splitext(vcf_files[0])) if vcf_files[0].endswith('.gz') else os.path.splitext(vcf_files[0])}.merged.vcf.gz'}
+	options = {
+		'cores': 30,
+		'memory': '40g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory} ] || mkdir -p {output_directory}
+	
+	bcftools merge \
+		--threads {options['cores']} \
+		--output-type z \
+		--output {output_directory}/{species_abbreviation(species_name)}.{os.path.splitext(os.path.splitext(vcf_files[0])) if vcf_files[0].endswith('.gz') else os.path.splitext(vcf_files[0])}.merged.prog.vcf.gz \
+		--missing-to-ref \
+		--write-index \
+		{' '.join(vcf_files)}
+	
+	mv {output_directory}/{species_abbreviation(species_name)}.{os.path.splitext(os.path.splitext(vcf_files[0])) if vcf_files[0].endswith('.gz') else os.path.splitext(vcf_files[0])}.merged.prog.vcf.gz {outputs['vcf']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
 def filter_vcf(vcf_file: str, output_directory: str, sample_group: str, sample_name: str, min_depth: int = 300, max_depth: int = 600):
 	"""

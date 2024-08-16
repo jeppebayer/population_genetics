@@ -165,6 +165,9 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 		)
 	)
 
+	vcf_single_list = []
+	vcf_group_list = []
+
 	for GROUP in SAMPLE_LIST:
 		if not GROUP['bam_file_list']:
 			continue
@@ -210,7 +213,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 					collection = collect(freebayes_parts_single.outputs, ['vcf'])['vcfs']
 
 					for i in range(nsegments):
-						concat_freebayes_single = gwf.target_from_template(
+						concat_freebayes_single_segment = gwf.target_from_template(
 							name=f'concatenate_freebayes_vcf_{GROUP_NAME}_{SAMPLE_NAME.replace("-", "_")}_segment_{i+1}',
 							template=concat_vcf(
 								files=collection[start : end],
@@ -220,7 +223,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 							)
 						)
 
-						segmentlist.append(concat_freebayes_single.outputs['concat_file'])
+						segmentlist.append(concat_freebayes_single_segment.outputs['concat_file'])
 						if i < nsegments - 1:
 							start = end
 							end += segmentsize
@@ -228,7 +231,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 							start = end
 							end = npartitions
 
-					concat_freebayes_single_complete = gwf.target_from_template(
+					concat_freebayes_single = gwf.target_from_template(
 						name=f'concatenate_freebayes_vcf_{GROUP_NAME}_{SAMPLE_NAME.replace("-", "_")}_complete',
 						template=concat_vcf(
 							files=segmentlist,
@@ -237,6 +240,9 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 							compress=True
 						)
 					)
+				
+				# Collect concatenated single population VCF files
+				vcf_single_list.append(concat_freebayes_single.outputs['concat_file'])
 		
 		# One VCF file per sample group.
 		if MODE == 2 or MODE == 4:
@@ -297,6 +303,9 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 						output_directory=f'{top_out}/{GROUP_NAME}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf/{GROUP_NAME}'
 					)
 				)
+
+			# Collect concatenated group population VCF files
+			vcf_group_list.append(concat_freebayes_group.outputs['concat_file'])
 	
 	# One VCF file containing all sample files.
 	if MODE == 3 or MODE == 4:
@@ -359,7 +368,37 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 					compress=True
 				)
 			)
-		
+	
+	if vcf_single_list:
+		merge_vcf_single = gwf.target_from_template(
+			name=f'merge_vcf_single',
+			template=merge_vcf(
+				vcf_files=vcf_single_list,
+				output_directory=f'{top_out}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf',
+				species_name=SPECIES_NAME
+			)
+		)
+
+	if vcf_group_list:
+		merge_vcf_group = gwf.target_from_template(
+			name=f'merge_vcf_group',
+			template=merge_vcf(
+				vcf_files=vcf_group_list,
+				output_directory=f'{top_out}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf',
+				species_name=SPECIES_NAME
+			)
+		)
+
+	if vcf_single_list:
+		merge_vcf_single = gwf.target_from_template(
+			name=f'merge_vcf_single',
+			template=merge_vcf(
+				vcf_files=vcf_single_list,
+				output_directory=f'{top_out}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf',
+				species_name=SPECIES_NAME
+			)
+		)
+
 	depth = gwf.target_from_template(
 		name=f'depth_distribution',
 		template=depth_distribution(
