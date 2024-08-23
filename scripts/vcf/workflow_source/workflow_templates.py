@@ -427,7 +427,7 @@ def shared_sites_within_threshold_bed(depth_distribution_file: str, depth_distri
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
 def name_freebayes_partition_single(idx: str, target: AnonymousTarget) -> str:
-	return f'freebayes_part_single_{os.path.basename(target.outputs["vcf"]).replace("-", "_")}'
+	return f'freebayes_part_single_{os.path.basename(target.outputs["vcf"]).replace("-", "_").replace("|", "_")}'
 
 def freebayes_partition_single(reference_genome_file: str, bam_file: str, output_directory: str, group_name: str, sample_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2):
 	"""
@@ -487,7 +487,7 @@ def freebayes_partition_single(reference_genome_file: str, bam_file: str, output
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
 def name_freebayes_partition_group(idx: str, target: AnonymousTarget) -> str:
-	return f'freebayes_part_group_{os.path.basename(target.outputs["vcf"]).replace("-", "_")}'
+	return f'freebayes_part_group_{os.path.basename(target.outputs["vcf"]).replace("-", "_").replace("|", "_")}'
 
 def freebayes_partition_group(reference_genome_file: str, bam_files: list, output_directory: str, species_name: str, group_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2):
 	"""
@@ -547,7 +547,7 @@ def freebayes_partition_group(reference_genome_file: str, bam_files: list, outpu
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
 def name_freebayes_partition_all(idx: str, target: AnonymousTarget) -> str:
-	return f'freebayes_part_all_{os.path.basename(target.outputs["vcf"]).replace("-", "_")}'
+	return f'freebayes_part_all_{os.path.basename(target.outputs["vcf"]).replace("-", "_").replace("|", "_")}'
 
 def freebayes_partition_all(reference_genome_file: str, bam_files: list, output_directory: str, species_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2):
 	"""
