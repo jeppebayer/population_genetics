@@ -148,9 +148,9 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 
 	# When the argument line for any command becomes too long it cannot be executed. This can become an issue when jobs have too many dependencies.
 	# For this workflow in can occur when cancatenating massively parallellised task, eg. create the VCF parts.
-	# To alleviate the issue, multiple concatenation jobs will be created so that no concatenation  has more than 10000 dependencies.
+	# To alleviate the issue, multiple concatenation jobs will be created so that no concatenation has more than 5000 dependencies.
 	npartitions = len(partitions)
-	segmentsize = 10000
+	segmentsize = 5000
 	nsegments = int(round(npartitions / segmentsize, 0) + 1) if (npartitions / segmentsize > round(npartitions / segmentsize, 0)) else int(round(npartitions / segmentsize, 0))
 
 	top_dir = f'{WORK_DIR}/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}/vcf' if TAXONOMY else f'{WORK_DIR}/{SPECIES_NAME.replace(" ", "_")}/vcf'
