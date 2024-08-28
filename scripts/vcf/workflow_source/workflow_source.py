@@ -369,25 +369,25 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 				)
 			)
 	
-	if MODE == 1 or MODE == 4:
-		merge_vcf_single = gwf.target_from_template(
-			name=f'merge_vcf_single',
-			template=merge_vcf(
-				vcf_files=vcf_single_list,
-				output_directory=f'{top_out}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf',
-				species_name=SPECIES_NAME
-			)
-		)
+	# if MODE == 1 or MODE == 4:
+	# 	merge_vcf_single = gwf.target_from_template(
+	# 		name=f'merge_vcf_single',
+	# 		template=merge_vcf(
+	# 			vcf_files=vcf_single_list,
+	# 			output_directory=f'{top_out}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf',
+	# 			species_name=SPECIES_NAME
+	# 		)
+	# 	)
 
-	if MODE == 2 or MODE == 4:
-		merge_vcf_group = gwf.target_from_template(
-			name=f'merge_vcf_group',
-			template=merge_vcf(
-				vcf_files=vcf_group_list,
-				output_directory=f'{top_out}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf',
-				species_name=SPECIES_NAME
-			)
-		)
+	# if MODE == 2 or MODE == 4:
+	# 	merge_vcf_group = gwf.target_from_template(
+	# 		name=f'merge_vcf_group',
+	# 		template=merge_vcf(
+	# 			vcf_files=vcf_group_list,
+	# 			output_directory=f'{top_out}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf',
+	# 			species_name=SPECIES_NAME
+	# 		)
+	# 	)
 
 	depth = gwf.target_from_template(
 		name=f'depth_distribution',

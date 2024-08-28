@@ -33,7 +33,7 @@ stddev = np.std(depthfilereformatmaxthres[0])
 
 # Create tsv file of summary values
 with open(f'{plotdir}/{plotname}.tsv', 'w') as outfile:
-			outfile.write(f'file\tmean\tmedian\tstd\tmost_frequent_value_>1\tmin_coverage_threshold\tmax_coverage_threshold\tmax_coverage_value\n{plotname}\t{mean}\t{median}\t{stddev}\t{mostfrequent}\t{minthres}\t{maxthres}\t{maxcov}')
+			outfile.write(f'file\tmean\tmedian\tstd\tmode_>1\tmin_coverage_threshold\tmax_coverage_threshold\tmax_coverage_value\n{plotname}\t{mean}\t{median}\t{stddev}\t{mostfrequent}\t{minthres}\t{maxthres}\t{maxcov}')
 
 # Two subplots, one of the total coverage distribution and one within the maximum threshold
 plt.figure(figsize = (12, 10))

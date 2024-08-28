@@ -405,16 +405,20 @@ def shared_sites_within_threshold_bed(depth_distribution_file: str, depth_distri
 		-i <(awk \
 		-v maxthreshold = $(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depth_distribution_tsv}) \
 		-v minthreshold = $(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $6; exit}}}}' {depth_distribution_tsv}) \
-		'BEGIN{{FS = OFS = "\\t"}}
-		checksum = 0
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
 		{{
-		for (i = 1; i <= NF, i++)
-			{{
-			if ($i >= minthreshold && $i <= maxthreshold)
-				{{checksum += 1}}
-			}}
-		if (checksum == NF)
-			{{print $1, $2 - 1, $2}}
+			checksum = 0
+			for (i = 1; i <= NF, i++)
+				{{
+					if ($i >= minthreshold && $i <= maxthreshold)
+						{{checksum += 1}}
+				}}
+			if (checksum == NF)
+				{{
+					print $1, $2 - 1, $2
+				}}
 		}}' \
 		{depth_distribution_file}) \
 		> {output_directory}/depth_distribution/{species_abbreviation(species_name)}.depththreshold.prog.bed
@@ -739,7 +743,7 @@ def concat_vcf(files: list, output_name: str, output_directory: str = None, comp
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def merge_vcf(vcf_files: list, output_directory: str, species_name: str):
+def merge_and_norm_vcf(vcf_files: list, reference_genome_file: str, output_directory: str, species_name: str):
 	"""
 	Template: template_description
 	
@@ -751,7 +755,8 @@ def merge_vcf(vcf_files: list, output_directory: str, species_name: str):
 	:param
 	"""
 	inputs = {'vcfs': vcf_files}
-	outputs = {'vcf': f'{output_directory}/{species_abbreviation(species_name)}.{os.path.splitext(os.path.splitext(vcf_files[0])[0])[0] if vcf_files[0].endswith('.gz') else os.path.splitext(vcf_files[0])[0]}.merged.vcf.gz'}
+	outputs = {'vcf': f'{output_directory}/{species_abbreviation(species_name)}.{os.path.splitext(os.path.splitext(vcf_files[0])[0])[0] if vcf_files[0].endswith('.gz') else os.path.splitext(vcf_files[0])[0]}.merged.norm.vcf.gz',
+			   'index': f'{output_directory}/{species_abbreviation(species_name)}.{os.path.splitext(os.path.splitext(vcf_files[0])[0])[0] if vcf_files[0].endswith('.gz') else os.path.splitext(vcf_files[0])[0]}.merged.norm.vcf.gz.csi'}
 	options = {
 		'cores': 30,
 		'memory': '40g',
@@ -771,20 +776,26 @@ def merge_vcf(vcf_files: list, output_directory: str, species_name: str):
 	
 	bcftools merge \
 		--threads {options['cores']} \
-		--output-type z \
-		--output {output_directory}/{species_abbreviation(species_name)}.{os.path.splitext(os.path.splitext(vcf_files[0])[0])[0] if vcf_files[0].endswith('.gz') else os.path.splitext(vcf_files[0])[0]}.merged.prog.vcf.gz \
+		--output-type u \
 		--missing-to-ref \
+		{' '.join(vcf_files)} \
+	| bcftools norm \
+		--threads {options['cores']} \
+		--output-type z \
+		--output {output_directory}/{species_abbreviation(species_name)}.{os.path.splitext(os.path.splitext(vcf_files[0])[0])[0] if vcf_files[0].endswith('.gz') else os.path.splitext(vcf_files[0])[0]}.merged.norm.prog.vcf.gz \
+		--fasta-ref {reference_genome_file} \
 		--write-index \
-		{' '.join(vcf_files)}
+		-
 	
-	mv {output_directory}/{species_abbreviation(species_name)}.{os.path.splitext(os.path.splitext(vcf_files[0])[0])[0] if vcf_files[0].endswith('.gz') else os.path.splitext(vcf_files[0])[0]}.merged.prog.vcf.gz {outputs['vcf']}
+	mv {output_directory}/{species_abbreviation(species_name)}.{os.path.splitext(os.path.splitext(vcf_files[0])[0])[0] if vcf_files[0].endswith('.gz') else os.path.splitext(vcf_files[0])[0]}.merged.norm.prog.vcf.gz {outputs['vcf']}
+	mv {output_directory}/{species_abbreviation(species_name)}.{os.path.splitext(os.path.splitext(vcf_files[0])[0])[0] if vcf_files[0].endswith('.gz') else os.path.splitext(vcf_files[0])[0]}.merged.norm.prog.vcf.gz.csi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def filter_vcf(vcf_file: str, output_directory: str, sample_group: str, sample_name: str, min_depth: int = 300, max_depth: int = 600):
+def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: str, sample_group: str, sample_name: str, min_depth: int = 300):
 	"""
 	Template: template_description
 	
@@ -815,25 +826,134 @@ def filter_vcf(vcf_file: str, output_directory: str, sample_group: str, sample_n
 	
 	[ -d {output_directory}/{sample_group}/{sample_name} ] || mkdir -p {output_directory}/{sample_group}/{sample_name}
 	
+	bcftools view \
+		--threads {options['cores']} \
+		--output-type v \
+		{vcf_file} \
+	| tee \
+		>(awk \
+			'BEGIN{{
+				FS = OFS = "\\t"
+			}}
+			{{
+				if ($0 ~ /^#/)
+				{{
+					next
+				}}
+				nvariants += 1
+			}}
+			END{{
+				print "stage", "stage_name" "variant_count"
+				print "01", "start", nvariants
+			}}' \
+			> {output_directory}) \
 	bcftools filter \
 		--threads {options['cores']} \
 		--SnpGap 5:indel \
-		--output-type u \
+		--output-type v \
 		{vcf_file} \
+	| tee \
+		>(awk \
+			'BEGIN{{
+				FS = OFS = "\\t"
+			}}
+			{{
+				if ($0 ~ /^#/)
+				{{
+					next
+				}}
+				nvariants += 1
+			}}
+			END{{
+				print "02", "indel_proximity", nvariants
+			}}' \
+			>> {output_directory}) \
 	| bcftools view \
 		--threads {options['cores']} \
-		--include 'FMT/DP>={min_depth} & FMT/DP<={max_depth}' \
-		--output-type u \
+		--types snps \
+		--output-type v \
 		- \
+	| tee \
+		>(awk \
+			'BEGIN{{
+				FS = OFS = "\\t"
+			}}
+			{{
+				if ($0 ~ /^#/)
+				{{
+					next
+				}}
+				nvariants += 1
+			}}
+			END{{
+				print "03", "snps_only", nvariants
+			}}' \
+			>> {output_directory}) \
 	| bcftools view \
 		--threads {options['cores']} \
 		--max-alleles 2 \
-		--types snps \
-		--output-type u \
+		--output-type v \
 		- \
+	| tee \
+		>(awk \
+			'BEGIN{{
+				FS = OFS = "\\t"
+			}}
+			{{
+				if ($0 ~ /^#/)
+				{{
+					next
+				}}
+				nvariants += 1
+			}}
+			END{{
+				print "04", "biallelic_only", nvariants
+			}}' \
+			>> {output_directory}) \
+	| bcftools view \
+		--threads {options['cores']} \
+		--include 'FMT/DP>={min_depth} & FMT/DP<={max_depth}' \
+		--output-type v \
+		- \
+	| tee \
+		>(awk \
+			'BEGIN{{
+				FS = OFS = "\\t"
+			}}
+			{{
+				if ($0 ~ /^#/)
+				{{
+					next
+				}}
+				nvariants += 1
+			}}
+			END{{
+				print "05", "depth", nvariants
+			}}' \
+			>> {output_directory}) \
 	| bcftools view \
 		--threads {options['cores']} \
 		--include 'AVG(FMT/AO) > 1' \
+		--output-type v \
+		- \
+	| tee \
+		>(awk \
+			'BEGIN{{
+				FS = OFS = "\\t"
+			}}
+			{{
+				if ($0 ~ /^#/)
+				{{
+					next
+				}}
+				nvariants += 1
+			}}
+			END{{
+				print "06", "AO>1", nvariants
+			}}' \
+			>> {output_directory}) \
+	| bcftools view \
+		--threads {options['cores']} \
 		--output-type z \
 		--output {output_directory}/{sample_group}/{sample_name}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_DP{min_depth}-{max_depth}_biallelic_AO1.prog.vcf.gz \
 		--write-index \
