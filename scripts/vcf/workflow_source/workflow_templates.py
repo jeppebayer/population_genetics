@@ -795,7 +795,7 @@ def merge_and_norm_vcf(vcf_files: list, reference_genome_file: str, output_direc
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: str, sample_group: str, sample_name: str, min_depth: int = 300):
+def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: str, species_name: str, min_depth: int = 200):
 	"""
 	Template: template_description
 	
@@ -806,12 +806,13 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 	
 	:param
 	"""
-	inputs = {'vcf': vcf_file}
-	outputs = {'vcf': f'{output_directory}/{sample_group}/{sample_name}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_DP{min_depth}-{max_depth}_biallelic_AO1.vcf.gz',
-			   'index': f'{output_directory}/{sample_group}/{sample_name}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_DP{min_depth}-{max_depth}_biallelic_AO1.vcf.gz.csi'}
+	inputs = {'vcf': vcf_file,
+		   	  'depth': depth_distribution_file}
+	outputs = {'vcf': f'{output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.vcf.gz',
+			   'index': f'{output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.vcf.gz.csi'}
 	options = {
 		'cores': 18,
-		'memory': '20g',
+		'memory': '30g',
 		'walltime': '12:00:00'
 	}
 	spec = f"""
@@ -824,143 +825,155 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/{sample_group}/{sample_name} ] || mkdir -p {output_directory}/{sample_group}/{sample_name}
+	[ -d {output_directory} ] || mkdir -p {output_directory}
+
+	variablesitecount() {{
+		awk \
+			-v first="$1" \
+			-v stage="$2" \
+			-v identifier="$3" \
+			'BEGIN{{
+				FS = OFS = "\\t"
+			}}
+			{{
+				if ($0 ~ /^##/)
+				{{
+					next
+				}}
+				if ($0 ~ /^#CHROM/)
+				{{
+					for (i = 10; i <= NF; i++)
+					{{
+						populations[i] = $i
+					}}
+					next
+				}}
+				for (i = 10; i <= NF; i++)
+				{{
+					split($i, genotypearray, ":")
+					if (genotypearray[1] ~ /^0\/.*0$/)
+					{{
+						npopulationvariants[populations[i], "whole_genome"] += 1
+						npopulationvariants[populations[i], $1] += 1
+					}}
+				}}
+				ntotalvariants["whole_genome"] += 1
+				ntotalvariants[$1] += 1
+			}}
+			END{{
+				if (first == 1)
+				{{
+					print "stage", "identifier", "group", "region", "type", "site_count"
+				}}
+				for (i in ntotalvariants)
+				{{
+					print stage, identifier, "all", i, "variable_sites", ntotalvariants[i]
+				}}
+				for (i in npopulationvariants)
+				{{
+					split(i, popregion, "\\034")
+					print stage, identifier, popregion[1], popregion[2], "variable_sites", npopulationvariants[i]
+				}}
+			}}'
+	}}
+	
+	maxdepth=$(awk \
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			if (NR == 2)
+			{{
+				print $7
+				exit
+			}}
+		}}' \
+		{depth_distribution_file})
 	
 	bcftools view \
 		--threads {options['cores']} \
 		--output-type v \
 		{vcf_file} \
 	| tee \
-		>(awk \
-			'BEGIN{{
-				FS = OFS = "\\t"
-			}}
-			{{
-				if ($0 ~ /^#/)
-				{{
-					next
-				}}
-				nvariants += 1
-			}}
-			END{{
-				print "stage", "stage_name" "variant_count"
-				print "01", "start", nvariants
-			}}' \
-			> {output_directory}) \
+		>(variablesitecount \
+			1 \
+			1 \
+			"start" \
+			> {output_directory}/{species_abbreviation(species_name)}.sitetable.tsv) \
 	bcftools filter \
 		--threads {options['cores']} \
 		--SnpGap 5:indel \
 		--output-type v \
 		{vcf_file} \
 	| tee \
-		>(awk \
-			'BEGIN{{
-				FS = OFS = "\\t"
-			}}
-			{{
-				if ($0 ~ /^#/)
-				{{
-					next
-				}}
-				nvariants += 1
-			}}
-			END{{
-				print "02", "indel_proximity", nvariants
-			}}' \
-			>> {output_directory}) \
+		>(variablesitecount \
+			0 \
+			2 \
+			"indel_proximity" \
+			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.tsv) \
 	| bcftools view \
 		--threads {options['cores']} \
 		--types snps \
 		--output-type v \
 		- \
 	| tee \
-		>(awk \
-			'BEGIN{{
-				FS = OFS = "\\t"
-			}}
-			{{
-				if ($0 ~ /^#/)
-				{{
-					next
-				}}
-				nvariants += 1
-			}}
-			END{{
-				print "03", "snps_only", nvariants
-			}}' \
-			>> {output_directory}) \
+		>(variablesitecount \
+			0 \
+			3 \
+			"snps_only" \
+			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.tsv) \
 	| bcftools view \
 		--threads {options['cores']} \
 		--max-alleles 2 \
 		--output-type v \
 		- \
 	| tee \
-		>(awk \
-			'BEGIN{{
-				FS = OFS = "\\t"
-			}}
-			{{
-				if ($0 ~ /^#/)
-				{{
-					next
-				}}
-				nvariants += 1
-			}}
-			END{{
-				print "04", "biallelic_only", nvariants
-			}}' \
-			>> {output_directory}) \
+		>(variablesitecount \
+			0 \
+			4 \
+			"biallelic_only" \
+			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.tsv) \
 	| bcftools view \
 		--threads {options['cores']} \
-		--include 'FMT/DP>={min_depth} & FMT/DP<={max_depth}' \
+		--include 'FMT/DP>={min_depth} & FMT/DP<="$maxdepth"' \
 		--output-type v \
 		- \
 	| tee \
-		>(awk \
-			'BEGIN{{
-				FS = OFS = "\\t"
-			}}
-			{{
-				if ($0 ~ /^#/)
-				{{
-					next
-				}}
-				nvariants += 1
-			}}
-			END{{
-				print "05", "depth", nvariants
-			}}' \
-			>> {output_directory}) \
+		>(variablesitecount \
+			0 \
+			5 \
+			"depth_thresholds" \
+			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.tsv) \
 	| bcftools view \
 		--threads {options['cores']} \
 		--include 'AVG(FMT/AO) > 1' \
 		--output-type v \
 		- \
 	| tee \
-		>(awk \
-			'BEGIN{{
-				FS = OFS = "\\t"
-			}}
-			{{
-				if ($0 ~ /^#/)
-				{{
-					next
-				}}
-				nvariants += 1
-			}}
-			END{{
-				print "06", "AO>1", nvariants
-			}}' \
-			>> {output_directory}) \
+		>(variablesitecount \
+			0 \
+			6 \
+			"AO>1" \
+			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.tsv) \
 	| bcftools view \
 		--threads {options['cores']} \
 		--output-type z \
-		--output {output_directory}/{sample_group}/{sample_name}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_DP{min_depth}-{max_depth}_biallelic_AO1.prog.vcf.gz \
+		--output {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz \
 		--write-index \
 		-
 	
-	mv {output_directory}/{sample_group}/{sample_name}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_DP{min_depth}-{max_depth}_biallelic_AO1.prog.vcf.gz {outputs['vcf']}
-	mv {output_directory}/{sample_group}/{sample_name}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_DP{min_depth}-{max_depth}_biallelic_AO1.prog.vcf.gz.csi {outputs['index']}
+	(head \
+		-n 1 \
+		{output_directory}/{species_abbreviation(species_name)}.sitetable.tsv \
+	&& tail \
+		-n +2 \
+		{output_directory}/{species_abbreviation(species_name)}.sitetable.tsv \
+	| sort \
+		-k 1,3) \
+		> {output_directory}/{species_abbreviation(species_name)}.sitetable.sorted.tsv
+		
+	mv {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz {outputs['vcf']}
+	mv {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz.csi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
