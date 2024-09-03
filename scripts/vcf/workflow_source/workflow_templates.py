@@ -403,19 +403,19 @@ def shared_sites_within_threshold_bed(depth_distribution_file: str, depth_distri
 	
 	bedtools merge \
 		-i <(awk \
-		-v maxthreshold = $(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depth_distribution_tsv}) \
-		-v minthreshold = $(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $6; exit}}}}' {depth_distribution_tsv}) \
+		-v maxthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depth_distribution_tsv}) \
+		-v minthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $6; exit}}}}' {depth_distribution_tsv}) \
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
 		{{
 			checksum = 0
-			for (i = 1; i <= NF, i++)
+			for (i = 3; i <= NF; i++)
 				{{
 					if ($i >= minthreshold && $i <= maxthreshold)
 						{{checksum += 1}}
 				}}
-			if (checksum == NF)
+			if (checksum == NF - 2)
 				{{
 					print $1, $2 - 1, $2
 				}}
