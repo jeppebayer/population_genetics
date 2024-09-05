@@ -795,6 +795,110 @@ def merge_and_norm_vcf(vcf_files: list, reference_genome_file: str, output_direc
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
+def site_count_region(bam_files: list, depth_distribution_tsv: str, bed_file: str | None, site_type: str, output_directory: str, species_name: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	if bed_file:
+		inputs = {'bam': bam_files,
+			   	  'depth': depth_distribution_tsv,
+				  'bed': bed_file}
+	else:
+		inputs = {'bam': bam_files,
+			   	  'depth': depth_distribution_tsv}
+	outputs = {'sitetable': f'{output_directory}/{species_abbreviation(species_name)}.sitetable.{site_type}.tsv'}
+	options = {
+		'cores': 10,
+		'memory': '40g',
+		'walltime': '06:00:00'
+	}
+	protect = [outputs['sitetable']]
+	populations = '\034'.join([os.path.basename(i).split(sep=".")[0] for i in bam_files])
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory} ] || mkdir -p {output_directory}
+	
+	awk \
+		-v maxthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depth_distribution_tsv}) \
+		-v minthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $6; exit}}}}' {depth_distribution_tsv}) \
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			if (FNR == NR)
+			{{
+				n = split($0, populations, "\\034")
+				nextfile
+			}}
+			checksum = 0
+			for (i = 3; i <= NF; i++)
+				{{
+					if ($i >= minthreshold && $i <= maxthreshold)
+						{{
+							checksum += 1
+							thressites[populations[i - 2], "whole_genome"] += 1
+							thressites[populations[i - 2], $1] += 1
+					}}
+				}}
+			if (checksum == NF - 2)
+				{{
+					thressites["all", "whole_genome"] += 1
+					thressites["all", $1] += 1
+				}}
+			allsites["all", "whole_genome"] += 1
+			allsites["all", $1] += 1
+		}}
+		END{{
+			print "stage", "identifier", "group", "region", "type", "site_count"
+			for (i in allsites)
+			{{
+				split(i, allsitesarray, "\\034")
+				print "0", "total", allsitesarray[1], allsitesarray[2], "{site_type}", allsites[i]
+			}}
+			for (i in thressites)
+			{{
+				split(i, thressitesarray, "\\034")
+				print "1", "within_threshold", thressitesarray[1], thressitesarray[2], "{site_type}", thressites[i]
+			}}
+		}}' \
+		<(echo -e "{populations}") \
+		<(samtools depth \
+			--threads {options['cores']} \
+			{f'-b {bed_file}' if bed_file else ''} \
+			{' '.join(bam_files)}) \
+	| awk \
+		'{{
+			if (NR == 1)
+			{{
+				print $0
+				next
+			}}
+			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
+		}}' \
+		> {output_directory}/{species_abbreviation(species_name)}.sitetable.{site_type}.prog.tsv
+
+	mv {output_directory}/{species_abbreviation(species_name)}.sitetable.{site_type}.prog.tsv {outputs['sitetable']}
+
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
+
 def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: str, species_name: str, min_depth: int = 200):
 	"""
 	Template: template_description
@@ -809,12 +913,14 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 	inputs = {'vcf': vcf_file,
 		   	  'depth': depth_distribution_file}
 	outputs = {'vcf': f'{output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.vcf.gz',
-			   'index': f'{output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.vcf.gz.csi'}
+			   'index': f'{output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.vcf.gz.csi',
+			   'sitetable': f'{output_directory}/{species_abbreviation(species_name)}.sitetable.variable.tsv'}
 	options = {
 		'cores': 18,
 		'memory': '30g',
 		'walltime': '12:00:00'
 	}
+	protect = [outputs['vcf'], outputs['index'], outputs['sitetable']]
 	spec = f"""
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
@@ -867,12 +973,12 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 				}}
 				for (i in ntotalvariants)
 				{{
-					print stage, identifier, "all", i, "variable_sites", ntotalvariants[i]
+					print stage, identifier, "all", i, "variable", ntotalvariants[i]
 				}}
 				for (i in npopulationvariants)
 				{{
 					split(i, popregion, "\\034")
-					print stage, identifier, popregion[1], popregion[2], "variable_sites", npopulationvariants[i]
+					print stage, identifier, popregion[1], popregion[2], "variable", npopulationvariants[i]
 				}}
 			}}'
 	}}
@@ -897,9 +1003,9 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 	| tee \
 		>(variablesitecount \
 			1 \
-			1 \
-			"start" \
-			> {output_directory}/{species_abbreviation(species_name)}.sitetable.tsv) \
+			0 \
+			"total" \
+			> {output_directory}/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
 	bcftools filter \
 		--threads {options['cores']} \
 		--SnpGap 5:indel \
@@ -910,7 +1016,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 			0 \
 			2 \
 			"indel_proximity" \
-			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.tsv) \
+			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
 	| bcftools view \
 		--threads {options['cores']} \
 		--types snps \
@@ -921,7 +1027,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 			0 \
 			3 \
 			"snps_only" \
-			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.tsv) \
+			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
 	| bcftools view \
 		--threads {options['cores']} \
 		--max-alleles 2 \
@@ -932,7 +1038,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 			0 \
 			4 \
 			"biallelic_only" \
-			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.tsv) \
+			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
 	| bcftools view \
 		--threads {options['cores']} \
 		--include 'FMT/DP>={min_depth} & FMT/DP<="$maxdepth"' \
@@ -943,7 +1049,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 			0 \
 			5 \
 			"depth_thresholds" \
-			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.tsv) \
+			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
 	| bcftools view \
 		--threads {options['cores']} \
 		--include 'AVG(FMT/AO) > 1' \
@@ -954,7 +1060,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 			0 \
 			6 \
 			"AO>1" \
-			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.tsv) \
+			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
 	| bcftools view \
 		--threads {options['cores']} \
 		--output-type z \
@@ -962,20 +1068,83 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 		--write-index \
 		-
 	
-	(head \
-		-n 1 \
-		{output_directory}/{species_abbreviation(species_name)}.sitetable.tsv \
-	&& tail \
-		-n +2 \
-		{output_directory}/{species_abbreviation(species_name)}.sitetable.tsv \
-	| sort \
-		-k 1,3) \
-		> {output_directory}/{species_abbreviation(species_name)}.sitetable.sorted.tsv
+	awk \
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			if (NR == 1)
+			{{
+				print $0
+				next
+			}}
+			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
+		}}' \
+		{output_directory}/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv \
+		> {output_directory}/{species_abbreviation(species_name)}.sitetable.variable.prog.tsv
 		
 	mv {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz {outputs['vcf']}
 	mv {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz.csi {outputs['index']}
+	mv {output_directory}/{species_abbreviation(species_name)}.sitetable.variable.prog.tsv {outputs['sitetable']}
+	rm {output_directory}/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
+
+def concat_site_tables(site_tables: list, output_directory: str, species_name: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'tables': site_tables}
+	outputs = {'sitetable': f'{output_directory}/{species_abbreviation(species_name)}.sitetable.sorted.tsv'}
+	options = {
+		'cores': 1,
+		'memory': '10g',
+		'walltime': '02:00:00'
+	}
+	protect = [outputs['sitetable']]
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory} ] || mkdir -p {output_directory}
+	
+	awk \
+		'BEGIN{{
+			FS = OFS = "\t"
+		}}
+		{{
+			if (FNR == 1)
+			{{
+				if (FNR == NR)
+				{{
+					print $0
+				}}
+				next
+			}}
+			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
+		}}' \
+		{' '.join(site_tables)} \
+		> {output_directory}/{species_abbreviation(species_name)}.sitetable.prog.tsv
+	
+	mv {output_directory}/{species_abbreviation(species_name)}.sitetable.prog.tsv {outputs['sitetable']}
+
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
