@@ -1126,7 +1126,7 @@ def concat_site_tables(site_tables: list, output_directory: str, species_name: s
 	
 	awk \
 		'BEGIN{{
-			FS = OFS = "\t"
+			FS = OFS = "\\t"
 		}}
 		{{
 			if (FNR == 1)
