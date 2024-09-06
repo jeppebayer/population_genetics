@@ -332,7 +332,7 @@ def depth_distribution(bam_files: list, output_directory: str, species_name: str
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def depth_distribution_plot(depth_distribution_file: str, min_coverage_threshold: int, plot_depth_distribution: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/depthdistribution.py'):
+def depth_distribution_plot(depth_distribution_file: str, min_coverage_threshold: int, output_directory: str, plot_depth_distribution: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/depthdistribution.py'):
 	"""
 	Template: template_description
 	
@@ -351,6 +351,7 @@ def depth_distribution_plot(depth_distribution_file: str, min_coverage_threshold
 		'memory': '400g',
 		'walltime': '04:00:00'
 	}
+	protect = [outputs['plot'], outputs['tsv']]
 	spec = f"""
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
@@ -361,14 +362,17 @@ def depth_distribution_plot(depth_distribution_file: str, min_coverage_threshold
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
+	[ -d {output_directory}/depth_distribution ] || mkdir -p {output_directory}/depth_distribution
+
 	python {plot_depth_distribution} \
 		{min_coverage_threshold} \
-		{depth_distribution_file}
-	
+		{depth_distribution_file} \
+		{output_directory}
+
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
 def shared_sites_within_threshold_bed(depth_distribution_file: str, depth_distribution_tsv: str, output_directory: str, species_name: str):
 	"""
@@ -389,6 +393,7 @@ def shared_sites_within_threshold_bed(depth_distribution_file: str, depth_distri
 		'memory': '10g',
 		'walltime': '02:00:00'
 	}
+	protect = [outputs['bed']]
 	spec = f"""
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
@@ -428,7 +433,7 @@ def shared_sites_within_threshold_bed(depth_distribution_file: str, depth_distri
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
 def name_freebayes_partition_single(idx: str, target: AnonymousTarget) -> str:
 	return f'freebayes_part_single_{os.path.basename(target.outputs["vcf"]).replace("-", "_").replace("|", "_")}'
@@ -762,6 +767,7 @@ def merge_and_norm_vcf(vcf_files: list, reference_genome_file: str, output_direc
 		'memory': '40g',
 		'walltime': '12:00:00'
 	}
+	protect = [outputs['vcf'], outputs['index']]
 	spec = f"""
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
@@ -793,9 +799,9 @@ def merge_and_norm_vcf(vcf_files: list, reference_genome_file: str, output_direc
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def site_count_region(bam_files: list, depth_distribution_tsv: str, bed_file: str | None, site_type: str, output_directory: str, species_name: str):
+def site_count_region(bam_files: list, depth_distribution_tsv: str, site_type: str, output_directory: str, species_name: str, bed_file: str | None = None):
 	"""
 	Template: template_description
 	
@@ -813,7 +819,7 @@ def site_count_region(bam_files: list, depth_distribution_tsv: str, bed_file: st
 	else:
 		inputs = {'bam': bam_files,
 			   	  'depth': depth_distribution_tsv}
-	outputs = {'sitetable': f'{output_directory}/{species_abbreviation(species_name)}.sitetable.{site_type}.tsv'}
+	outputs = {'sitetable': f'{output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.{site_type}.tsv'}
 	options = {
 		'cores': 10,
 		'memory': '40g',
@@ -831,7 +837,7 @@ def site_count_region(bam_files: list, depth_distribution_tsv: str, bed_file: st
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory} ] || mkdir -p {output_directory}
+	[ -d {output_directory}/sitetable ] || mkdir -p {output_directory}/sitetable
 	
 	awk \
 		-v maxthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depth_distribution_tsv}) \
@@ -890,9 +896,9 @@ def site_count_region(bam_files: list, depth_distribution_tsv: str, bed_file: st
 			}}
 			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
 		}}' \
-		> {output_directory}/{species_abbreviation(species_name)}.sitetable.{site_type}.prog.tsv
+		> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.{site_type}.prog.tsv
 
-	mv {output_directory}/{species_abbreviation(species_name)}.sitetable.{site_type}.prog.tsv {outputs['sitetable']}
+	mv {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.{site_type}.prog.tsv {outputs['sitetable']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -1093,7 +1099,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def concat_site_tables(site_tables: list, output_directory: str, species_name: str):
+def merge_site_tables(site_tables: list, output_directory: str, species_name: str):
 	"""
 	Template: template_description
 	

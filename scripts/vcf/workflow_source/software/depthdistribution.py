@@ -5,7 +5,7 @@ import sys, os.path, matplotlib.pyplot as plt, pandas as pd, numpy as np
 minthres = int(sys.argv[1])
 
 fullpath = os.path.abspath(sys.argv[2])
-plotdir = os.path.dirname(fullpath)
+plotdir = os.path.abspath(sys.argv[3])
 plotname = os.path.basename(fullpath)
 depthfile = pd.read_table(fullpath, header=None)
 
