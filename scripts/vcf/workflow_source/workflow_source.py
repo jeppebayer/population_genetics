@@ -17,21 +17,24 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 	
 	CONFIG = yaml.safe_load(open(config_file))
 	ACCOUNT: str = CONFIG['account']
-	TAXONOMY: str = CONFIG['taxonomic_group'].lower() if CONFIG['taxonomic_group'] else None
+	TAXONOMY: str | None = CONFIG['taxonomic_group'].lower() if CONFIG['taxonomic_group'] else None
 	SPECIES_NAME: str = CONFIG['species_name']
 	REFERENCE_GENOME: str = CONFIG['reference_genome_path']
 	WORK_DIR: str = CONFIG['working_directory_path'][:len(CONFIG['working_directory_path']) - 1] if CONFIG['working_directory_path'].endswith('/') else CONFIG['working_directory_path']
-	OUTPUT_DIR: str = (CONFIG['output_directory_path'][:len(CONFIG['output_directory_path']) - 1] if CONFIG['output_directory_path'].endswith('/') else CONFIG['output_directory_path']) if CONFIG['output_directory_path'] else None
-	PARTITION_SIZE: int | None = CONFIG['partition_size'] if CONFIG['partition_size'] else 500000
+	OUTPUT_DIR: str | None = (CONFIG['output_directory_path'][:len(CONFIG['output_directory_path']) - 1] if CONFIG['output_directory_path'].endswith('/') else CONFIG['output_directory_path']) if CONFIG['output_directory_path'] else None
+	PARTITION_SIZE: int = CONFIG['partition_size'] if CONFIG['partition_size'] else 500000
 	FREEBAYES_SETTINGS: dict = CONFIG['freebayes_settings']
 	FREEBAYES_PLOIDY: int | None = FREEBAYES_SETTINGS['sample_ploidy'] if FREEBAYES_SETTINGS['sample_ploidy'] else 100
 	FREEBAYES_BESTN: int | None = FREEBAYES_SETTINGS['best_n_alleles'] if FREEBAYES_SETTINGS['best_n_alleles'] else 3
 	FREEBAYES_MINALTFRC: float | int | None = FREEBAYES_SETTINGS['min_alternate_fraction'] if FREEBAYES_SETTINGS['min_alternate_fraction'] else 0
 	FREEBAYES_MINALTCNT: int | None = FREEBAYES_SETTINGS['min_alternate_count'] if FREEBAYES_SETTINGS['min_alternate_count'] else 2
+	VCF_MEM: int | None = FREEBAYES_SETTINGS['memory'] if FREEBAYES_SETTINGS['memory'] else 80
+	VCF_TIME: str | None = FREEBAYES_SETTINGS['time'] if FREEBAYES_SETTINGS['time'] else '48:00:00'
 	FILTERING: dict = CONFIG['filtering']
 	FILTERING_MINDP: int | None = FILTERING['minimum_depth'] if FILTERING['minimum_depth'] else 200
 	MODE: int = CONFIG['mode']
 	SAMPLE_LIST: list = CONFIG['sample_list']
+	INTERGENIC_BED: str | None = CONFIG['intergenic_bed_file']
 
 	# --------------------------------------------------
 	#                  Workflow
@@ -109,7 +112,9 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 						   'ploidy': FREEBAYES_PLOIDY,
 						   'best_n_alleles': FREEBAYES_BESTN,
 						   'min_alternate_fraction': FREEBAYES_MINALTFRC,
-						   'min_alternate_count': FREEBAYES_MINALTCNT}
+						   'min_alternate_count': FREEBAYES_MINALTCNT,
+						   'memory': VCF_MEM,
+						   'time': VCF_TIME}
 				)
 
 				if nsegments <= 1:
@@ -118,7 +123,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 						template=concat_vcf(
 							files=collect(freebayes_parts_single.outputs, ['vcf'])['vcfs'],
 							output_name=f'{SAMPLE_NAME}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}',
-							output_directory=f'{top_out}/{GROUP_NAME}/{SAMPLE_NAME}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf/{GROUP_NAME}/{SAMPLE_NAME}',
+							output_directory=f'{top_out}/{GROUP_NAME}/{SAMPLE_NAME}' if OUTPUT_DIR else f'{top_dir}/raw_vcf/{GROUP_NAME}/{SAMPLE_NAME}',
 							compress=True
 						)
 					)
@@ -153,7 +158,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 						template=concat_vcf(
 							files=segmentlist,
 							output_name=f'{SAMPLE_NAME}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}',
-							output_directory=f'{top_out}/{GROUP_NAME}/{SAMPLE_NAME}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf/{GROUP_NAME}/{SAMPLE_NAME}',
+							output_directory=f'{top_out}/{GROUP_NAME}/{SAMPLE_NAME}' if OUTPUT_DIR else f'{top_dir}/raw_vcf/{GROUP_NAME}/{SAMPLE_NAME}',
 							compress=True
 						)
 					)
@@ -175,7 +180,9 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 				   	   'ploidy': FREEBAYES_PLOIDY,
 				   	   'best_n_alleles': FREEBAYES_BESTN,
 				   	   'min_alternate_fraction': FREEBAYES_MINALTFRC,
-				   	   'min_alternate_count': FREEBAYES_MINALTCNT}
+				   	   'min_alternate_count': FREEBAYES_MINALTCNT,
+					   'memory': VCF_MEM,
+					   'time': VCF_TIME}
 			)
 
 			if nsegments <= 1:
@@ -184,7 +191,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 					template=concat_vcf(
 						files=collect(freebayes_parts_group.outputs, ['vcf'])['vcfs'],
 						output_name=f'{species_abbreviation(SPECIES_NAME)}_{GROUP_NAME}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}',
-						output_directory=f'{top_out}/{GROUP_NAME}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf/{GROUP_NAME}'
+						output_directory=f'{top_out}/{GROUP_NAME}' if OUTPUT_DIR else f'{top_dir}/raw_vcf/{GROUP_NAME}'
 					)
 				)
 
@@ -195,7 +202,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 				collection = collect(freebayes_parts_group.outputs, ['vcf'])['vcfs']
 
 				for i in range(nsegments):
-					concat_freebayes_group = gwf.target_from_template(
+					concat_freebayes_group_segment = gwf.target_from_template(
 						name=f'concatenate_freebayes_vcf_group_{GROUP_NAME}_segment_{i+1}',
 						template=concat_vcf(
 							files=collection[start : end],
@@ -204,7 +211,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 						)
 					)
 
-					segmentlist.append(concat_freebayes_group.outputs['concat_file'])
+					segmentlist.append(concat_freebayes_group_segment.outputs['concat_file'])
 					if i < nsegments - 1:
 						start = end
 						end += segmentsize
@@ -217,7 +224,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 					template=concat_vcf(
 						files=segmentlist,
 						output_name=f'{species_abbreviation(SPECIES_NAME)}_{GROUP_NAME}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}',
-						output_directory=f'{top_out}/{GROUP_NAME}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf/{GROUP_NAME}'
+						output_directory=f'{top_out}/{GROUP_NAME}' if OUTPUT_DIR else f'{top_dir}/raw_vcf/{GROUP_NAME}'
 					)
 				)
 
@@ -237,7 +244,9 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 				   'ploidy': FREEBAYES_PLOIDY,
 				   'best_n_alleles': FREEBAYES_BESTN,
 				   'min_alternate_fraction': FREEBAYES_MINALTFRC,
-				   'min_alternate_count': FREEBAYES_MINALTCNT}
+				   'min_alternate_count': FREEBAYES_MINALTCNT,
+				   'memory': VCF_MEM,
+				   'time': VCF_TIME}
 		)
 
 		if nsegments <= 1:
@@ -246,7 +255,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 				template=concat_vcf(
 					files=collect(freebayes_parts_all.outputs, ['vcf'])['vcfs'],
 					output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}',
-					output_directory=f'{top_out}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf',
+					output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/raw_vcf',
 					compress=True
 				)
 			)
@@ -258,7 +267,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 			collection = collect(freebayes_parts_all.outputs, ['vcf'])['vcfs']
 
 			for i in range(nsegments):
-				concat_freebayes_all = gwf.target_from_template(
+				concat_freebayes_all_segment = gwf.target_from_template(
 					name=f'concatenate_freebayes_vcf_all_segment_{i+1}',
 					template=concat_vcf(
 						files=collection[start : end],
@@ -268,7 +277,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 					)
 				)
 
-				segmentlist.append(concat_freebayes_all.outputs['concat_file'])
+				segmentlist.append(concat_freebayes_all_segment.outputs['concat_file'])
 				if i < nsegments - 1:
 					start = end
 					end += segmentsize
@@ -281,7 +290,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 				template=concat_vcf(
 					files=segmentlist,
 					output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}',
-					output_directory=f'{top_out}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf',
+					output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/raw_vcf',
 					compress=True
 				)
 			)
@@ -321,7 +330,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 			depth_distribution_tsv=depth_plot.outputs['tsv'],
 			bed_file=None,
 			site_type='all',
-			output_directory=top_dir,
+			output_directory=f'{top_dir}/sitetables',
 			species_name=SPECIES_NAME
 		)
 	)
@@ -332,28 +341,29 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 			bam_files=full_bam_list,
 			depth_distribution_tsv=depth_plot.outputs['tsv'],
 			site_type='intergenic',
-			output_directory=top_dir,
+			output_directory=f'{top_dir}/sitetables',
 			species_name=SPECIES_NAME,
 			bed_file=INTERGENIC_BED
 		)
 	)
 
 	if MODE == 1 or MODE == 4:
-		merge_vcf_single = gwf.target_from_template(
-			name=f'merge_vcf_single',
+		merge_and_norm_vcf_single = gwf.target_from_template(
+			name=f'merge_and_normalize_vcf_single',
 			template=merge_and_norm_vcf(
 				vcf_files=vcf_single_list,
-				output_directory=f'{top_out}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf',
-				species_name=SPECIES_NAME
+				reference_genome_file=index_reference.outputs['symlink'],
+				output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
+				output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/raw_vcf'
 			)
 		)
 
 		filter_vcf_single = gwf.target_from_template(
 			name=f'filter_vcf_single',
 			template=filter_vcf(
-				vcf_file=merge_vcf_single.outputs['vcf'],
+				vcf_file=merge_and_norm_vcf_single.outputs['vcf'],
 				depth_distribution_file=depth_plot.outputs['tsv'],
-				output_directory=f'{top_out}/vcf' if OUTPUT_DIR else f'{top_dir}/vcf',
+				output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/filtered_vcf',
 				species_name=SPECIES_NAME,
 				min_depth=FILTERING_MINDP
 			)
@@ -365,27 +375,28 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 				site_tables=[site_count_all.outputs['sitetable'],
 							 site_count_intergenic.outputs['sitetable'],
 							 filter_vcf_single.outputs['sitetable']],
-				output_directory=top_out if OUTPUT_DIR else top_dir,
-				species_name=SPECIES_NAME
+				output_name=f'{species_abbreviation(SPECIES_NAME)}.singlecall' if MODE == 4 else f'{species_abbreviation(SPECIES_NAME)}',
+				output_directory=top_out if OUTPUT_DIR else f'{top_dir}/sitetables'
 			)
 		)
 
 	if MODE == 2 or MODE == 4:
-		merge_vcf_group = gwf.target_from_template(
-			name=f'merge_vcf_group',
+		merge_and_norm_vcf_group = gwf.target_from_template(
+			name=f'merge_and_normalize_vcf_group',
 			template=merge_and_norm_vcf(
 				vcf_files=vcf_group_list,
-				output_directory=f'{top_out}/vcf' if OUTPUT_DIR else f'{top_dir}/raw_vcf',
-				species_name=SPECIES_NAME
+				reference_genome_file=index_reference.outputs['symlink'],
+				output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_groupcall',
+				output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/raw_vcf'
 			)
 		)
 
 		filter_vcf_group = gwf.target_from_template(
 			name=f'filter_vcf_group',
 			template=filter_vcf(
-				vcf_file=merge_vcf_group.outputs['vcf'],
+				vcf_file=merge_and_norm_vcf_group.outputs['vcf'],
 				depth_distribution_file=depth_plot.outputs['tsv'],
-				output_directory=top_out if OUTPUT_DIR else top_dir,
+				output_directory=top_out if OUTPUT_DIR else f'{top_dir}/filtered_vcf',
 				species_name=SPECIES_NAME,
 				min_depth=FILTERING_MINDP
 			)
@@ -397,10 +408,42 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 				site_tables=[site_count_all.outputs['sitetable'],
 							 site_count_intergenic.outputs['sitetable'],
 							 filter_vcf_group.outputs['sitetable']],
-				output_directory=top_out if OUTPUT_DIR else top_dir,
-				species_name=SPECIES_NAME
+				output_name=f'{species_abbreviation(SPECIES_NAME)}.groupcall' if MODE == 4 else f'{species_abbreviation(SPECIES_NAME)}',
+				output_directory=top_out if OUTPUT_DIR else f'{top_dir}/sitetables'
 			)
 		)
 
+	if MODE == 3 or MODE == 4:
+		norm_vcf_all = gwf.target_from_template(
+			name=f'normalize_vcf_all',
+			template=norm_vcf(
+				vcf_file=concat_freebayes_all.outputs['concat_file'],
+				reference_genome_file=index_reference.outputs['symlink'],
+				output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_allcall',
+				output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/raw_vcf'
+			)
+		)
+
+		filter_vcf_all = gwf.target_from_template(
+			name=f'filter_vcf_all',
+			template=filter_vcf(
+				norm_vcf_all.outputs['vcf'],
+				depth_distribution_file=depth_plot.outputs['tsv'],
+				output_directory=top_out if OUTPUT_DIR else f'{top_dir}/filtered_vcf',
+				species_name=SPECIES_NAME,
+				min_depth=FILTERING_MINDP
+			)
+		)
+
+		merge_site_tables_all = gwf.target_from_template(
+			name=f'merge_site_tables_all',
+			template=merge_site_tables(
+				site_tables=[site_count_all.outputs['sitetable'],
+							 site_count_intergenic.outputs['sitetable'],
+							 filter_vcf_all.outputs['sitetable']],
+				output_name=f'{species_abbreviation(SPECIES_NAME)}.allcall' if MODE == 4 else f'{species_abbreviation(SPECIES_NAME)}',
+				output_directory=top_out if OUTPUT_DIR else f'{top_dir}/sitetables'
+			)
+		)
 	
 	return gwf

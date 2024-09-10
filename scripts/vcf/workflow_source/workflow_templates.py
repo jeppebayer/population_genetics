@@ -42,7 +42,7 @@ def parse_fasta(fasta_file: str):
 		fasta_list.append({'sequence_name': seq_name, 'sequence_length': length})
 	return fasta_list
 
-def padding_calculator(parse_fasta: list, size: int = 500000):
+def padding_calculator(parse_fasta: list, size: int  | None = 500000):
 	"""
 	Calculates proper 0 padding for numbers in **partition_chrom**.
 
@@ -344,8 +344,8 @@ def depth_distribution_plot(depth_distribution_file: str, min_coverage_threshold
 	:param
 	"""
 	inputs = {'depth': depth_distribution_file}
-	outputs = {'plot': f'{depth_distribution_file}.png',
-			   'tsv': f'{depth_distribution_file}.tsv'}
+	outputs = {'plot': f'{output_directory}/depth_distribution/{os.path.basename(depth_distribution_file)}.png',
+			   'tsv': f'{output_directory}/depth_distribution/{os.path.basename(depth_distribution_file)}.tsv'}
 	options = {
 		'cores': 1,
 		'memory': '400g',
@@ -438,7 +438,7 @@ def shared_sites_within_threshold_bed(depth_distribution_file: str, depth_distri
 def name_freebayes_partition_single(idx: str, target: AnonymousTarget) -> str:
 	return f'freebayes_part_single_{os.path.basename(target.outputs["vcf"]).replace("-", "_").replace("|", "_")}'
 
-def freebayes_partition_single(reference_genome_file: str, bam_file: str, output_directory: str, group_name: str, sample_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2):
+def freebayes_partition_single(reference_genome_file: str, bam_file: str, output_directory: str, group_name: str, sample_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2, memory: int = 80, time: str = '48:00:00'):
 	"""
 	Template: Create VCF file for each partition in a single pooled alignment.
 	
@@ -455,8 +455,8 @@ def freebayes_partition_single(reference_genome_file: str, bam_file: str, output
 			   'index': f'{output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz.csi'}
 	options = {
 		'cores': 1,
-		'memory': '80g',
-		'walltime': '96:00:00'
+		'memory': f'{memory}g',
+		'walltime': time
 	}
 	spec = f"""
 	# Sources environment
@@ -498,7 +498,7 @@ def freebayes_partition_single(reference_genome_file: str, bam_file: str, output
 def name_freebayes_partition_group(idx: str, target: AnonymousTarget) -> str:
 	return f'freebayes_part_group_{os.path.basename(target.outputs["vcf"]).replace("-", "_").replace("|", "_")}'
 
-def freebayes_partition_group(reference_genome_file: str, bam_files: list, output_directory: str, species_name: str, group_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2):
+def freebayes_partition_group(reference_genome_file: str, bam_files: list, output_directory: str, species_name: str, group_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2, memory: int = 80, time: str = '48:00:00'):
 	"""
 	Template: Create VCF file for each partition in a group of pooled alignments.
 	
@@ -515,8 +515,8 @@ def freebayes_partition_group(reference_genome_file: str, bam_files: list, outpu
 			   'index': f'{output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz.csi'}
 	options = {
 		'cores': 1,
-		'memory': '100g',
-		'walltime': '96:00:00'
+		'memory': f'{memory}g',
+		'walltime': time
 	}
 	spec = f"""
 	# Sources environment
@@ -558,7 +558,7 @@ def freebayes_partition_group(reference_genome_file: str, bam_files: list, outpu
 def name_freebayes_partition_all(idx: str, target: AnonymousTarget) -> str:
 	return f'freebayes_part_all_{os.path.basename(target.outputs["vcf"]).replace("-", "_").replace("|", "_")}'
 
-def freebayes_partition_all(reference_genome_file: str, bam_files: list, output_directory: str, species_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2):
+def freebayes_partition_all(reference_genome_file: str, bam_files: list, output_directory: str, species_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2, memory: int = 80, time: str = '48:00:00'):
 	"""
 	Template: Create VCF file for each partition in a large set of pooled alignments.
 	
@@ -575,8 +575,8 @@ def freebayes_partition_all(reference_genome_file: str, bam_files: list, output_
 			   'index': f'{output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz.csi'}
 	options = {
 		'cores': 1,
-		'memory': '100g',
-		'walltime': '96:00:00'
+		'memory': f'{memory}g',
+		'walltime': time
 	}
 	spec = f"""
 	# Sources environment
@@ -615,7 +615,7 @@ def freebayes_partition_all(reference_genome_file: str, bam_files: list, output_
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def concat(files: list, output_name: str, output_directory: str = None, compress: bool = False):
+def concat(files: list, output_name: str, output_directory: str | None = None, compress: bool = False):
 	"""
 	Template: Name-sorts and concatenates files. Optionally compresses output using :script:`gzip`.
 	
@@ -680,7 +680,7 @@ def concat(files: list, output_name: str, output_directory: str = None, compress
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def concat_vcf(files: list, output_name: str, output_directory: str = None, compress: bool = True):
+def concat_vcf(files: list, output_name: str, output_directory: str| None = None, compress: bool = True):
 	"""
 	Template: Concatenates :format:`VCF` files. Optionally compresses output.
 	
@@ -748,7 +748,7 @@ def concat_vcf(files: list, output_name: str, output_directory: str = None, comp
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def merge_and_norm_vcf(vcf_files: list, reference_genome_file: str, output_directory: str, species_name: str):
+def merge_and_norm_vcf(vcf_files: list, reference_genome_file: str, output_name: str, output_directory: str):
 	"""
 	Template: template_description
 	
@@ -760,8 +760,8 @@ def merge_and_norm_vcf(vcf_files: list, reference_genome_file: str, output_direc
 	:param
 	"""
 	inputs = {'vcfs': vcf_files}
-	outputs = {'vcf': f'{output_directory}/{species_abbreviation(species_name)}.{os.path.splitext(os.path.splitext(vcf_files[0])[0])[0] if vcf_files[0].endswith('.gz') else os.path.splitext(vcf_files[0])[0]}.merged.norm.vcf.gz',
-			   'index': f'{output_directory}/{species_abbreviation(species_name)}.{os.path.splitext(os.path.splitext(vcf_files[0])[0])[0] if vcf_files[0].endswith('.gz') else os.path.splitext(vcf_files[0])[0]}.merged.norm.vcf.gz.csi'}
+	outputs = {'vcf': f'{output_directory}/{output_name}.merged.norm.vcf.gz',
+			   'index': f'{output_directory}/{output_name}.merged.norm.vcf.gz.csi'}
 	options = {
 		'cores': 30,
 		'memory': '40g',
@@ -788,13 +788,61 @@ def merge_and_norm_vcf(vcf_files: list, reference_genome_file: str, output_direc
 	| bcftools norm \
 		--threads {options['cores']} \
 		--output-type z \
-		--output {output_directory}/{species_abbreviation(species_name)}.{os.path.splitext(os.path.splitext(vcf_files[0])[0])[0] if vcf_files[0].endswith('.gz') else os.path.splitext(vcf_files[0])[0]}.merged.norm.prog.vcf.gz \
+		--output {output_directory}/{output_name}.merged.norm.prog.vcf.gz \
 		--fasta-ref {reference_genome_file} \
 		--write-index \
 		-
 	
-	mv {output_directory}/{species_abbreviation(species_name)}.{os.path.splitext(os.path.splitext(vcf_files[0])[0])[0] if vcf_files[0].endswith('.gz') else os.path.splitext(vcf_files[0])[0]}.merged.norm.prog.vcf.gz {outputs['vcf']}
-	mv {output_directory}/{species_abbreviation(species_name)}.{os.path.splitext(os.path.splitext(vcf_files[0])[0])[0] if vcf_files[0].endswith('.gz') else os.path.splitext(vcf_files[0])[0]}.merged.norm.prog.vcf.gz.csi {outputs['index']}
+	mv {output_directory}/{output_name}.merged.norm.prog.vcf.gz {outputs['vcf']}
+	mv {output_directory}/{output_name}.merged.norm.prog.vcf.gz.csi {outputs['index']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
+
+def norm_vcf(vcf_file: str, reference_genome_file: str, output_name: str, output_directory: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'vcf': vcf_file}
+	outputs = {'vcf': f'{output_directory}/{output_name}.norm.vcf.gz',
+			   'index': f'{output_directory}/{output_name}.norm.vcf.gz.csi'}
+	options = {
+		'cores': 30,
+		'memory': '40g',
+		'walltime': '12:00:00'
+	}
+	protect = [outputs['vcf'], outputs['index']]
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory} ] || mkdir -p {output_directory}
+	
+	bcftools norm \
+		--threads {options['cores']} \
+		--output-type z \
+		--output {output_directory}/{output_name}.merged.norm.prog.vcf.gz \
+		--fasta-ref {reference_genome_file} \
+		--write-index \
+		{vcf_file}
+	
+	mv {output_directory}/{output_name}.norm.prog.vcf.gz {outputs['vcf']}
+	mv {output_directory}/{output_name}.norm.prog.vcf.gz.csi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -1099,7 +1147,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def merge_site_tables(site_tables: list, output_directory: str, species_name: str):
+def merge_site_tables(site_tables: list, output_name: str, output_directory: str):
 	"""
 	Template: template_description
 	
@@ -1111,7 +1159,7 @@ def merge_site_tables(site_tables: list, output_directory: str, species_name: st
 	:param
 	"""
 	inputs = {'tables': site_tables}
-	outputs = {'sitetable': f'{output_directory}/{species_abbreviation(species_name)}.sitetable.sorted.tsv'}
+	outputs = {'sitetable': f'{output_directory}/{output_name}.sitetable.tsv'}
 	options = {
 		'cores': 1,
 		'memory': '10g',
@@ -1146,9 +1194,9 @@ def merge_site_tables(site_tables: list, output_directory: str, species_name: st
 			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
 		}}' \
 		{' '.join(site_tables)} \
-		> {output_directory}/{species_abbreviation(species_name)}.sitetable.prog.tsv
+		> {output_directory}/{output_name}.sitetable.prog.tsv
 	
-	mv {output_directory}/{species_abbreviation(species_name)}.sitetable.prog.tsv {outputs['sitetable']}
+	mv {output_directory}/{output_name}.sitetable.prog.tsv {outputs['sitetable']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
