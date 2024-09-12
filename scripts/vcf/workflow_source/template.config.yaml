@@ -1,8 +1,49 @@
-# The name of the relevant project account.
+# Tag identifying file association.
+TAG: jeppebayer:EcoGenetics,museomics,vcf:workflowconfiguration
+# (str). The name of the relevant project account.
 account: 
-# Name of species being analyzed
+# (str). Taxonomic group. Can be left empty.
+taxonomic_group: 
+# (str). Name of species being analyzed.
 species_name: 
-# Directory for intermediary files.
+# (str). Path to reference genome.
+reference_genome_path: 
+# (str). BED file indicating intergenic regions of the reference genome.
+intergenic_bed_file: 
+# (str). BED file indicating repetitive regions of the reference genome.
+repeats_bed_file: 
+# (str). Directory for intermediary files.
 working_directory_path: 
-# Directory for final output files.
+# (str). Directory for final output files. (If left empty, output file will be placed within 'working_directory_path').
 output_directory_path: 
+# (int). Partition size of genome in base pairs. If left empty defaults to '500000'.
+partition_size: 
+# Variant caller, Freebayes settings.
+freebayes_settings:
+  # (int). sample_ploidy = ploidy * n_individials. If left empty defaults to '100'.
+  sample_ploidy: 
+  # (int). Number of variants to consider and report when multiple are available. If left empty defaults to '3'
+  best_n_alleles: 
+  # (0 | float). Lower threshold fraction for variant to be considered. If left empty defaults to '0'.
+  min_alternate_fraction: 
+  # (int). Lower threshold count for variant to be considered. If left empty defaults to '2'.
+  min_alternate_count: 
+  # (int). Amount of memory, in GB, to reserve per VCF partition. If left empty defaults to '80'.
+  memory: 
+  # (str). Amount of time to reserve per VCF partition in format: 'tt:mm:ss'. If left empty defaults to '48:00:00'.
+  time: 
+# Filtering settings.
+filtering:
+  # (int). Minimum required depth, inclusive.
+  minimum_depth: 
+# (int). Mode for creating VCF file (1 | 2 | 3 | 4).
+# 1 = Separate VCF files for each sample/BAM file. 2 = One VCF file per sample group. 3 = One VCF containing data for all samples/BAM files. 4 = All.
+mode: 
+# (list). Sample setup. List of dictionaries listing the configuration for each sample.
+sample_list:
+  - 
+    # (str). Name of sample group.
+    group_name: 
+    # (list). List of paths to BAM files.
+    bam_file_list:
+      - 

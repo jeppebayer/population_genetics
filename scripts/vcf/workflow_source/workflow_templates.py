@@ -367,7 +367,7 @@ def depth_distribution_plot(depth_distribution_file: str, min_coverage_threshold
 	python {plot_depth_distribution} \
 		{min_coverage_threshold} \
 		{depth_distribution_file} \
-		{output_directory}
+		{output_directory}/depth_distribution
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -953,6 +953,49 @@ def site_count_region(bam_files: list, depth_distribution_tsv: str, site_type: s
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
+def bed_exclude_overlap(main_bed_file: str, subtraction_bed_file: str, output_directory: str, species_name: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'main': main_bed_file,
+		   	  'sub': subtraction_bed_file}
+	outputs = {'bed': f'{output_directory}/sitetable/{species_abbreviation(species_name)}.intergenic_excl_repeats.bed'}
+	options = {
+		'cores': 1,
+		'memory': '10g',
+		'walltime': '01:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/sitetable ] || mkdir -p {output_directory}/sitetable
+	
+	bedtools subtract \
+		-a {main_bed_file} \
+		-b {subtraction_bed_file} \
+		> {output_directory}/sitetable/{species_abbreviation(species_name)}.intergenic_excl_repeats.prog.bed
+	
+	mv {output_directory}/sitetable/{species_abbreviation(species_name)}.intergenic_excl_repeats.prog.bed {outputs['bed']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
 def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: str, species_name: str, min_depth: int = 200):
 	"""
 	Template: template_description
@@ -968,7 +1011,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 		   	  'depth': depth_distribution_file}
 	outputs = {'vcf': f'{output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.vcf.gz',
 			   'index': f'{output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.vcf.gz.csi',
-			   'sitetable': f'{output_directory}/{species_abbreviation(species_name)}.sitetable.variable.tsv'}
+			   'sitetable': f'{output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.tsv'}
 	options = {
 		'cores': 18,
 		'memory': '30g',
@@ -985,7 +1028,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory} ] || mkdir -p {output_directory}
+	[ -d {output_directory}/sitetable ] || mkdir -p {output_directory}/sitetable
 
 	variablesitecount() {{
 		awk \
@@ -1059,7 +1102,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 			1 \
 			0 \
 			"total" \
-			> {output_directory}/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
+			> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
 	bcftools filter \
 		--threads {options['cores']} \
 		--SnpGap 5:indel \
@@ -1070,7 +1113,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 			0 \
 			2 \
 			"indel_proximity" \
-			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
+			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
 	| bcftools view \
 		--threads {options['cores']} \
 		--types snps \
@@ -1081,7 +1124,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 			0 \
 			3 \
 			"snps_only" \
-			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
+			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
 	| bcftools view \
 		--threads {options['cores']} \
 		--max-alleles 2 \
@@ -1092,7 +1135,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 			0 \
 			4 \
 			"biallelic_only" \
-			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
+			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
 	| bcftools view \
 		--threads {options['cores']} \
 		--include 'FMT/DP>={min_depth} & FMT/DP<="$maxdepth"' \
@@ -1103,7 +1146,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 			0 \
 			5 \
 			"depth_thresholds" \
-			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
+			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
 	| bcftools view \
 		--threads {options['cores']} \
 		--include 'AVG(FMT/AO) > 1' \
@@ -1114,7 +1157,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 			0 \
 			6 \
 			"AO>1" \
-			>> {output_directory}/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
+			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
 	| bcftools view \
 		--threads {options['cores']} \
 		--output-type z \
@@ -1134,8 +1177,8 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 			}}
 			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
 		}}' \
-		{output_directory}/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv \
-		> {output_directory}/{species_abbreviation(species_name)}.sitetable.variable.prog.tsv
+		{output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv \
+		> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.prog.tsv
 		
 	mv {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz {outputs['vcf']}
 	mv {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz.csi {outputs['index']}
@@ -1159,7 +1202,7 @@ def merge_site_tables(site_tables: list, output_name: str, output_directory: str
 	:param
 	"""
 	inputs = {'tables': site_tables}
-	outputs = {'sitetable': f'{output_directory}/{output_name}.sitetable.tsv'}
+	outputs = {'sitetable': f'{output_directory}/sitetable/{output_name}.sitetable.tsv'}
 	options = {
 		'cores': 1,
 		'memory': '10g',
@@ -1176,7 +1219,7 @@ def merge_site_tables(site_tables: list, output_name: str, output_directory: str
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory} ] || mkdir -p {output_directory}
+	[ -d {output_directory}/sitetable ] || mkdir -p {output_directory}/sitetable
 	
 	awk \
 		'BEGIN{{
@@ -1196,7 +1239,7 @@ def merge_site_tables(site_tables: list, output_name: str, output_directory: str
 		{' '.join(site_tables)} \
 		> {output_directory}/{output_name}.sitetable.prog.tsv
 	
-	mv {output_directory}/{output_name}.sitetable.prog.tsv {outputs['sitetable']}
+	mv {output_directory}/sitetable/{output_name}.sitetable.prog.tsv {outputs['sitetable']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"

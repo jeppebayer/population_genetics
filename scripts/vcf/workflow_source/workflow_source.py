@@ -35,6 +35,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 	MODE: int = CONFIG['mode']
 	SAMPLE_LIST: list = CONFIG['sample_list']
 	INTERGENIC_BED: str | None = CONFIG['intergenic_bed_file']
+	REPEATS_BED: str | None = CONFIG['repeats_bed_file']
 
 	# --------------------------------------------------
 	#                  Workflow
@@ -330,7 +331,7 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 			depth_distribution_tsv=depth_plot.outputs['tsv'],
 			bed_file=None,
 			site_type='all',
-			output_directory=f'{top_dir}/sitetables',
+			output_directory=top_dir,
 			species_name=SPECIES_NAME
 		)
 	)
@@ -341,11 +342,34 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 			bam_files=full_bam_list,
 			depth_distribution_tsv=depth_plot.outputs['tsv'],
 			site_type='intergenic',
-			output_directory=f'{top_dir}/sitetables',
+			output_directory=top_dir,
 			species_name=SPECIES_NAME,
 			bed_file=INTERGENIC_BED
 		)
 	)
+
+	if REPEATS_BED:
+		exclude_repeats = gwf.target_from_template(
+			name=f'intergenic_exluding_repeats_bed',
+			template=bed_exclude_overlap(
+				main_bed_file=INTERGENIC_BED,
+				subtraction_bed_file=REPEATS_BED,
+				output_directory=top_dir,
+				species_name=SPECIES_NAME
+			)
+		)
+
+		site_count_intergenic_excl_repeats = gwf.target_from_template(
+			name=f'site_count_intergenic_excl_repeats',
+			template=site_count_region(
+				bam_files=full_bam_list,
+				depth_distribution_tsv=depth_plot.outputs['tsv'],
+				site_type='intergenic_excl_repeats',
+				output_directory=top_dir,
+				species_name=SPECIES_NAME,
+				bed_file=exclude_repeats.outputs['bed']
+			)
+		)
 
 	if MODE == 1 or MODE == 4:
 		merge_and_norm_vcf_single = gwf.target_from_template(
@@ -369,16 +393,30 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 			)
 		)
 
-		merge_site_tables_single = gwf.target_from_template(
-			name=f'merge_site_tables_single',
-			template=merge_site_tables(
-				site_tables=[site_count_all.outputs['sitetable'],
-							 site_count_intergenic.outputs['sitetable'],
-							 filter_vcf_single.outputs['sitetable']],
-				output_name=f'{species_abbreviation(SPECIES_NAME)}.singlecall' if MODE == 4 else f'{species_abbreviation(SPECIES_NAME)}',
-				output_directory=top_out if OUTPUT_DIR else f'{top_dir}/sitetables'
+		if REPEATS_BED:
+			merge_site_tables_single = gwf.target_from_template(
+				name=f'merge_site_tables_single',
+				template=merge_site_tables(
+					site_tables=[site_count_all.outputs['sitetable'],
+								site_count_intergenic.outputs['sitetable'],
+								site_count_intergenic_excl_repeats.outputs['sitetable'],
+								filter_vcf_single.outputs['sitetable']],
+					output_name=f'{species_abbreviation(SPECIES_NAME)}.singlecall' if MODE == 4 else f'{species_abbreviation(SPECIES_NAME)}',
+					output_directory=top_out if OUTPUT_DIR else top_dir
+				)
 			)
-		)
+
+		else:
+			merge_site_tables_single = gwf.target_from_template(
+				name=f'merge_site_tables_single',
+				template=merge_site_tables(
+					site_tables=[site_count_all.outputs['sitetable'],
+								site_count_intergenic.outputs['sitetable'],
+								filter_vcf_single.outputs['sitetable']],
+					output_name=f'{species_abbreviation(SPECIES_NAME)}.singlecall' if MODE == 4 else f'{species_abbreviation(SPECIES_NAME)}',
+					output_directory=top_out if OUTPUT_DIR else top_dir
+				)
+			)
 
 	if MODE == 2 or MODE == 4:
 		merge_and_norm_vcf_group = gwf.target_from_template(
@@ -402,16 +440,30 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 			)
 		)
 
-		merge_site_tables_group = gwf.target_from_template(
-			name=f'merge_site_tables_group',
-			template=merge_site_tables(
-				site_tables=[site_count_all.outputs['sitetable'],
-							 site_count_intergenic.outputs['sitetable'],
-							 filter_vcf_group.outputs['sitetable']],
-				output_name=f'{species_abbreviation(SPECIES_NAME)}.groupcall' if MODE == 4 else f'{species_abbreviation(SPECIES_NAME)}',
-				output_directory=top_out if OUTPUT_DIR else f'{top_dir}/sitetables'
+		if REPEATS_BED:
+			merge_site_tables_group = gwf.target_from_template(
+				name=f'merge_site_tables_group',
+				template=merge_site_tables(
+					site_tables=[site_count_all.outputs['sitetable'],
+								site_count_intergenic.outputs['sitetable'],
+								site_count_intergenic_excl_repeats.outputs['sitetable'],
+								filter_vcf_group.outputs['sitetable']],
+					output_name=f'{species_abbreviation(SPECIES_NAME)}.groupcall' if MODE == 4 else f'{species_abbreviation(SPECIES_NAME)}',
+					output_directory=top_out if OUTPUT_DIR else top_dir
+				)
 			)
-		)
+		
+		else:
+			merge_site_tables_group = gwf.target_from_template(
+				name=f'merge_site_tables_group',
+				template=merge_site_tables(
+					site_tables=[site_count_all.outputs['sitetable'],
+								site_count_intergenic.outputs['sitetable'],
+								filter_vcf_group.outputs['sitetable']],
+					output_name=f'{species_abbreviation(SPECIES_NAME)}.groupcall' if MODE == 4 else f'{species_abbreviation(SPECIES_NAME)}',
+					output_directory=top_out if OUTPUT_DIR else top_dir
+				)
+			)
 
 	if MODE == 3 or MODE == 4:
 		norm_vcf_all = gwf.target_from_template(
@@ -435,15 +487,29 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 			)
 		)
 
-		merge_site_tables_all = gwf.target_from_template(
-			name=f'merge_site_tables_all',
-			template=merge_site_tables(
-				site_tables=[site_count_all.outputs['sitetable'],
-							 site_count_intergenic.outputs['sitetable'],
-							 filter_vcf_all.outputs['sitetable']],
-				output_name=f'{species_abbreviation(SPECIES_NAME)}.allcall' if MODE == 4 else f'{species_abbreviation(SPECIES_NAME)}',
-				output_directory=top_out if OUTPUT_DIR else f'{top_dir}/sitetables'
+		if REPEATS_BED:
+			merge_site_tables_all = gwf.target_from_template(
+				name=f'merge_site_tables_all',
+				template=merge_site_tables(
+					site_tables=[site_count_all.outputs['sitetable'],
+								site_count_intergenic.outputs['sitetable'],
+								site_count_intergenic_excl_repeats.outputs['sitetable'],
+								filter_vcf_all.outputs['sitetable']],
+					output_name=f'{species_abbreviation(SPECIES_NAME)}.allcall' if MODE == 4 else f'{species_abbreviation(SPECIES_NAME)}',
+					output_directory=top_out if OUTPUT_DIR else top_dir
+				)
 			)
-		)
+		
+		else:
+			merge_site_tables_all = gwf.target_from_template(
+				name=f'merge_site_tables_all',
+				template=merge_site_tables(
+					site_tables=[site_count_all.outputs['sitetable'],
+								site_count_intergenic.outputs['sitetable'],
+								filter_vcf_all.outputs['sitetable']],
+					output_name=f'{species_abbreviation(SPECIES_NAME)}.allcall' if MODE == 4 else f'{species_abbreviation(SPECIES_NAME)}',
+					output_directory=top_out if OUTPUT_DIR else top_dir
+				)
+			)
 	
 	return gwf
