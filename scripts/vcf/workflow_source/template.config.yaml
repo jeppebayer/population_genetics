@@ -1,5 +1,5 @@
 # Tag identifying file association.
-TAG: jeppebayer:EcoGenetics,museomics,vcf:workflowconfiguration
+TAG: jeppebayer:EcoGenetics,population_genetics,vcf:workflowconfiguration
 # (str). The name of the relevant project account.
 account: 
 # (str). Taxonomic group. Can be left empty.
