@@ -782,7 +782,7 @@ def merge_and_norm_vcf(vcf_files: list, reference_genome_file: str, output_name:
 	
 	bcftools merge \
 		--threads {options['cores']} \
-		--output-type u \
+		--output-type v \
 		--missing-to-ref \
 		{' '.join(vcf_files)} \
 	| bcftools norm \
@@ -836,7 +836,7 @@ def norm_vcf(vcf_file: str, reference_genome_file: str, output_name: str, output
 	bcftools norm \
 		--threads {options['cores']} \
 		--output-type z \
-		--output {output_directory}/{output_name}.merged.norm.prog.vcf.gz \
+		--output {output_directory}/{output_name}.norm.prog.vcf.gz \
 		--fasta-ref {reference_genome_file} \
 		--write-index \
 		{vcf_file}
@@ -1054,7 +1054,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 				for (i = 10; i <= NF; i++)
 				{{
 					split($i, genotypearray, ":")
-					if (genotypearray[1] ~ /^0\/.*0$/)
+					if (genotypearray[1] ~ /^0\\/.*0$/)
 					{{
 						npopulationvariants[populations[i], "whole_genome"] += 1
 						npopulationvariants[populations[i], $1] += 1
@@ -1103,11 +1103,11 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 			0 \
 			"total" \
 			> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
-	bcftools filter \
+	| bcftools filter \
 		--threads {options['cores']} \
 		--SnpGap 5:indel \
 		--output-type v \
-		{vcf_file} \
+		- \
 	| tee \
 		>(variablesitecount \
 			0 \
@@ -1182,8 +1182,8 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 		
 	mv {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz {outputs['vcf']}
 	mv {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz.csi {outputs['index']}
-	mv {output_directory}/{species_abbreviation(species_name)}.sitetable.variable.prog.tsv {outputs['sitetable']}
-	rm {output_directory}/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv
+	mv {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.prog.tsv {outputs['sitetable']}
+	rm {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -1237,7 +1237,7 @@ def merge_site_tables(site_tables: list, output_name: str, output_directory: str
 			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
 		}}' \
 		{' '.join(site_tables)} \
-		> {output_directory}/{output_name}.sitetable.prog.tsv
+		> {output_directory}/sitetable/{output_name}.sitetable.prog.tsv
 	
 	mv {output_directory}/sitetable/{output_name}.sitetable.prog.tsv {outputs['sitetable']}
 

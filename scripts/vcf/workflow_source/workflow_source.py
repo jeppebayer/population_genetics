@@ -372,20 +372,32 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 		)
 
 	if MODE == 1 or MODE == 4:
-		merge_and_norm_vcf_single = gwf.target_from_template(
-			name=f'merge_and_normalize_vcf_single',
-			template=merge_and_norm_vcf(
-				vcf_files=vcf_single_list,
-				reference_genome_file=index_reference.outputs['symlink'],
-				output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
-				output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/raw_vcf'
+		if len(vcf_single_list) == 1:
+			norm_vcf_single = gwf.target_from_template(
+				name=f'normalize_vcf_single',
+				template=norm_vcf(
+					vcf_file=vcf_single_list[0],
+					reference_genome_file=index_reference.outputs['symlink'],
+					output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
+					output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/raw_vcf'
+				)
 			)
-		)
+
+		else:
+			norm_vcf_single = gwf.target_from_template(
+				name=f'merge_and_normalize_vcf_single',
+				template=merge_and_norm_vcf(
+					vcf_files=vcf_single_list,
+					reference_genome_file=index_reference.outputs['symlink'],
+					output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
+					output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/raw_vcf'
+				)
+			)
 
 		filter_vcf_single = gwf.target_from_template(
 			name=f'filter_vcf_single',
 			template=filter_vcf(
-				vcf_file=merge_and_norm_vcf_single.outputs['vcf'],
+				vcf_file=norm_vcf_single.outputs['vcf'],
 				depth_distribution_file=depth_plot.outputs['tsv'],
 				output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/filtered_vcf',
 				species_name=SPECIES_NAME,
@@ -398,9 +410,9 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 				name=f'merge_site_tables_single',
 				template=merge_site_tables(
 					site_tables=[site_count_all.outputs['sitetable'],
-								site_count_intergenic.outputs['sitetable'],
-								site_count_intergenic_excl_repeats.outputs['sitetable'],
-								filter_vcf_single.outputs['sitetable']],
+								 site_count_intergenic.outputs['sitetable'],
+								 site_count_intergenic_excl_repeats.outputs['sitetable'],
+								 filter_vcf_single.outputs['sitetable']],
 					output_name=f'{species_abbreviation(SPECIES_NAME)}.singlecall' if MODE == 4 else f'{species_abbreviation(SPECIES_NAME)}',
 					output_directory=top_out if OUTPUT_DIR else top_dir
 				)
@@ -411,28 +423,40 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 				name=f'merge_site_tables_single',
 				template=merge_site_tables(
 					site_tables=[site_count_all.outputs['sitetable'],
-								site_count_intergenic.outputs['sitetable'],
-								filter_vcf_single.outputs['sitetable']],
+								 site_count_intergenic.outputs['sitetable'],
+								 filter_vcf_single.outputs['sitetable']],
 					output_name=f'{species_abbreviation(SPECIES_NAME)}.singlecall' if MODE == 4 else f'{species_abbreviation(SPECIES_NAME)}',
 					output_directory=top_out if OUTPUT_DIR else top_dir
 				)
 			)
 
 	if MODE == 2 or MODE == 4:
-		merge_and_norm_vcf_group = gwf.target_from_template(
-			name=f'merge_and_normalize_vcf_group',
-			template=merge_and_norm_vcf(
-				vcf_files=vcf_group_list,
-				reference_genome_file=index_reference.outputs['symlink'],
-				output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_groupcall',
-				output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/raw_vcf'
+		if len(vcf_group_list) == 1:
+			norm_vcf_group = gwf.target_from_template(
+				name=f'normalize_vcf_group',
+				template=norm_vcf(
+					vcf_file=vcf_group_list[0],
+					reference_genome_file=index_reference.outputs['symlink'],
+					output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_groupcall',
+					output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/raw_vcf'
+				)
 			)
-		)
+
+		else:
+			norm_vcf_group = gwf.target_from_template(
+				name=f'merge_and_normalize_vcf_group',
+				template=merge_and_norm_vcf(
+					vcf_files=vcf_group_list,
+					reference_genome_file=index_reference.outputs['symlink'],
+					output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_groupcall',
+					output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/raw_vcf'
+				)
+			)
 
 		filter_vcf_group = gwf.target_from_template(
 			name=f'filter_vcf_group',
 			template=filter_vcf(
-				vcf_file=merge_and_norm_vcf_group.outputs['vcf'],
+				vcf_file=norm_vcf_group.outputs['vcf'],
 				depth_distribution_file=depth_plot.outputs['tsv'],
 				output_directory=top_out if OUTPUT_DIR else f'{top_dir}/filtered_vcf',
 				species_name=SPECIES_NAME,
@@ -445,9 +469,9 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 				name=f'merge_site_tables_group',
 				template=merge_site_tables(
 					site_tables=[site_count_all.outputs['sitetable'],
-								site_count_intergenic.outputs['sitetable'],
-								site_count_intergenic_excl_repeats.outputs['sitetable'],
-								filter_vcf_group.outputs['sitetable']],
+								 site_count_intergenic.outputs['sitetable'],
+								 site_count_intergenic_excl_repeats.outputs['sitetable'],
+								 filter_vcf_group.outputs['sitetable']],
 					output_name=f'{species_abbreviation(SPECIES_NAME)}.groupcall' if MODE == 4 else f'{species_abbreviation(SPECIES_NAME)}',
 					output_directory=top_out if OUTPUT_DIR else top_dir
 				)
@@ -458,8 +482,8 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 				name=f'merge_site_tables_group',
 				template=merge_site_tables(
 					site_tables=[site_count_all.outputs['sitetable'],
-								site_count_intergenic.outputs['sitetable'],
-								filter_vcf_group.outputs['sitetable']],
+								 site_count_intergenic.outputs['sitetable'],
+								 filter_vcf_group.outputs['sitetable']],
 					output_name=f'{species_abbreviation(SPECIES_NAME)}.groupcall' if MODE == 4 else f'{species_abbreviation(SPECIES_NAME)}',
 					output_directory=top_out if OUTPUT_DIR else top_dir
 				)
@@ -492,9 +516,9 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 				name=f'merge_site_tables_all',
 				template=merge_site_tables(
 					site_tables=[site_count_all.outputs['sitetable'],
-								site_count_intergenic.outputs['sitetable'],
-								site_count_intergenic_excl_repeats.outputs['sitetable'],
-								filter_vcf_all.outputs['sitetable']],
+								 site_count_intergenic.outputs['sitetable'],
+								 site_count_intergenic_excl_repeats.outputs['sitetable'],
+								 filter_vcf_all.outputs['sitetable']],
 					output_name=f'{species_abbreviation(SPECIES_NAME)}.allcall' if MODE == 4 else f'{species_abbreviation(SPECIES_NAME)}',
 					output_directory=top_out if OUTPUT_DIR else top_dir
 				)
@@ -505,8 +529,8 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 				name=f'merge_site_tables_all',
 				template=merge_site_tables(
 					site_tables=[site_count_all.outputs['sitetable'],
-								site_count_intergenic.outputs['sitetable'],
-								filter_vcf_all.outputs['sitetable']],
+								 site_count_intergenic.outputs['sitetable'],
+								 filter_vcf_all.outputs['sitetable']],
 					output_name=f'{species_abbreviation(SPECIES_NAME)}.allcall' if MODE == 4 else f'{species_abbreviation(SPECIES_NAME)}',
 					output_directory=top_out if OUTPUT_DIR else top_dir
 				)
