@@ -1009,8 +1009,8 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 	"""
 	inputs = {'vcf': vcf_file,
 		   	  'depth': depth_distribution_file}
-	outputs = {'vcf': f'{output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.vcf.gz',
-			   'index': f'{output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.vcf.gz.csi',
+	outputs = {'vcf': f'{output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.vcf.gz',
+			   'index': f'{output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.vcf.gz.csi',
 			   'sitetable': f'{output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.tsv'}
 	options = {
 		'cores': 18,
@@ -1054,7 +1054,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 				for (i = 10; i <= NF; i++)
 				{{
 					split($i, genotypearray, ":")
-					if (genotypearray[1] ~ /^0\\/.*0$/)
+					if (genotypearray[1] !~ /^0\\/.*0$/)
 					{{
 						npopulationvariants[populations[i], "whole_genome"] += 1
 						npopulationvariants[populations[i], $1] += 1
@@ -1103,6 +1103,17 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 			0 \
 			"total" \
 			> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
+	| bcftools view \
+		--threads {options['cores']} \
+		--include 'INFO/AF > 0' \
+		--output-type v \
+		- \
+	| tee \
+		>(variablesitecount \
+			0 \
+			2 \
+			"AF>0" \
+			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
 	| bcftools filter \
 		--threads {options['cores']} \
 		--SnpGap 5:indel \
@@ -1111,7 +1122,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 	| tee \
 		>(variablesitecount \
 			0 \
-			2 \
+			3 \
 			"indel_proximity" \
 			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
 	| bcftools view \
@@ -1122,7 +1133,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 	| tee \
 		>(variablesitecount \
 			0 \
-			3 \
+			4 \
 			"snps_only" \
 			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
 	| bcftools view \
@@ -1133,18 +1144,18 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 	| tee \
 		>(variablesitecount \
 			0 \
-			4 \
+			5 \
 			"biallelic_only" \
 			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
 	| bcftools view \
 		--threads {options['cores']} \
-		--include 'FMT/DP>={min_depth} & FMT/DP<="$maxdepth"' \
+		--include "FMT/DP>={min_depth} & FMT/DP<=$maxdepth" \
 		--output-type v \
 		- \
 	| tee \
 		>(variablesitecount \
 			0 \
-			5 \
+			6 \
 			"depth_thresholds" \
 			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
 	| bcftools view \
@@ -1155,13 +1166,13 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 	| tee \
 		>(variablesitecount \
 			0 \
-			6 \
+			7 \
 			"AO>1" \
 			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
 	| bcftools view \
 		--threads {options['cores']} \
 		--output-type z \
-		--output {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz \
+		--output {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz \
 		--write-index \
 		-
 	
@@ -1180,8 +1191,8 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 		{output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv \
 		> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.prog.tsv
 		
-	mv {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz {outputs['vcf']}
-	mv {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz.csi {outputs['index']}
+	mv {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz {outputs['vcf']}
+	mv {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz.csi {outputs['index']}
 	mv {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.prog.tsv {outputs['sitetable']}
 	rm {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv
 	
