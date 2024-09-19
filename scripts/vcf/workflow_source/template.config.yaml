@@ -10,7 +10,7 @@ species_name:
 reference_genome_path: 
 # (str). BED file indicating intergenic regions of the reference genome.
 intergenic_bed_file: 
-# (str). BED file indicating repetitive regions of the reference genome.
+# (str). BED file indicating repetitive regions of the reference genome. If left empty workflow will try to extract repetitive regions from reference genome.
 repeats_bed_file: 
 # (str). Directory for intermediary files.
 working_directory_path: 

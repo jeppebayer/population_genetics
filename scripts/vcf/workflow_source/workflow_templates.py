@@ -953,6 +953,76 @@ def site_count_region(bam_files: list, depth_distribution_tsv: str, site_type: s
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
+def extract_softmasked_intervals(reference_genome_file: str, output_directory: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'reference': reference_genome_file}
+	outputs = {'bed': f'{output_directory}/annotation/{os.path.splitext(os.path.splitext(os.path.basename(reference_genome_file))[0])[0] if reference_genome_file.endswith('.gz') else os.path.splitext(os.path.basename(reference_genome_file))[0]}.repeats.bed'}
+	options = {
+		'cores': 1,
+		'memory': '10g',
+		'walltime': '02:00:00'
+	}
+	protect = {outputs['bed']}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/annotation ] || mkdir -p {output_directory}/annotation
+	
+	bedtools merge \
+		-i <(awk \
+			'function maskedinterval(string)
+			{{
+				result = match(string, /[a-z]+/, matcharray)
+				if (result != 0)
+				{{
+					start = pos + RSTART - 1
+					end = start + RLENGTH
+					print seqname, start, end
+					sub(matcharray[0], toupper(matcharray[0]), string)
+ 					maskedinterval(string)
+				}}
+			}}
+			BEGIN{{
+				FS = "\\t"
+				OFS = "\\t"
+			}}
+			{{
+				if ($0 ~ /^>/)
+				{{
+					split($1, seqnamearray, " ")
+					seqname = substr(seqnamearray[1], 2)
+					pos = 0
+					next
+				}}
+				maskedinterval($0)
+				pos += length($0)
+			}}' \
+			{'<(zcat' + reference_genome_file + ')' if reference_genome_file.endswith('.gz') else reference_genome_file}) \
+		> {output_directory}/annotation/{os.path.splitext(os.path.splitext(os.path.basename(reference_genome_file))[0])[0] if reference_genome_file.endswith('.gz') else os.path.splitext(os.path.basename(reference_genome_file))[0]}.repeats.prog.bed
+	
+	mv {output_directory}/annotation/{os.path.splitext(os.path.splitext(os.path.basename(reference_genome_file))[0])[0] if reference_genome_file.endswith('.gz') else os.path.splitext(os.path.basename(reference_genome_file))[0]}.repeats.prog.bed {outputs['bed']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
+
 def bed_exclude_overlap(main_bed_file: str, subtraction_bed_file: str, output_directory: str, species_name: str):
 	"""
 	Template: template_description
