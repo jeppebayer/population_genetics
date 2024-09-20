@@ -451,8 +451,8 @@ def freebayes_partition_single(reference_genome_file: str, bam_file: str, output
 	"""
 	inputs = {'reference': reference_genome_file,
 		   	  'bam': bam_file}
-	outputs = {'vcf': f'{output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz',
-			   'index': f'{output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz.csi'}
+	outputs = {'vcf': f'{output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.vcf.gz',
+			   'index': f'{output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.vcf.gz.csi'}
 	options = {
 		'cores': 1,
 		'memory': f'{memory}g',
@@ -476,19 +476,19 @@ def freebayes_partition_single(reference_genome_file: str, bam_file: str, output
 		--fasta-reference {reference_genome_file} \
 		--use-best-n-alleles {best_n_alleles} \
 		--ploidy {ploidy} \
-		--region {region}:{start}-{end} \
+		--region '{region}:{start}-{end}' \
 		--min-alternate-fraction {min_alternate_fraction} \
 		--min-alternate-count {min_alternate_count} \
 		--pooled-discrete \
 		-b {bam_file} \
 	| bcftools view \
 		--output-type z \
-		--output {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz \
+		--output {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz \
 		--write-index \
 		-
 	
-	mv {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz {outputs['vcf']}
-	mv {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz.csi {outputs['index']}
+	mv {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz {outputs['vcf']}
+	mv {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz.csi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -511,8 +511,8 @@ def freebayes_partition_group(reference_genome_file: str, bam_files: list, outpu
 	"""
 	inputs = {'reference': reference_genome_file,
 		   	  'bam': bam_files}
-	outputs = {'vcf': f'{output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz',
-			   'index': f'{output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz.csi'}
+	outputs = {'vcf': f'{output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.vcf.gz',
+			   'index': f'{output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.vcf.gz.csi'}
 	options = {
 		'cores': 1,
 		'memory': f'{memory}g',
@@ -536,19 +536,19 @@ def freebayes_partition_group(reference_genome_file: str, bam_files: list, outpu
 		--fasta-reference {reference_genome_file} \
 		--use-best-n-alleles {best_n_alleles} \
 		--ploidy {ploidy} \
-		--region {region}:{start}-{end} \
+		--region '{region}:{start}-{end}' \
 		--min-alternate-fraction {min_alternate_fraction} \
 		--min-alternate-count {min_alternate_count} \
 		--pooled-discrete \
 		-b {' -b '.join(bam_files)} \
 	| bcftools view \
 		--output-type z \
-		--output {output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz \
+		--output {output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz \
 		--write-index \
 		-
 	
-	mv {output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz {outputs['vcf']}
-	mv {output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz.csi {outputs['index']}
+	mv {output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz {outputs['vcf']}
+	mv {output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz.csi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -571,8 +571,8 @@ def freebayes_partition_all(reference_genome_file: str, bam_files: list, output_
 	"""
 	inputs = {'reference': reference_genome_file,
 		   	  'bam': bam_files}
-	outputs = {'vcf': f'{output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz',
-			   'index': f'{output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf.gz.csi'}
+	outputs = {'vcf': f'{output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.vcf.gz',
+			   'index': f'{output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.vcf.gz.csi'}
 	options = {
 		'cores': 1,
 		'memory': f'{memory}g',
@@ -596,19 +596,19 @@ def freebayes_partition_all(reference_genome_file: str, bam_files: list, output_
 		--fasta-reference {reference_genome_file} \
 		--use-best-n-alleles {best_n_alleles} \
 		--ploidy {ploidy} \
-		--region {region}:{start}-{end} \
+		--region '{region}:{start}-{end}' \
 		--min-alternate-fraction {min_alternate_fraction} \
 		--min-alternate-count {min_alternate_count} \
 		--pooled-discrete \
 		-b {' -b '.join(bam_files)} \
 	| bcftools view \
 		--output-type z \
-		--output {output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz \
+		--output {output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz \
 		--write-index \
 		-
 	
-	mv {output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz {outputs['vcf']}
-	mv {output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf.gz.csi {outputs['index']}
+	mv {output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz {outputs['vcf']}
+	mv {output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz.csi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"

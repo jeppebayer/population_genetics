@@ -39,6 +39,13 @@ filtering:
 # (int). Mode for creating VCF file (1 | 2 | 3 | 4).
 # 1 = Separate VCF files for each sample/BAM file. 2 = One VCF file per sample group. 3 = One VCF containing data for all samples/BAM files. 4 = All.
 mode: 
+# Batch settings. Can be used to reduced the number of jobs sent to the queue at one time.
+# Only partial VCF files will be created when batching. To complete the full workflow one must do a no-batch run.
+batch_settings:
+  # (int). The number of batches to create. 0 = don't batch jobs. If left empty defaults to '0'
+  number_of_batches: 
+  # (int). Which of the created batches to run. Must be >=1 AND <=number_of_batches. Can be left empty if number_of_batches is '0'.
+  current_batch_number: 
 # (list). Sample setup. List of dictionaries listing the configuration for each sample.
 sample_list:
   - 
