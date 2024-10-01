@@ -377,7 +377,7 @@ def merge_alignments(alignment_files: list, sample_name: str, output_directory: 
 	options = {
 		'cores': 18,
 		'memory': '30g',
-		'walltime': '12:00:00'
+		'walltime': '18:00:00'
 	}
 	spec = f"""
 	# Sources environment

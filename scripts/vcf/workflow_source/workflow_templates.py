@@ -85,8 +85,9 @@ def partition_chrom(parse_fasta: list, size: int = 500000, npad: int = 5):
 			chrom_partition.append({'num': f'{num:0{npad}}', 'region': chrom['sequence_name'], 'start': start, 'end': end})
 			start = end
 			num += 1
-		chrom_partition.append({'num': f'{num:0{npad}}', 'region': chrom['sequence_name'], 'start': start, 'end': start + partial_chunk})
-		num += 1
+		if partial_chunk:
+			chrom_partition.append({'num': f'{num:0{npad}}', 'region': chrom['sequence_name'], 'start': start, 'end': start + partial_chunk})
+			num += 1
 	return chrom_partition
 
 def mpileup_partitions_filelist(partitions: list, top_dir: str, species_name: str, npad: int = 5):
