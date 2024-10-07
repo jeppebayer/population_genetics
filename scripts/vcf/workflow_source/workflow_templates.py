@@ -349,7 +349,7 @@ def depth_distribution_plot(depth_distribution_file: str, min_coverage_threshold
 			   'tsv': f'{output_directory}/depth_distribution/{os.path.basename(depth_distribution_file)}.tsv'}
 	options = {
 		'cores': 1,
-		'memory': '400g',
+		'memory': '100g',
 		'walltime': '04:00:00'
 	}
 	protect = [outputs['plot'], outputs['tsv']]
@@ -409,8 +409,8 @@ def shared_sites_within_threshold_bed(depth_distribution_file: str, depth_distri
 	
 	bedtools merge \
 		-i <(awk \
-		-v maxthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depth_distribution_tsv}) \
-		-v minthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $6; exit}}}}' {depth_distribution_tsv}) \
+		-v maxthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $8; exit}}}}' {depth_distribution_tsv}) \
+		-v minthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depth_distribution_tsv}) \
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -703,7 +703,8 @@ def concat_vcf(files: list, output_name: str, output_directory: str| None = None
 		output_directory = os.path.dirname(files[0])
 	inputs = {'files': files}
 	if compress:
-		outputs = {'concat_file': f'{output_directory}/{output_name}.vcf.gz'}
+		outputs = {'concat_file': f'{output_directory}/{output_name}.vcf.gz',
+			 	   'index': f'{output_directory}/{output_name}.vcf.gz.csi'}
 	else:
 		outputs = {'concat_file': f'{output_directory}/{output_name}.vcf'}
 	options = {
@@ -737,11 +738,14 @@ def concat_vcf(files: list, output_name: str, output_directory: str| None = None
 			--threads {options['cores']} \
 			--output-type z \
 			--output {output_directory}/{output_name}.prog.vcf.gz \
-			--write-index \
 			{' '.join(files)}
+		
+		bcftools index \
+			--threads {options['cores']} \
+			{output_directory}/{output_name}.prog.vcf.gz
 
 			mv {output_directory}/{output_name}.prog.vcf.gz {outputs['concat_file']}
-			mv {output_directory}/{output_name}.prog.vcf.gz.csi {output_directory}/{output_name}.vcf.gz.csi
+			mv {output_directory}/{output_name}.prog.vcf.gz.csi {outputs['index']}
 	fi
 	
 	echo "END: $(date)"
@@ -889,8 +893,8 @@ def site_count_region(bam_files: list, depth_distribution_tsv: str, site_type: s
 	[ -d {output_directory}/sitetable ] || mkdir -p {output_directory}/sitetable
 	
 	awk \
-		-v maxthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depth_distribution_tsv}) \
-		-v minthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $6; exit}}}}' {depth_distribution_tsv}) \
+		-v maxthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $8; exit}}}}' {depth_distribution_tsv}) \
+		-v minthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depth_distribution_tsv}) \
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -1067,7 +1071,7 @@ def bed_exclude_overlap(main_bed_file: str, subtraction_bed_file: str, output_di
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: str, species_name: str, min_depth: int = 200):
+def filter_vcf(vcf_file: str, depth_distribution_tsv: str, output_directory: str, species_name: str, min_depth: int = 200):
 	"""
 	Template: template_description
 	
@@ -1079,7 +1083,7 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 	:param
 	"""
 	inputs = {'vcf': vcf_file,
-		   	  'depth': depth_distribution_file}
+		   	  'depth': depth_distribution_tsv}
 	outputs = {'vcf': f'{output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.vcf.gz',
 			   'index': f'{output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.vcf.gz.csi',
 			   'sitetable': f'{output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.tsv'}
@@ -1158,11 +1162,11 @@ def filter_vcf(vcf_file: str, depth_distribution_file: str, output_directory: st
 		{{
 			if (NR == 2)
 			{{
-				print $7
+				print $8
 				exit
 			}}
 		}}' \
-		{depth_distribution_file})
+		{depth_distribution_tsv})
 	
 	bcftools view \
 		--threads {options['cores']} \
