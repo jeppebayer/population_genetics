@@ -1331,3 +1331,81 @@ def merge_site_tables(site_tables: list, output_name: str, output_directory: str
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
+
+def singleton_proportion(output_directory: str, species_name: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {}
+	outputs = {}
+	options = {
+		'cores': 10,
+		'memory': '40g',
+		'walltime': '04:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory} ] || mkdir -p {output_directory}
+	
+	awk \
+		-v minthreshold="$min" \
+		-v maxthreshold="$max" \
+		'BEGIN{{
+			FS = OFS = "\\t"
+			for (i = minthreshold; i <= maxthreshold; i += 10)
+			{{
+				bincountsites[i] = 0
+				bincountsingletons[i] = 0
+			}}
+		}}
+		{{
+			if (FNR == NR)
+			{{
+				if ($3 >= minthreshold && $3 <= maxthreshold)
+				{{
+					bincountsites[10 * int($3 / 10)] += 1
+				}}
+				next
+			}}
+			if ($1 >= minthreshold && $1 <= maxthreshold && ($2 ~ /0\\/1$/))
+			{{
+				bincountsingletons[10 * int($1 / 10)] += 1
+				
+			}}
+		}}
+		END{{
+			print "coverage_bin", "n_sites", "n_singletons", "singleton_proportion"
+			for (i in bincountsites)
+			{{
+				print i "-" i + 9, bincountsites[i], bincountsingletons[i], bincountsingletons[i] / bincountsites[i]
+			}}
+		}}' \
+		<(samtools depth \
+			--threads {options['cores']} \
+			"$i"*.bam) \
+		<(bcftools query \
+			-f '%INFO/DP\\t[%GT]\\n' \
+			"$i"*.vcf.gz) \
+		> "$i".bincounts.tsv
+	
+	mv
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
