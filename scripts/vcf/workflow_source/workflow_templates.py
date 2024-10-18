@@ -160,19 +160,19 @@ def name_freebayes_chrom(idx: str, target: AnonymousTarget) -> str:
 
 # 	[ -d {output_directory}/freebayes_vcf/tmp ] || mkdir -p {output_directory}/freebayes_vcf/tmp
 	
-# 	freebayes \
-# 		-f {reference_genome_file} \
-# 		-n {best_n_alleles} \
-# 		-p {ploidy} \
-# 		-r {region}:{start}-{end} \
-# 		--min-alternate-fraction {min_alternate_fraction} \
-# 		--min-alternate-count {min_alternate_count} \
-# 		--pooled-discrete \
-#         -b {bam_file_string} \
-# 	| bcftools filter \
-# 		-e 'INFO/TYPE~"del" || INFO/TYPE~"ins"' \
-# 		-O v \
-# 		- \
+# 	freebayes \\
+# 		-f {reference_genome_file} \\
+# 		-n {best_n_alleles} \\
+# 		-p {ploidy} \\
+# 		-r {region}:{start}-{end} \\
+# 		--min-alternate-fraction {min_alternate_fraction} \\
+# 		--min-alternate-count {min_alternate_count} \\
+# 		--pooled-discrete \\
+#         -b {bam_file_string} \\
+# 	| bcftools filter \\
+# 		-e 'INFO/TYPE~"del" || INFO/TYPE~"ins"' \\
+# 		-O v \\
+# 		- \\
 # 		> {output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf
 	
 # 	mv {output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf {outputs['vcf']}
@@ -216,15 +216,15 @@ def freebayes_chrom(reference_genome_file: str, bam_file_list: list, output_dire
 
 	[ -d {output_directory}/freebayes_vcf/tmp ] || mkdir -p {output_directory}/freebayes_vcf/tmp
 	
-	freebayes \
-		-f {reference_genome_file} \
-		-n {best_n_alleles} \
-		-p {ploidy} \
-		-r {region}:{start}-{end} \
-		--min-alternate-fraction {min_alternate_fraction} \
-		--min-alternate-count {min_alternate_count} \
-		--pooled-discrete \
-		-b {bam_file_string} \
+	freebayes \\
+		-f {reference_genome_file} \\
+		-n {best_n_alleles} \\
+		-p {ploidy} \\
+		-r {region}:{start}-{end} \\
+		--min-alternate-fraction {min_alternate_fraction} \\
+		--min-alternate-count {min_alternate_count} \\
+		--pooled-discrete \\
+		-b {bam_file_string} \\
 		> {output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf
 	
 	mv {output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf {outputs['vcf']}
@@ -276,12 +276,12 @@ def index_reference_genome(reference_genome_file: str, output_directory: str):
 	[ -e {output_directory}/reference/{os.path.basename(reference_genome_file)} ] && rm -f {output_directory}/reference/{os.path.basename(reference_genome_file)}
 	ln -s {reference_genome_file} {output_directory}/reference/{os.path.basename(reference_genome_file)}
 	
-	bwa index \
-		-p {output_directory}/reference/{os.path.basename(reference_genome_file)} \
+	bwa index \\
+		-p {output_directory}/reference/{os.path.basename(reference_genome_file)} \\
 		{output_directory}/reference/{os.path.basename(reference_genome_file)}
 	
-	samtools faidx \
-		-o {output_directory}/reference/{os.path.basename(reference_genome_file)}.prog.fai \
+	samtools faidx \\
+		-o {output_directory}/reference/{os.path.basename(reference_genome_file)}.prog.fai \\
 		{output_directory}/reference/{os.path.basename(reference_genome_file)}
 	
 	mv {output_directory}/reference/{os.path.basename(reference_genome_file)}.prog.fai {outputs['fai']}
@@ -321,9 +321,9 @@ def depth_distribution(bam_files: list, output_directory: str, species_name: str
 	
 	[ -d {output_directory}/depth_distribution ] || mkdir -p {output_directory}/depth_distribution
 	
-	samtools depth \
-		--threads {options['cores']} \
-		-o {output_directory}/depth_distribution/{species_abbreviation(species_name)}.prog.depth \
+	samtools depth \\
+		--threads {options['cores']} \\
+		-o {output_directory}/depth_distribution/{species_abbreviation(species_name)}.prog.depth \\
 		{' '.join(bam_files)}
 	
 	mv {output_directory}/depth_distribution/{species_abbreviation(species_name)}.prog.depth {outputs['depth']}
@@ -365,9 +365,9 @@ def depth_distribution_plot(depth_distribution_file: str, min_coverage_threshold
 	
 	[ -d {output_directory}/depth_distribution ] || mkdir -p {output_directory}/depth_distribution
 
-	python {plot_depth_distribution} \
-		{min_coverage_threshold} \
-		{depth_distribution_file} \
+	python {plot_depth_distribution} \\
+		{min_coverage_threshold} \\
+		{depth_distribution_file} \\
 		{output_directory}/depth_distribution
 
 	echo "END: $(date)"
@@ -407,10 +407,10 @@ def shared_sites_within_threshold_bed(depth_distribution_file: str, depth_distri
 	
 	[ -d {output_directory}/depth_distribution ] || mkdir -p {output_directory}/depth_distribution
 	
-	bedtools merge \
-		-i <(awk \
-		-v maxthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $8; exit}}}}' {depth_distribution_tsv}) \
-		-v minthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depth_distribution_tsv}) \
+	bedtools merge \\
+		-i <(awk \\
+		-v maxthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $8; exit}}}}' {depth_distribution_tsv}) \\
+		-v minthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depth_distribution_tsv}) \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -425,8 +425,8 @@ def shared_sites_within_threshold_bed(depth_distribution_file: str, depth_distri
 				{{
 					print $1, $2 - 1, $2
 				}}
-		}}' \
-		{depth_distribution_file}) \
+		}}' \\
+		{depth_distribution_file}) \\
 		> {output_directory}/depth_distribution/{species_abbreviation(species_name)}.depththreshold.prog.bed
 	
 	mv {output_directory}/depth_distribution/{species_abbreviation(species_name)}.depththreshold.prog.bed {outputs['bed']}
@@ -473,19 +473,19 @@ def freebayes_partition_single(reference_genome_file: str, bam_file: str, output
 
 	[ -d {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp ] || mkdir -p {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp
 	
-	freebayes \
-		--fasta-reference {reference_genome_file} \
-		--use-best-n-alleles {best_n_alleles} \
-		--ploidy {ploidy} \
-		--region '{region}:{start}-{end}' \
-		--min-alternate-fraction {min_alternate_fraction} \
-		--min-alternate-count {min_alternate_count} \
-		--pooled-discrete \
-		-b {bam_file} \
-	| bcftools view \
-		--output-type z \
-		--output {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz \
-		--write-index \
+	freebayes \\
+		--fasta-reference {reference_genome_file} \\
+		--use-best-n-alleles {best_n_alleles} \\
+		--ploidy {ploidy} \\
+		--region '{region}:{start}-{end}' \\
+		--min-alternate-fraction {min_alternate_fraction} \\
+		--min-alternate-count {min_alternate_count} \\
+		--pooled-discrete \\
+		-b {bam_file} \\
+	| bcftools view \\
+		--output-type z \\
+		--output {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz \\
+		--write-index \\
 		-
 	
 	mv {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz {outputs['vcf']}
@@ -533,19 +533,19 @@ def freebayes_partition_group(reference_genome_file: str, bam_files: list, outpu
 
 	[ -d {output_directory}/raw_vcf/{group_name}/tmp ] || mkdir -p {output_directory}/raw_vcf/{group_name}/tmp
 	
-	freebayes \
-		--fasta-reference {reference_genome_file} \
-		--use-best-n-alleles {best_n_alleles} \
-		--ploidy {ploidy} \
-		--region '{region}:{start}-{end}' \
-		--min-alternate-fraction {min_alternate_fraction} \
-		--min-alternate-count {min_alternate_count} \
-		--pooled-discrete \
-		-b {' -b '.join(bam_files)} \
-	| bcftools view \
-		--output-type z \
-		--output {output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz \
-		--write-index \
+	freebayes \\
+		--fasta-reference {reference_genome_file} \\
+		--use-best-n-alleles {best_n_alleles} \\
+		--ploidy {ploidy} \\
+		--region '{region}:{start}-{end}' \\
+		--min-alternate-fraction {min_alternate_fraction} \\
+		--min-alternate-count {min_alternate_count} \\
+		--pooled-discrete \\
+		-b {' -b '.join(bam_files)} \\
+	| bcftools view \\
+		--output-type z \\
+		--output {output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz \\
+		--write-index \\
 		-
 	
 	mv {output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz {outputs['vcf']}
@@ -593,19 +593,19 @@ def freebayes_partition_all(reference_genome_file: str, bam_files: list, output_
 
 	[ -d {output_directory}/raw_vcf/all/tmp ] || mkdir -p {output_directory}/raw_vcf/all/tmp
 	
-	freebayes \
-		--fasta-reference {reference_genome_file} \
-		--use-best-n-alleles {best_n_alleles} \
-		--ploidy {ploidy} \
-		--region '{region}:{start}-{end}' \
-		--min-alternate-fraction {min_alternate_fraction} \
-		--min-alternate-count {min_alternate_count} \
-		--pooled-discrete \
-		-b {' -b '.join(bam_files)} \
-	| bcftools view \
-		--output-type z \
-		--output {output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz \
-		--write-index \
+	freebayes \\
+		--fasta-reference {reference_genome_file} \\
+		--use-best-n-alleles {best_n_alleles} \\
+		--ploidy {ploidy} \\
+		--region '{region}:{start}-{end}' \\
+		--min-alternate-fraction {min_alternate_fraction} \\
+		--min-alternate-count {min_alternate_count} \\
+		--pooled-discrete \\
+		-b {' -b '.join(bam_files)} \\
+	| bcftools view \\
+		--output-type z \\
+		--output {output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz \\
+		--write-index \\
 		-
 	
 	mv {output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz {outputs['vcf']}
@@ -660,17 +660,17 @@ def concat(files: list, output_name: str, output_directory: str | None = None, c
 	[ -d {output_directory}] || mkdir -p {output_directory}
 
 	if [ {compress} == 'False' ]; then
-		cat \
-			{' '.join(files)} \
+		cat \\
+			{' '.join(files)} \\
 			> {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}
 		
 		mv {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]} {outputs['concat_file']}
 	else
-		cat \
-			{' '.join(files)} \
-		| gzip \
-			-c \
-			- \
+		cat \\
+			{' '.join(files)} \\
+		| gzip \\
+			-c \\
+			- \\
 			> {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}.gz
 		
 		mv {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}.gz {outputs['concat_file']}
@@ -726,22 +726,22 @@ def concat_vcf(files: list, output_name: str, output_directory: str| None = None
 	[ -d {output_directory} ] || mkdir -p {output_directory}
 	
 	if [ {compress} == 'False' ]; then
-		bcftools concat \
-			--threads {options['cores']} \
-			--output-type v \
-			--output {output_directory}/{output_name}.prog.vcf \
+		bcftools concat \\
+			--threads {options['cores']} \\
+			--output-type v \\
+			--output {output_directory}/{output_name}.prog.vcf \\
 			{' '.join(files)}
 
 			mv {output_directory}/{output_name}.prog.vcf {outputs['concat_file']}
 	else
-		bcftools concat \
-			--threads {options['cores']} \
-			--output-type z \
-			--output {output_directory}/{output_name}.prog.vcf.gz \
+		bcftools concat \\
+			--threads {options['cores']} \\
+			--output-type z \\
+			--output {output_directory}/{output_name}.prog.vcf.gz \\
 			{' '.join(files)}
 		
-		bcftools index \
-			--threads {options['cores']} \
+		bcftools index \\
+			--threads {options['cores']} \\
 			{output_directory}/{output_name}.prog.vcf.gz
 
 			mv {output_directory}/{output_name}.prog.vcf.gz {outputs['concat_file']}
@@ -785,17 +785,17 @@ def merge_and_norm_vcf(vcf_files: list, reference_genome_file: str, output_name:
 	
 	[ -d {output_directory} ] || mkdir -p {output_directory}
 	
-	bcftools merge \
-		--threads {options['cores']} \
-		--output-type v \
-		--missing-to-ref \
-		{' '.join(vcf_files)} \
-	| bcftools norm \
-		--threads {options['cores']} \
-		--output-type z \
-		--output {output_directory}/{output_name}.merged.norm.prog.vcf.gz \
-		--fasta-ref {reference_genome_file} \
-		--write-index \
+	bcftools merge \\
+		--threads {options['cores']} \\
+		--output-type v \\
+		--missing-to-ref \\
+		{' '.join(vcf_files)} \\
+	| bcftools norm \\
+		--threads {options['cores']} \\
+		--output-type z \\
+		--output {output_directory}/{output_name}.merged.norm.prog.vcf.gz \\
+		--fasta-ref {reference_genome_file} \\
+		--write-index \\
 		-
 	
 	mv {output_directory}/{output_name}.merged.norm.prog.vcf.gz {outputs['vcf']}
@@ -838,12 +838,12 @@ def norm_vcf(vcf_file: str, reference_genome_file: str, output_name: str, output
 	
 	[ -d {output_directory} ] || mkdir -p {output_directory}
 	
-	bcftools norm \
-		--threads {options['cores']} \
-		--output-type z \
-		--output {output_directory}/{output_name}.norm.prog.vcf.gz \
-		--fasta-ref {reference_genome_file} \
-		--write-index \
+	bcftools norm \\
+		--threads {options['cores']} \\
+		--output-type z \\
+		--output {output_directory}/{output_name}.norm.prog.vcf.gz \\
+		--fasta-ref {reference_genome_file} \\
+		--write-index \\
 		{vcf_file}
 	
 	mv {output_directory}/{output_name}.norm.prog.vcf.gz {outputs['vcf']}
@@ -892,9 +892,9 @@ def site_count_region(bam_files: list, depth_distribution_tsv: str, site_type: s
 	
 	[ -d {output_directory}/sitetable ] || mkdir -p {output_directory}/sitetable
 	
-	awk \
-		-v maxthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $8; exit}}}}' {depth_distribution_tsv}) \
-		-v minthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depth_distribution_tsv}) \
+	awk \\
+		-v maxthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $8; exit}}}}' {depth_distribution_tsv}) \\
+		-v minthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depth_distribution_tsv}) \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -934,13 +934,13 @@ def site_count_region(bam_files: list, depth_distribution_tsv: str, site_type: s
 				split(i, thressitesarray, "\\034")
 				print "1", "within_threshold", thressitesarray[1], thressitesarray[2], "{site_type}", thressites[i]
 			}}
-		}}' \
-		<(echo -e "{populations}") \
-		<(samtools depth \
-			--threads {options['cores']} \
-			{f'-b {bed_file}' if bed_file else ''} \
-			{' '.join(bam_files)}) \
-	| awk \
+		}}' \\
+		<(echo -e "{populations}") \\
+		<(samtools depth \\
+			--threads {options['cores']} \\
+			{f'-b {bed_file}' if bed_file else ''} \\
+			{' '.join(bam_files)}) \\
+	| awk \\
 		'{{
 			if (NR == 1)
 			{{
@@ -948,7 +948,7 @@ def site_count_region(bam_files: list, depth_distribution_tsv: str, site_type: s
 				next
 			}}
 			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
-		}}' \
+		}}' \\
 		> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.{site_type}.prog.tsv
 
 	mv {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.{site_type}.prog.tsv {outputs['sitetable']}
@@ -989,8 +989,8 @@ def extract_softmasked_intervals(reference_genome_file: str, output_directory: s
 	
 	[ -d {output_directory}/annotation ] || mkdir -p {output_directory}/annotation
 	
-	bedtools merge \
-		-i <(awk \
+	bedtools merge \\
+		-i <(awk \\
 			'function maskedinterval(string)
 			{{
 				result = match(string, /[a-z]+/, matcharray)
@@ -1017,8 +1017,8 @@ def extract_softmasked_intervals(reference_genome_file: str, output_directory: s
 				}}
 				maskedinterval($0)
 				pos += length($0)
-			}}' \
-			{'<(zcat' + reference_genome_file + ')' if reference_genome_file.endswith('.gz') else reference_genome_file}) \
+			}}' \\
+			{'<(zcat' + reference_genome_file + ')' if reference_genome_file.endswith('.gz') else reference_genome_file}) \\
 		> {output_directory}/annotation/{os.path.splitext(os.path.splitext(os.path.basename(reference_genome_file))[0])[0] if reference_genome_file.endswith('.gz') else os.path.splitext(os.path.basename(reference_genome_file))[0]}.repeats.prog.bed
 	
 	mv {output_directory}/annotation/{os.path.splitext(os.path.splitext(os.path.basename(reference_genome_file))[0])[0] if reference_genome_file.endswith('.gz') else os.path.splitext(os.path.basename(reference_genome_file))[0]}.repeats.prog.bed {outputs['bed']}
@@ -1059,9 +1059,9 @@ def bed_exclude_overlap(main_bed_file: str, subtraction_bed_file: str, output_di
 	
 	[ -d {output_directory}/sitetable ] || mkdir -p {output_directory}/sitetable
 	
-	bedtools subtract \
-		-a {main_bed_file} \
-		-b {subtraction_bed_file} \
+	bedtools subtract \\
+		-a {main_bed_file} \\
+		-b {subtraction_bed_file} \\
 		> {output_directory}/sitetable/{species_abbreviation(species_name)}.intergenic_excl_repeats.prog.bed
 	
 	mv {output_directory}/sitetable/{species_abbreviation(species_name)}.intergenic_excl_repeats.prog.bed {outputs['bed']}
@@ -1106,10 +1106,10 @@ def filter_vcf(vcf_file: str, depth_distribution_tsv: str, output_directory: str
 	[ -d {output_directory}/sitetable ] || mkdir -p {output_directory}/sitetable
 
 	variablesitecount() {{
-		awk \
-			-v first="$1" \
-			-v stage="$2" \
-			-v identifier="$3" \
+		awk \\
+			-v first="$1" \\
+			-v stage="$2" \\
+			-v identifier="$3" \\
 			'BEGIN{{
 				FS = OFS = "\\t"
 			}}
@@ -1155,7 +1155,7 @@ def filter_vcf(vcf_file: str, depth_distribution_tsv: str, output_directory: str
 			}}'
 	}}
 	
-	maxdepth=$(awk \
+	maxdepth=$(awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -1165,93 +1165,93 @@ def filter_vcf(vcf_file: str, depth_distribution_tsv: str, output_directory: str
 				print $8
 				exit
 			}}
-		}}' \
+		}}' \\
 		{depth_distribution_tsv})
 	
-	bcftools view \
-		--threads {options['cores']} \
-		--output-type v \
-		{vcf_file} \
-	| tee \
-		>(variablesitecount \
-			1 \
-			0 \
-			"total" \
-			> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
-	| bcftools view \
-		--threads {options['cores']} \
-		--include 'INFO/AF > 0' \
-		--output-type v \
-		- \
-	| tee \
-		>(variablesitecount \
-			0 \
-			2 \
-			"AF>0" \
-			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
-	| bcftools filter \
-		--threads {options['cores']} \
-		--SnpGap 5:indel \
-		--output-type v \
-		- \
-	| tee \
-		>(variablesitecount \
-			0 \
-			3 \
-			"indel_proximity" \
-			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
-	| bcftools view \
-		--threads {options['cores']} \
-		--types snps \
-		--output-type v \
-		- \
-	| tee \
-		>(variablesitecount \
-			0 \
-			4 \
-			"snps_only" \
-			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
-	| bcftools view \
-		--threads {options['cores']} \
-		--max-alleles 2 \
-		--output-type v \
-		- \
-	| tee \
-		>(variablesitecount \
-			0 \
-			5 \
-			"biallelic_only" \
-			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
-	| bcftools view \
-		--threads {options['cores']} \
-		--include "FMT/DP>={min_depth} & FMT/DP<=$maxdepth" \
-		--output-type v \
-		- \
-	| tee \
-		>(variablesitecount \
-			0 \
-			6 \
-			"depth_thresholds" \
-			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
-	| bcftools view \
-		--threads {options['cores']} \
-		--include 'AVG(FMT/AO) > 1' \
-		--output-type v \
-		- \
-	| tee \
-		>(variablesitecount \
-			0 \
-			7 \
-			"AO>1" \
-			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \
-	| bcftools view \
-		--threads {options['cores']} \
-		--output-type z \
-		--output {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz \
-		--write-index \
+	bcftools view \\
+		--threads {options['cores']} \\
+		--output-type v \\
+		{vcf_file} \\
+	| tee \\
+		>(variablesitecount \\
+			1 \\
+			0 \\
+			"total" \\
+			> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \\
+	| bcftools view \\
+		--threads {options['cores']} \\
+		--include 'INFO/AF > 0' \\
+		--output-type v \\
+		- \\
+	| tee \\
+		>(variablesitecount \\
+			0 \\
+			2 \\
+			"AF>0" \\
+			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \\
+	| bcftools filter \\
+		--threads {options['cores']} \\
+		--SnpGap 5:indel \\
+		--output-type v \\
+		- \\
+	| tee \\
+		>(variablesitecount \\
+			0 \\
+			3 \\
+			"indel_proximity" \\
+			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \\
+	| bcftools view \\
+		--threads {options['cores']} \\
+		--types snps \\
+		--output-type v \\
+		- \\
+	| tee \\
+		>(variablesitecount \\
+			0 \\
+			4 \\
+			"snps_only" \\
+			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \\
+	| bcftools view \\
+		--threads {options['cores']} \\
+		--max-alleles 2 \\
+		--output-type v \\
+		- \\
+	| tee \\
+		>(variablesitecount \\
+			0 \\
+			5 \\
+			"biallelic_only" \\
+			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \\
+	| bcftools view \\
+		--threads {options['cores']} \\
+		--include "FMT/DP>={min_depth} & FMT/DP<=$maxdepth" \\
+		--output-type v \\
+		- \\
+	| tee \\
+		>(variablesitecount \\
+			0 \\
+			6 \\
+			"depth_thresholds" \\
+			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \\
+	| bcftools view \\
+		--threads {options['cores']} \\
+		--include 'AVG(FMT/AO) > 1' \\
+		--output-type v \\
+		- \\
+	| tee \\
+		>(variablesitecount \\
+			0 \\
+			7 \\
+			"AO>1" \\
+			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \\
+	| bcftools view \\
+		--threads {options['cores']} \\
+		--output-type z \\
+		--output {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz \\
+		--write-index \\
 		-
 	
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -1262,8 +1262,8 @@ def filter_vcf(vcf_file: str, depth_distribution_tsv: str, output_directory: str
 				next
 			}}
 			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
-		}}' \
-		{output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv \
+		}}' \\
+		{output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv \\
 		> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.prog.tsv
 		
 	mv {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz {outputs['vcf']}
@@ -1307,7 +1307,7 @@ def merge_site_tables(site_tables: list, output_name: str, output_directory: str
 	
 	[ -d {output_directory}/sitetable ] || mkdir -p {output_directory}/sitetable
 	
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -1321,8 +1321,8 @@ def merge_site_tables(site_tables: list, output_name: str, output_directory: str
 				next
 			}}
 			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
-		}}' \
-		{' '.join(site_tables)} \
+		}}' \\
+		{' '.join(site_tables)} \\
 		> {output_directory}/sitetable/{output_name}.sitetable.prog.tsv
 	
 	mv {output_directory}/sitetable/{output_name}.sitetable.prog.tsv {outputs['sitetable']}
@@ -1362,9 +1362,9 @@ def singleton_proportion(output_directory: str, species_name: str):
 	
 	[ -d {output_directory} ] || mkdir -p {output_directory}
 	
-	awk \
-		-v minthreshold="$min" \
-		-v maxthreshold="$max" \
+	awk \\
+		-v minthreshold="$min" \\
+		-v maxthreshold="$max" \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 			for (i = minthreshold; i <= maxthreshold; i += 10)
@@ -1394,13 +1394,13 @@ def singleton_proportion(output_directory: str, species_name: str):
 			{{
 				print i "-" i + 9, bincountsites[i], bincountsingletons[i], bincountsingletons[i] / bincountsites[i]
 			}}
-		}}' \
-		<(samtools depth \
-			--threads {options['cores']} \
-			"$i"*.bam) \
-		<(bcftools query \
-			-f '%INFO/DP\\t[%GT]\\n' \
-			"$i"*.vcf.gz) \
+		}}' \\
+		<(samtools depth \\
+			--threads {options['cores']} \\
+			"$i"*.bam) \\
+		<(bcftools query \\
+			-f '%INFO/DP\\t[%GT]\\n' \\
+			"$i"*.vcf.gz) \\
 		> "$i".bincounts.tsv
 	
 	mv

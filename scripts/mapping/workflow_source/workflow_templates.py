@@ -78,12 +78,12 @@ def index_reference_genome(reference_genome_file: str, output_directory: str):
 	[ -e {output_directory}/reference/{os.path.basename(reference_genome_file)} ] && rm -f {output_directory}/reference/{os.path.basename(reference_genome_file)}
 	ln -s {reference_genome_file} {output_directory}/reference/{os.path.basename(reference_genome_file)}
 	
-	bwa index \
-		-p {output_directory}/reference/{os.path.basename(reference_genome_file)} \
+	bwa index \\
+		-p {output_directory}/reference/{os.path.basename(reference_genome_file)} \\
 		{output_directory}/reference/{os.path.basename(reference_genome_file)}
 	
-	samtools faidx \
-		-o {output_directory}/reference/{os.path.basename(reference_genome_file)}.prog.fai \
+	samtools faidx \\
+		-o {output_directory}/reference/{os.path.basename(reference_genome_file)}.prog.fai \\
 		{output_directory}/reference/{os.path.basename(reference_genome_file)}
 	
 	mv {output_directory}/reference/{os.path.basename(reference_genome_file)}.prog.fai {outputs['fai']}
@@ -147,17 +147,17 @@ def adapterremoval_pairedend(sample_name: str, read1_files: list, read2_files: l
 	
 	[ -d {output_directory}/adapterremoval/{sample_name} ] || mkdir -p {output_directory}/adapterremoval/{sample_name}
 	
-	AdapterRemoval \
-		--threads {options['cores']} \
-		--file1 {' '.join(read1_files)} \
-		--file2 {' '.join(read2_files)} \
-		--adapter1 {adapter1} \
-		--adapter2 {adapter2} \
-		--minquality {min_quality} \
-		--minlength {min_length} \
-		--basename {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog \
-		--trimns \
-		--trimqualities \
+	AdapterRemoval \\
+		--threads {options['cores']} \\
+		--file1 {' '.join(read1_files)} \\
+		--file2 {' '.join(read2_files)} \\
+		--adapter1 {adapter1} \\
+		--adapter2 {adapter2} \\
+		--minquality {min_quality} \\
+		--minlength {min_length} \\
+		--basename {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog \\
+		--trimns \\
+		--trimqualities \\
 		--collapse
 	
 	mv {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog.settings {outputs['misc'][0]}
@@ -216,15 +216,15 @@ def adapterremoval_singleend(sample_name: str, read_files: list, output_director
 	
 	[ -d {output_directory}/adapterremoval/{sample_name} ] || mkdir -p {output_directory}/adapterremoval/{sample_name}
 	
-	AdapterRemoval \
-		--threads {options['cores']} \
-		--file1 {' '.join(read_files)} \
-		--adapter1 {adapter1} \
-		--minquality {min_qulaity} \
-		--minlength {min_length} \
-		--basename {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog \
-		--trimns \
-		--trimqualities \
+	AdapterRemoval \\
+		--threads {options['cores']} \\
+		--file1 {' '.join(read_files)} \\
+		--adapter1 {adapter1} \\
+		--minquality {min_qulaity} \\
+		--minlength {min_length} \\
+		--basename {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog \\
+		--trimns \\
+		--trimqualities \\
 		--collapse
 	
 	mv {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog.settings {outputs['misc'][0]}
@@ -277,18 +277,18 @@ def alignment_pairedend(read1_file: str, read2_file: str, reference_genome_file:
 	
 	[ -d {output_directory}/alignment/{sample_name}/tmp ] || mkdir -p {output_directory}/alignment/{sample_name}/tmp
 	
-	bwa mem \
-		-t {options['cores']} \
-		-R "@RG\\tID:{sample_name}\\tSM:{sample_name}" \
-		{reference_genome_file} \
-		{read1_file} \
-		{read2_file} \
-	| samtools sort \
-		--threads {options['cores'] - 1} \
-		-n \
-		--output-fmt BAM \
-		-T {output_directory}/alignment/{sample_name}/tmp \
-		-o {output_directory}/alignment/{sample_name}/{sample_name}.paired_alignment.prog.bam \
+	bwa mem \\
+		-t {options['cores']} \\
+		-R "@RG\\tID:{sample_name}\\tSM:{sample_name}" \\
+		{reference_genome_file} \\
+		{read1_file} \\
+		{read2_file} \\
+	| samtools sort \\
+		--threads {options['cores'] - 1} \\
+		-n \\
+		--output-fmt BAM \\
+		-T {output_directory}/alignment/{sample_name}/tmp \\
+		-o {output_directory}/alignment/{sample_name}/{sample_name}.paired_alignment.prog.bam \\
 		-
 	
 	mv {output_directory}/alignment/{sample_name}/{sample_name}.paired_alignment.prog.bam {outputs['alignment']}
@@ -336,17 +336,17 @@ def alignment_collapsed(collapsed_read_files: list, reference_genome_file: str, 
 	
 	[ -d {output_directory}/alignment/{sample_name}/tmp ] || mkdir -p {output_directory}/alignment/{sample_name}/tmp
 	
-	bwa mem \
-		-t {options['cores']} \
-		-R "@RG\\tID:{sample_name}\\tSM:{sample_name}" \
-		{reference_genome_file} \
-		<(cat {' '.join(collapsed_read_files)}) \
-	| samtools sort \
-		--threads {options['cores'] - 1} \
-		-n \
-		--output-fmt BAM \
-		-T {output_directory}/alignment/{sample_name}/tmp \
-		-o {output_directory}/alignment/{sample_name}/{sample_name}.collapsed_alignment.prog.bam \
+	bwa mem \\
+		-t {options['cores']} \\
+		-R "@RG\\tID:{sample_name}\\tSM:{sample_name}" \\
+		{reference_genome_file} \\
+		<(cat {' '.join(collapsed_read_files)}) \\
+	| samtools sort \\
+		--threads {options['cores'] - 1} \\
+		-n \\
+		--output-fmt BAM \\
+		-T {output_directory}/alignment/{sample_name}/tmp \\
+		-o {output_directory}/alignment/{sample_name}/{sample_name}.collapsed_alignment.prog.bam \\
 		-
 	
 	mv {output_directory}/alignment/{sample_name}/{sample_name}.collapsed_alignment.prog.bam {outputs['alignment']}
@@ -391,12 +391,12 @@ def merge_alignments(alignment_files: list, sample_name: str, output_directory: 
 	
 	[ -d {output_directory}/alignment/{sample_name} ] || mkdir -p {output_directory}/alignment/{sample_name}
 	
-	samtools merge \
-		--threads {options['cores'] - 1} \
-		-c \
-		-p \
-		-n \
-		-o {output_directory}/alignment/{sample_name}/{sample_name}.merged_alignment.prog.bam \
+	samtools merge \\
+		--threads {options['cores'] - 1} \\
+		-c \\
+		-p \\
+		-n \\
+		-o {output_directory}/alignment/{sample_name}/{sample_name}.merged_alignment.prog.bam \\
 		{' '.join(alignment_files)}
 	
 	mv {output_directory}/alignment/{sample_name}/{sample_name}.merged_alignment.prog.bam {outputs['merged']}
@@ -450,24 +450,24 @@ def alignment_singleend(read_file: str, reference_genome_file: str, sample_name:
 	
 	[ -d {output_directory}/alignment/{sample_name}/tmp ] || mkdir -p {output_directory}/alignment/{sample_name}/tmp
 	
-	bwa aln \
-		-t {options['cores']} \
-		-l {seed_length} \
-		-n {missing_fraction} \
-		-o {max_gaps} \
-		{reference_genome_file} \
-		{read_file} \
-	| bwa samse \
-		-r "@RG\\tID:{sample_name}\\tSM:{sample_name}" \
-		{reference_genome_file} \
-		- \
-		{read_file} \
-	| samtools sort \
-		--threads {options['cores'] - 1} \
-		-n \
-		--output-fmt BAM \
-		-T {output_directory}/alignment/{sample_name}/tmp \
-		-o {output_directory}/alignment/{sample_name}/{sample_name}.single_alignment.prog.bam \
+	bwa aln \\
+		-t {options['cores']} \\
+		-l {seed_length} \\
+		-n {missing_fraction} \\
+		-o {max_gaps} \\
+		{reference_genome_file} \\
+		{read_file} \\
+	| bwa samse \\
+		-r "@RG\\tID:{sample_name}\\tSM:{sample_name}" \\
+		{reference_genome_file} \\
+		- \\
+		{read_file} \\
+	| samtools sort \\
+		--threads {options['cores'] - 1} \\
+		-n \\
+		--output-fmt BAM \\
+		-T {output_directory}/alignment/{sample_name}/tmp \\
+		-o {output_directory}/alignment/{sample_name}/{sample_name}.single_alignment.prog.bam \\
 		- 
 	
 	mv {output_directory}/alignment/{sample_name}/{sample_name}.single_alignment.prog.bam {outputs['alignment']}
@@ -515,30 +515,30 @@ def mark_duplicates_samtools(alignment_file: str, sample_name: str, output_direc
 	
 	[ -d {output_directory}/alignment/{sample_name}/tmp ] || mkdir -p {output_directory}/alignment/{sample_name}/tmp
 
-	samtools fixmate \
-		--threads {options['cores'] - 1} \
-		-m \
-		--output-fmt BAM \
-		{alignment_file} \
-		- \
-	| samtools sort \
-		--threads {options['cores'] - 1} \
-		--output-fmt BAM \
-		-T {output_directory}/alignment/{sample_name}/tmp \
-		- \
-	| samtools markdup \
-		--threads {options['cores'] - 1} \
-		--output-fmt BAM \
-		-T {output_directory}/alignment/{sample_name}/tmp \
-		-s \
-		-f {output_directory}/alignment/{sample_name}/{sample_name}.markdup.bam.markdupstats \
-		- \
+	samtools fixmate \\
+		--threads {options['cores'] - 1} \\
+		-m \\
+		--output-fmt BAM \\
+		{alignment_file} \\
+		- \\
+	| samtools sort \\
+		--threads {options['cores'] - 1} \\
+		--output-fmt BAM \\
+		-T {output_directory}/alignment/{sample_name}/tmp \\
+		- \\
+	| samtools markdup \\
+		--threads {options['cores'] - 1} \\
+		--output-fmt BAM \\
+		-T {output_directory}/alignment/{sample_name}/tmp \\
+		-s \\
+		-f {output_directory}/alignment/{sample_name}/{sample_name}.markdup.bam.markdupstats \\
+		- \\
 		{output_directory}/alignment/{sample_name}/{sample_name}.markdup.bam
 	
-	samtools index \
-		--threads {options['cores'] - 1} \
-		-b \
-		{output_directory}/alignment/{sample_name}/{sample_name}.markdup.bam \
+	samtools index \\
+		--threads {options['cores'] - 1} \\
+		-b \\
+		{output_directory}/alignment/{sample_name}/{sample_name}.markdup.bam \\
 		{output_directory}/alignment/{sample_name}/{sample_name}.markdup.prog.bam.bai
 
 	mv {output_directory}/alignment/{sample_name}/{sample_name}.markdup.prog.bam.bai {outputs['bai']}
@@ -585,17 +585,17 @@ def extract_unmapped_reads(alignment_file: str, sample_name: str, output_directo
 	
 	[ -d {output_directory}/{sample_name} ] || mkdir -p {output_directory}/{sample_name}
 	
-	samtools view \
-		--threads {options['cores'] - 1} \
-		--require-flags 4 \
-		--bam \
-		--output {output_directory}/{sample_name}/{sample_name}.unmapped.bam \
+	samtools view \\
+		--threads {options['cores'] - 1} \\
+		--require-flags 4 \\
+		--bam \\
+		--output {output_directory}/{sample_name}/{sample_name}.unmapped.bam \\
 		{alignment_file}
 
-	samtools index \
-		--threads {options['cores'] - 1} \
-		--bai \
-		--output {output_directory}/{sample_name}/{sample_name}.unmapped.prog.bam.bai \
+	samtools index \\
+		--threads {options['cores'] - 1} \\
+		--bai \\
+		--output {output_directory}/{sample_name}/{sample_name}.unmapped.prog.bam.bai \\
 		{output_directory}/{sample_name}/{sample_name}.unmapped.bam
 		
 	mv {output_directory}/{sample_name}/{sample_name}.unmapped.prog.bam.bai {outputs['bai']}
@@ -642,24 +642,24 @@ def samtools_stats(alignment_file: str, output_directory: str):
 	
 	[ -d {output_directory} ] || mkdir -p {output_directory}
 	
-	samtools idxstats \
-		--threads {options['cores'] - 1} \
-		{alignment_file} \
+	samtools idxstats \\
+		--threads {options['cores'] - 1} \\
+		{alignment_file} \\
 		> {output_directory}/{os.path.basename(alignment_file)}.prog.idxstats
 	
-	samtools flagstat \
-		--threads {options['cores'] - 1} \
-		{alignment_file} \
+	samtools flagstat \\
+		--threads {options['cores'] - 1} \\
+		{alignment_file} \\
 		> {output_directory}/{os.path.basename(alignment_file)}.prog.flagstat
 
-	samtools coverage \
-		-o {output_directory}/{os.path.basename(alignment_file)}.prog.coverage \
+	samtools coverage \\
+		-o {output_directory}/{os.path.basename(alignment_file)}.prog.coverage \\
 		{alignment_file}
 	
-	samtools stats \
-		--threads {options['cores'] - 1} \
-		--coverage 1,1000,1 \
-		{alignment_file} \
+	samtools stats \\
+		--threads {options['cores'] - 1} \\
+		--coverage 1,1000,1 \\
+		{alignment_file} \\
 		> {output_directory}/{os.path.basename(alignment_file)}.prog.stats
 
 	mv {output_directory}/{os.path.basename(alignment_file)}.prog.idxstats {outputs['stats'][0]}
@@ -720,18 +720,18 @@ def samtools_filter(alignment_file: str, sample_name: str, output_directory: str
 	
 	[ -d {output_directory}/{sample_name} ] || mkdir -p {output_directory}/{sample_name}
 	
-	samtools view \
-		--threads {options['cores'] - 1} \
-		--bam \
-		--min-MQ {min_mq} \
-		--output {output_directory}/{sample_name}/{sample_name}.filtered.bam \
-		{' '.join(flags)} \
+	samtools view \\
+		--threads {options['cores'] - 1} \\
+		--bam \\
+		--min-MQ {min_mq} \\
+		--output {output_directory}/{sample_name}/{sample_name}.filtered.bam \\
+		{' '.join(flags)} \\
 		{alignment_file}
 
-	samtools index \
-		--threads {options['cores'] - 1} \
-		--bai \
-		--output {output_directory}/{sample_name}/{sample_name}.filtered.prog.bam.bai \
+	samtools index \\
+		--threads {options['cores'] - 1} \\
+		--bai \\
+		--output {output_directory}/{sample_name}/{sample_name}.filtered.prog.bam.bai \\
 		{output_directory}/{sample_name}/{sample_name}.filtered.bam
 	
 	mv {output_directory}/{sample_name}/{sample_name}.filtered.prog.bam.bai {outputs['bai']}
@@ -779,12 +779,12 @@ def qc_qualimap(alignment_file: str, output_directory: str):
 	
 	export _JAVA_OPTIONS="-Djava.awt.headless=true -Xmx{options['memory']}"
 	
-	qualimap bamqc \
-		-nt {options['cores']} \
-		-bam {alignment_file} \
-		-outdir {output_directory} \
-		-outformat PDF:HTML \
-		-outfile report.prog.pdf \
+	qualimap bamqc \\
+		-nt {options['cores']} \\
+		-bam {alignment_file} \\
+		-outdir {output_directory} \\
+		-outformat PDF:HTML \\
+		-outfile report.prog.pdf \\
 		--java-mem-size={options['memory']}
 
 	mv {output_directory}/report.prog.pdf {outputs['pdf']}
@@ -832,10 +832,10 @@ def qualimap_multi(dataset: list, output_directory: str):
 
 	export _JAVA_OPTIONS="-Djava.awt.headless=true -Xmx{options['memory']}"
 
-	qualimap multi-bamqc \
-		-d <(echo -e "{dataset_tabular}") \
-		-outdir {output_directory} \
-		-outfile report.prog.pdf \
+	qualimap multi-bamqc \\
+		-d <(echo -e "{dataset_tabular}") \\
+		-outdir {output_directory} \\
+		-outfile report.prog.pdf \\
 		-outformat PDF:HTML
 	
 	mv {output_directory}/report.prog.pdf {outputs['pdf']}

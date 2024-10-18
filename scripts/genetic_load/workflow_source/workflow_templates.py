@@ -128,30 +128,30 @@ def snpeff_database_build(gtf_annotation_file: str, reference_genome_file: str, 
 	[ -d {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]} ] || mkdir -p {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}
 
 	if [ ! -e {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/genes.gtf ]; then
-		ln \
-			-s \
-			{gtf_annotation_file} \
+		ln \\
+			-s \\
+			{gtf_annotation_file} \\
 			{snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/genes.gtf
 	fi
 
 	if [ ! -e {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/sequences.fa ]; then
-		ln \
-			-s \
-			{reference_genome_file} \
+		ln \\
+			-s \\
+			{reference_genome_file} \\
 			{snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/sequences.fa
 	fi
 
-	agat_sp_extract_sequences.pl \
-		--gff {gtf_annotation_file} \
-		--fasta {reference_genome_file} \
-		--type cds \
+	agat_sp_extract_sequences.pl \\
+		--gff {gtf_annotation_file} \\
+		--fasta {reference_genome_file} \\
+		--type cds \\
 		--output {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/cds.prog.fa
 
-	agat_sp_extract_sequences.pl \
-		--gff {gtf_annotation_file} \
-		--fasta {reference_genome_file} \
-		--type cds \
-		--protein \
+	agat_sp_extract_sequences.pl \\
+		--gff {gtf_annotation_file} \\
+		--fasta {reference_genome_file} \\
+		--type cds \\
+		--protein \\
 		--output {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/protein.prog.fa
 
 	mv {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/cds.prog.fa {snpeff_directory}/data/{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}/cds.fa
@@ -159,11 +159,11 @@ def snpeff_database_build(gtf_annotation_file: str, reference_genome_file: str, 
 
 	export _JAVA_OPTIONS="-Xmx{options['memory']}"
 
-	snpEff build \
-		-gtf22 \
-		-config {snpeff_directory}/snpEff.config \
-		-nodownload \
-		-verbose \
+	snpEff build \\
+		-gtf22 \\
+		-config {snpeff_directory}/snpEff.config \\
+		-nodownload \\
+		-verbose \\
 		{os.path.splitext(os.path.basename(reference_genome_file))[0].split(sep="_genomic")[0]}
 	
 	rm *.agat.log
@@ -214,20 +214,20 @@ def snpeff_annotation(vcf_file: str, snpeff_predictor_file: str, snpeff_config_f
 	
 	export _JAVA_OPTIONS="-Xmx{options['memory']}"
 
-	snpEff ann \
-		-csvStats {output_directory}/snpEff/{sample_group}/{sample_name}/{sample_name}.snpEff_summary.prog.csv \
-		-htmlStats {output_directory}/snpEff/{sample_group}/{sample_name}/{sample_name}.snpEff_summary.prog.html \
-		-nodownload \
-		-config {snpeff_config_file} \
-		-verbose \
-		-i vcf \
-		-o vcf \
-		{os.path.basename(os.path.dirname(snpeff_predictor_file))} \
-		{vcf_file} \
-	| bcftools view \
-		--output-type z \
-		--output {output_directory}/snpEff/{sample_group}/{sample_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz \
-		--write-index \
+	snpEff ann \\
+		-csvStats {output_directory}/snpEff/{sample_group}/{sample_name}/{sample_name}.snpEff_summary.prog.csv \\
+		-htmlStats {output_directory}/snpEff/{sample_group}/{sample_name}/{sample_name}.snpEff_summary.prog.html \\
+		-nodownload \\
+		-config {snpeff_config_file} \\
+		-verbose \\
+		-i vcf \\
+		-o vcf \\
+		{os.path.basename(os.path.dirname(snpeff_predictor_file))} \\
+		{vcf_file} \\
+	| bcftools view \\
+		--output-type z \\
+		--output {output_directory}/snpEff/{sample_group}/{sample_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz \\
+		--write-index \\
 		-
 	
 	mv {output_directory}/snpEff/{sample_group}/{sample_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz {outputs['ann']}
@@ -279,20 +279,20 @@ def snpeff_annotation_outgroup(vcf_file: str, snpeff_predictor_file: str, snpeff
 	
 	export _JAVA_OPTIONS="-Xmx{options['memory']}"
 
-	snpEff ann \
-		-csvStats {output_directory}/snpEff/outgroup/{outgroup_name}/{outgroup_name}.snpEff_summary.prog.csv \
-		-htmlStats {output_directory}/snpEff/outgroup/{outgroup_name}/{outgroup_name}.snpEff_summary.prog.html \
-		-nodownload \
-		-config {snpeff_config_file} \
-		-verbose \
-		-i vcf \
-		-o vcf \
-		{os.path.basename(os.path.dirname(snpeff_predictor_file))} \
-		{vcf_file} \
-	| bcftools view \
-		--output-type z \
-		--output {output_directory}/snpEff/outgroup/{outgroup_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz \
-		--write-index \
+	snpEff ann \\
+		-csvStats {output_directory}/snpEff/outgroup/{outgroup_name}/{outgroup_name}.snpEff_summary.prog.csv \\
+		-htmlStats {output_directory}/snpEff/outgroup/{outgroup_name}/{outgroup_name}.snpEff_summary.prog.html \\
+		-nodownload \\
+		-config {snpeff_config_file} \\
+		-verbose \\
+		-i vcf \\
+		-o vcf \\
+		{os.path.basename(os.path.dirname(snpeff_predictor_file))} \\
+		{vcf_file} \\
+	| bcftools view \\
+		--output-type z \\
+		--output {output_directory}/snpEff/outgroup/{outgroup_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz \\
+		--write-index \\
 		-
 	
 	mv {output_directory}/snpEff/outgroup/{outgroup_name}/{os.path.splitext(os.path.basename(vcf_file))[0] if vcf_file.endswith('.vcf') else os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0]}.ann.prog.vcf.gz {outputs['ann']}
@@ -338,7 +338,7 @@ def snpeff_freqs(ann: str):
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	awk \
+	awk \\
 		'BEGIN {{
 			FS = OFS = "\\t"
 		}}
@@ -383,8 +383,8 @@ def snpeff_freqs(ann: str):
 				sum = 0
 				n = 0
 			}}
-		}}' \
-		{annotated_vcf} \
+		}}' \\
+		{annotated_vcf} \\
 		> {os.path.dirname(ann)}/effectsummary.prog.csv
 	
 	mv {os.path.dirname(ann)}/effectsummary.prog.csv {outputs['csv']}
@@ -429,7 +429,7 @@ def cds_site_count(bam_file: str, gtf_annotation_file: str, output_directory: st
 	
 	[ -d {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp ] || mkdir -p {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp
 	
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -444,15 +444,15 @@ def cds_site_count(bam_file: str, gtf_annotation_file: str, output_directory: st
 					print $1, $4 - 1, $5, "neg" nneg, ".", $7
 				}}
 			}}
-		}}' \
-		{gtf_annotation_file} \
+		}}' \\
+		{gtf_annotation_file} \\
 		> {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.cds.bed
 
-	samtools depth \
-		-@ {options['cores'] - 1} \
-		-b {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.cds.bed \
-		{bam_file} \
-	| awk \
+	samtools depth \\
+		-@ {options['cores'] - 1} \\
+		-b {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.cds.bed \\
+		{bam_file} \\
+	| awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -466,7 +466,7 @@ def cds_site_count(bam_file: str, gtf_annotation_file: str, output_directory: st
 			for (i in chromosomearray) {{
 				print i, chromosomearray[i]
 			}}
-		}}' \
+		}}' \\
 		> {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{sample_name}.sitecount.prog.tsv
 
 	mv {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/tmp/{sample_name}.sitecount.prog.tsv {outputs['sites']}
@@ -507,11 +507,11 @@ def snpeff_result(effectsummary_file: str, sitecount_file: str, output_directory
 	
 	[ -d {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load ] || mkdir -p {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load
 	
-	python {snpeff_calcresult} \
-		{sample_name} \
-		{sample_group} \
-		{effectsummary_file} \
-		{sitecount_file} \
+	python {snpeff_calcresult} \\
+		{sample_name} \\
+		{sample_group} \\
+		{effectsummary_file} \\
+		{sitecount_file} \\
 		{output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/snpeff_results.prog.tsv
 	
 	mv {output_directory}/snpEff/{sample_group}/{sample_name}/calculated_genetic_load/snpeff_results.prog.tsv {outputs['tsv']}
@@ -551,15 +551,15 @@ def snpeff_concatenate_results(files: list, output_name: str, output_directory: 
 	
 	[ -d {output_directory} ] || mkdir -p {output_directory}
 	
-	awk \
+	awk \\
 		'BEGIN{{FS=OFS="\\t"}}
 		{{
 			if (FNR == 1 && NR != 1)
 				{{next}}
 			else
 				{{print}}
-		}}' \
-		{' '.join(files)} \
+		}}' \\
+		{' '.join(files)} \\
 		> {output_directory}/{output_name}.prog.tsv
 		
 	mv {output_directory}/{output_name}.prog.tsv {outputs['concat_file']}
@@ -613,17 +613,17 @@ def concat(files: list, output_name: str, output_directory: str = None, compress
 	[ -d {output_directory}] || mkdir -p {output_directory}
 
 	if [ {compress} == 'False' ]; then
-		cat \
-			{' '.join(files)} \
+		cat \\
+			{' '.join(files)} \\
 			> {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}
 		
 		mv {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]} {outputs['concat_file']}
 	else
-		cat \
-			{' '.join(files)} \
-		| gzip \
-			-c \
-			- \
+		cat \\
+			{' '.join(files)} \\
+		| gzip \\
+			-c \\
+			- \\
 			> {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}.gz
 		
 		mv {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}.gz {outputs['concat_file']}
@@ -694,69 +694,69 @@ def snpgenie_withinpool(reference_genome_file: str, gtf_annotation_file: str, vc
 	
 	cd {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}
 	  
-	awk -v region={region} \
+	awk -v region={region} \\
 		'BEGIN{{OFS=FS="\\t"}}
 		{{if ($0 ~ /^#/ || $1 == region)
 			{{print}}
-		}}' \
-		{vcf} \
+		}}' \\
+		{vcf} \\
 		> {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}.vcf
 	
 	[ -e {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}_revcom.vcf ] && rm -f {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}_revcom.vcf
 	
-	vcf2revcom.pl \
-		{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}.vcf \
+	vcf2revcom.pl \\
+		{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}.vcf \\
 		{region_length}
 	  
-	awk -v region={region} \
+	awk -v region={region} \\
 		'BEGIN{{RS=">"; ORS=""; FS=OFS="\\n"}}
 		{{if (NR > 1 && $1 == region)
 			{{print ">"$0}}
-		}}' \
-		{reference_genome_file} \
+		}}' \\
+		{reference_genome_file} \\
 		> {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}.fasta
 	
 	[ -e {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}_revcom.fasta ] && rm -f {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}_revcom.fasta
 
-	fasta2revcom.pl \
+	fasta2revcom.pl \\
 		{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}.fasta
 
-	awk -v region={region} \
+	awk -v region={region} \\
 		'BEGIN{{OFS=FS="\\t"}}
 		{{if ($1 == region)
 			{{print}}
-		}}' \
-		{gtf_annotation_file} \
+		}}' \\
+		{gtf_annotation_file} \\
 		> {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}.gtf
 	
 	[ -e {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}_revcom.gtf ] && rm -f {output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}_revcom.gtf
 	
-	gtf2revcom.pl \
-		{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}.gtf \
+	gtf2revcom.pl \\
+		{output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}.gtf \\
 		{region_length}
 
 	echo -e "#########################\\n# Processing '+' strand #\\n#########################"
 	
-	snpgenie.pl \
-		--vcfformat={vcf_format} \
-		--snpreport={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}.vcf \
-		--fastafile={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}.fasta \
-		--gtffile={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}.gtf \
-		--workdir={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region} \
-		--outdir={output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/plus \
-		--minfreq={min_allele_frequency} \
+	snpgenie.pl \\
+		--vcfformat={vcf_format} \\
+		--snpreport={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}.vcf \\
+		--fastafile={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}.fasta \\
+		--gtffile={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}.gtf \\
+		--workdir={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region} \\
+		--outdir={output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/plus \\
+		--minfreq={min_allele_frequency} \\
 		--slidingwindow={sliding_window_size}
 	
 	echo -e "#########################\\n# Processing '-' strand #\\n#########################"
 
-	snpgenie.pl \
-		--vcfformat={vcf_format} \
-		--snpreport={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}_revcom.vcf \
-		--fastafile={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}_revcom.fasta \
-		--gtffile={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}_revcom.gtf \
-		--workdir={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/ \
-		--outdir={output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/minus \
-		--minfreq={min_allele_frequency} \
+	snpgenie.pl \\
+		--vcfformat={vcf_format} \\
+		--snpreport={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{sample_group}.{sample_name}.{region}_revcom.vcf \\
+		--fastafile={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(reference_genome_file))[0]}.{region}_revcom.fasta \\
+		--gtffile={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/{os.path.splitext(os.path.basename(gtf_annotation_file))[0]}.{region}_revcom.gtf \\
+		--workdir={output_directory}/snpgenie/{sample_group}/tmp/{sample_name}/{region}/ \\
+		--outdir={output_directory}/snpgenie/{sample_group}/{sample_name}/{region}/minus \\
+		--minfreq={min_allele_frequency} \\
 		--slidingwindow={sliding_window_size}
 
 	echo "END: $(date)"
@@ -794,7 +794,7 @@ def snpgenie_summarize_results_population(population_summary_files: list, output
 	
 	[ -d {output_directory}/snpgenie ] || mkdir -p {output_directory}/snpgenie
 	
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 			print "sample", "group", "chromosome", "strand", "piN", "piS", "piN/piS"
@@ -813,8 +813,8 @@ def snpgenie_summarize_results_population(population_summary_files: list, output
 				piS=$11
 				print sample, group, chromosome, strand, piN, piS, piN_piS
 			}}
-		}}' \
-		{' '.join(population_summary_files)} \
+		}}' \\
+		{' '.join(population_summary_files)} \\
 		> {output_directory}/snpgenie/{species_abbreviation(species_name)}.snpgenie_results.prog.tsv
 	
 	mv {output_directory}/snpgenie/{species_abbreviation(species_name)}.snpgenie_results.prog.tsv {outputs['tsv']}
@@ -854,7 +854,7 @@ def gtf2gene_bed(gtf_annotation_file: str, output_directory: str):
 	
 	[ -d {output_directory}/DoS/bed ] || mkdir -p {output_directory}/DoS/bed
 	
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -869,8 +869,8 @@ def gtf2gene_bed(gtf_annotation_file: str, output_directory: str):
 					print $1, $4 - 1, $5, "neg" nneg, ".", $7
 				}}
 			}}
-		}}' \
-		{gtf_annotation_file} \
+		}}' \\
+		{gtf_annotation_file} \\
 		> {output_directory}/DoS/bed/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.gene.prog.bed
 
 	mv {output_directory}/DoS/bed/{os.path.basename(os.path.splitext(gtf_annotation_file)[0])}.gene.prog.bed {outputs['bed']}
@@ -912,10 +912,10 @@ def dos_count_polymorphic_sites(snpeff_annotated_vcf_file: str, gene_bed_file: s
 
 	[ -d {output_directory}/DoS/{sample_group}/{sample_name}/tmp ] || mkdir -p {output_directory}/DoS/{sample_group}/{sample_name}/tmp
 	
-	bcftools view \
-		--regions-file {gene_bed_file} \
-		{snpeff_annotated_vcf_file} \
-	| awk \
+	bcftools view \\
+		--regions-file {gene_bed_file} \\
+		{snpeff_annotated_vcf_file} \\
+	| awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 			print "chromosome", "position", "gene", "variant_type"
@@ -937,10 +937,10 @@ def dos_count_polymorphic_sites(snpeff_annotated_vcf_file: str, gene_bed_file: s
 				}}
 				print chromosome, position, gene, variant_type
 			}}
-		}}' \
+		}}' \\
 		> {output_directory}/DoS/{sample_group}/{sample_name}/tmp/polymorphism_variants.tsv
 
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -979,8 +979,8 @@ def dos_count_polymorphic_sites(snpeff_annotated_vcf_file: str, gene_bed_file: s
 				}}
 				print i, nonsynarray[i], synarray[i]
 			}}
-		}}' \
-		{output_directory}/DoS/{sample_group}/{sample_name}/tmp/polymorphism_variants.tsv \
+		}}' \\
+		{output_directory}/DoS/{sample_group}/{sample_name}/tmp/polymorphism_variants.tsv \\
 		> {output_directory}/DoS/{sample_group}/{sample_name}/tmp/polymorphisms.prog.tsv
 	
 	mv {output_directory}/DoS/{sample_group}/{sample_name}/tmp/polymorphisms.prog.tsv {outputs['poly']}
@@ -1024,10 +1024,10 @@ def dos_count_substitution_sites(snpeff_annotated_vcf_file: str, gene_bed_file: 
 
 	[ -d {output_directory}/DoS/{sample_group}/{sample_name}/tmp ] || mkdir -p {output_directory}/DoS/{sample_group}/{sample_name}/tmp
 	
-	bcftools view \
-		--regions-file {gene_bed_file} \
-		{snpeff_annotated_vcf_file} \
-	| awk \
+	bcftools view \\
+		--regions-file {gene_bed_file} \\
+		{snpeff_annotated_vcf_file} \\
+	| awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 			print "chromosome", "position", "gene", "variant_type"
@@ -1049,10 +1049,10 @@ def dos_count_substitution_sites(snpeff_annotated_vcf_file: str, gene_bed_file: 
 				}}
 				print chromosome, position, gene, variant_type
 			}}
-		}}' \
+		}}' \\
 		> {output_directory}/DoS/{sample_group}/{sample_name}/tmp/substitution_variants.tsv
 
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 			print "chromosome", "position", "gene", "variant_type"
@@ -1075,12 +1075,12 @@ def dos_count_substitution_sites(snpeff_annotated_vcf_file: str, gene_bed_file: 
 			{{
 				print $0
 			}}
-		}}' \
-		{polymorphism_variants_file} \
-		{output_directory}/DoS/{sample_group}/{sample_name}/tmp/substitution_variants.tsv \
+		}}' \\
+		{polymorphism_variants_file} \\
+		{output_directory}/DoS/{sample_group}/{sample_name}/tmp/substitution_variants.tsv \\
 		> {output_directory}/DoS/{sample_group}/{sample_name}/tmp/fixed_substitution_variants.tsv
 
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -1119,8 +1119,8 @@ def dos_count_substitution_sites(snpeff_annotated_vcf_file: str, gene_bed_file: 
 				}}
 				print i, nonsynarray[i] , synarray[i]
 			}}
-		}}' \
-		{output_directory}/DoS/{sample_group}/{sample_name}/tmp/fixed_substitution_variants.tsv \
+		}}' \\
+		{output_directory}/DoS/{sample_group}/{sample_name}/tmp/fixed_substitution_variants.tsv \\
 		> {output_directory}/DoS/{sample_group}/{sample_name}/tmp/substitutions.prog.tsv
 	
 	mv {output_directory}/DoS/{sample_group}/{sample_name}/tmp/substitutions.prog.tsv {outputs['sub']}
@@ -1161,7 +1161,7 @@ def dos_combine_d_p(polymorphisms_file: str, substitutions_file: str, output_dir
 	
 	[ -d {output_directory}/DoS/{sample_group}/{sample_name}/tmp ] || mkdir -p {output_directory}/DoS/{sample_group}/{sample_name}/tmp
 	
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -1203,9 +1203,9 @@ def dos_combine_d_p(polymorphisms_file: str, substitutions_file: str, output_dir
 				}}
 				print i, d[1], p[1], d[2], p[2]
 			}}
-		}}' \
-		{substitutions_file} \
-		{polymorphisms_file} \
+		}}' \\
+		{substitutions_file} \\
+		{polymorphisms_file} \\
 		> {output_directory}/DoS/{sample_group}/{sample_name}/tmp/combined_polymorphisms_substitutions.prog.tsv
 	
 	mv {output_directory}/DoS/{sample_group}/{sample_name}/tmp/combined_polymorphisms_substitutions.prog.tsv {outputs['combined']}
@@ -1246,7 +1246,7 @@ def dos_results(combined_file: str, output_directory: str, sample_group: str, sa
 	
 	[ -d {output_directory}/DoS/{sample_group}/{sample_name} ] || mkdir -p {output_directory}/DoS/{sample_group}/{sample_name}
 	
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 			print "gene_name", "Dn", "Pn", "Ds", "Ps", "DoS"
@@ -1265,12 +1265,12 @@ def dos_results(combined_file: str, output_directory: str, sample_group: str, sa
 				next
 			}}
 			print $1, $2, $3, $4, $5, ($2 / ($2 + $4)) - ($3 / ($3 + $5))
-		}}' \
-		{combined_file} \
+		}}' \\
+		{combined_file} \\
 		> {output_directory}/DoS/{sample_group}/{sample_name}/DoS.tsv
 
-	awk \
-		-v ngenes=$(($(wc -l < {output_directory}/DoS/{sample_group}/{sample_name}/DoS.tsv) - 1)) \
+	awk \\
+		-v ngenes=$(($(wc -l < {output_directory}/DoS/{sample_group}/{sample_name}/DoS.tsv) - 1)) \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 			if ((ngenes * 0.1) - int(ngenes * 0.1) >= 0.5)
@@ -1314,8 +1314,8 @@ def dos_results(combined_file: str, output_directory: str, sample_group: str, sa
 					print i, genearray[i], "deleterious", dosarray[lower_threshold]
 				}}
 			}}
-		}}' \
-		<(tail -n +2 {output_directory}/DoS/{sample_group}/{sample_name}/DoS.tsv | sort -r -n -k 6) \
+		}}' \\
+		<(tail -n +2 {output_directory}/DoS/{sample_group}/{sample_name}/DoS.tsv | sort -r -n -k 6) \\
 		> {output_directory}/DoS/{sample_group}/{sample_name}/DoS.genelist.prog.tsv
 
 	mv {output_directory}/DoS/{sample_group}/{sample_name}/DoS.genelist.prog.tsv {outputs['genelist']}
@@ -1357,7 +1357,7 @@ def dos_concatenate_results(dos_results_files: dict, output_directory: str, spec
 	
 	[ -d {output_directory}/DoS ] || mkdir -p {output_directory}/DoS
 	
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 			print "sample", "group", "gene", "Dn", "Pn", "Ds", "Ps", "DoS"
@@ -1371,13 +1371,13 @@ def dos_concatenate_results(dos_results_files: dict, output_directory: str, spec
 			sample = filenamearray[14]
 			group = filenamearray[13]
 			print sample, group, $1, $2, $3, $4, $5, $6
-		}}' \
-		{' '.join(dos_results_files['dos'])} \
+		}}' \\
+		{' '.join(dos_results_files['dos'])} \\
 		> {output_directory}/DoS/{species_abbreviation(species_name)}.DoS_results.prog.tsv
 	
 	mv {output_directory}/DoS/{species_abbreviation(species_name)}.DoS_results.prog.tsv {outputs['dos']}
 	
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 			print "sample", "group", "gene", "DoS", "class", "threshold_value"
@@ -1391,8 +1391,8 @@ def dos_concatenate_results(dos_results_files: dict, output_directory: str, spec
 			sample = filenamearray[14]
 			group = filenamearray[13]
 			print sample, group, $1, $2, $3, $4
-		}}' \
-		{' '.join(dos_results_files['genelist'])} \
+		}}' \\
+		{' '.join(dos_results_files['genelist'])} \\
 		> {output_directory}/DoS/{species_abbreviation(species_name)}.DoS_genelist.prog.tsv
 
 	mv {output_directory}/DoS/{species_abbreviation(species_name)}.DoS_genelist.prog.tsv {outputs['genelist']}
@@ -1432,19 +1432,19 @@ def outgroup_consensus_sequence(outgroup_bam_file: str, output_directory: str, o
 	
 	[ -d {output_directory}/DoS/outgroup_consensus ] || mkdir -p {output_directory}/DoS/outgroup_consensus
 	
-	samtools consensus \
-		--threads {options['cores']} \
-		--format FASTA \
-		--line-len 60 \
-		--mode bayesian \
-		-aa \
-		--show-del no \
-		--show-ins no \
-		{outgroup_bam_file} \
-	| bgzip \
-		--threads {options['cores']} \
-		-c \
-		- \
+	samtools consensus \\
+		--threads {options['cores']} \\
+		--format FASTA \\
+		--line-len 60 \\
+		--mode bayesian \\
+		-aa \\
+		--show-del no \\
+		--show-ins no \\
+		{outgroup_bam_file} \\
+	| bgzip \\
+		--threads {options['cores']} \\
+		-c \\
+		- \\
 		> {output_directory}/DoS/outgroup_consensus/{outgroup_name.replace(' ', '_')}.consensus.prog.fna.gz
 	
 	mv {output_directory}/DoS/outgroup_consensus/{outgroup_name.replace(' ', '_')}.consensus.prog.fna.gz {outputs['consensus']}
@@ -1484,18 +1484,18 @@ def outgroup_consensus_pileup(outgroup_bam_file: str, output_directory: str, out
 	
 	[ -d {output_directory}/DoS/outgroup_consensus ] || mkdir -p {output_directory}/DoS/outgroup_consensus
 	
-	samtools consensus \
-		--threads {options['cores']} \
-		--format pileup \
-		--mode bayesian \
-		-aa \
-		--show-del no \
-		--show-ins no \
-		{outgroup_bam_file} \
-	| bgzip \
-		--threads {options['cores']} \
-		-c \
-		- \
+	samtools consensus \\
+		--threads {options['cores']} \\
+		--format pileup \\
+		--mode bayesian \\
+		-aa \\
+		--show-del no \\
+		--show-ins no \\
+		{outgroup_bam_file} \\
+	| bgzip \\
+		--threads {options['cores']} \\
+		-c \\
+		- \\
 		> {output_directory}/DoS/outgroup_consensus/{outgroup_name.replace(' ', '_')}.consensus.prog.pileup.gz
 	
 	mv {output_directory}/DoS/outgroup_consensus/{outgroup_name.replace(' ', '_')}.consensus.prog.pileup.gz {outputs['consensus']}
@@ -1540,15 +1540,15 @@ def ancestral_allele_information(outgroup_vcf_file: str, reference_genome_file: 
 	
 	[ -d {output_directory}/DoS/ancestral_allele/outgroup ] || mkdir -p {output_directory}/DoS/ancestral_allele/outgroup
 	
-	bcftools query \
-		-f '%CHROM\\t%POS\\t%REF\\t%ALT\\t%INFO/AF\\n' \
-		{outgroup_vcf_file} \
-	| bgzip \
-		-c \
-		- \
+	bcftools query \\
+		-f '%CHROM\\t%POS\\t%REF\\t%ALT\\t%INFO/AF\\n' \\
+		{outgroup_vcf_file} \\
+	| bgzip \\
+		-c \\
+		- \\
 		> {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.variantinfo.tsv.gz
 
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -1571,14 +1571,14 @@ def ancestral_allele_information(outgroup_vcf_file: str, reference_genome_file: 
 			{{
 				print $1, $2, $3, $4, "."
 			}}
-		}}' \
-		<(zcat {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.variantinfo.tsv.gz) \
-	| bgzip \
-		-c \
-		- \
+		}}' \\
+		<(zcat {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.variantinfo.tsv.gz) \\
+	| bgzip \\
+		-c \\
+		- \\
 		> {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.partialancestral.tsv.gz
 	
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = ""
 			OFS = "\\t"
@@ -1595,14 +1595,14 @@ def ancestral_allele_information(outgroup_vcf_file: str, reference_genome_file: 
 				linenum += 1
 				print chromosome, linenum, $i
 			}}
-		}}' \
-		{reference_genome_file} \
-	| bgzip \
-		-c \
-		- \
+		}}' \\
+		{reference_genome_file} \\
+	| bgzip \\
+		-c \\
+		- \\
 		> {output_directory}/DoS/ancestral_allele/outgroup/{os.path.basename(os.path.splitext(reference_genome_file)[0])}.position.tsv.gz
 
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -1625,18 +1625,18 @@ def ancestral_allele_information(outgroup_vcf_file: str, reference_genome_file: 
 				print chromosome, position, reference, ancestralarray[$1, $2], ancestralarray[$1, $2]
 				next
 			}}
-		}}' \
-		<(zcat {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.partialancestral.tsv.gz) \
-		<(zcat {output_directory}/DoS/ancestral_allele/outgroup/{os.path.basename(os.path.splitext(reference_genome_file)[0])}.position.tsv.gz) \
-	| bgzip \
-		-c \
-		- \
+		}}' \\
+		<(zcat {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.partialancestral.tsv.gz) \\
+		<(zcat {output_directory}/DoS/ancestral_allele/outgroup/{os.path.basename(os.path.splitext(reference_genome_file)[0])}.position.tsv.gz) \\
+	| bgzip \\
+		-c \\
+		- \\
 		> {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.ancestralallele.prog.tsv.gz
 
-	tabix \
-		-s 1 \
-		-b 2 \
-		-e 2 \
+	tabix \\
+		-s 1 \\
+		-b 2 \\
+		-e 2 \\
 		{output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.ancestralallele.prog.tsv.gz
 
 	mv {output_directory}/DoS/ancestral_allele/outgroup/{outgroup_name.replace(' ', '_')}.ancestralallele.prog.tsv.gz {outputs['aa']}
@@ -1679,14 +1679,14 @@ def update_ancestral_allele(ancestral_allele_file: str, vcf_file: str, output_di
 	
 	[ -d {output_directory}/DoS/ancestral_allele/{sample_group}/{sample_name} ] || mkdir -p {output_directory}/DoS/ancestral_allele/{sample_group}/{sample_name}
 	
-	bcftools annotate \
-		--threads {options['cores']} \
-		--header-line '##INFO=<ID=AA,Number=1,Type=Character,Description="Ancestral allele">' \
-		--annotations {ancestral_allele_file} \
-		--columns CHROM,POS,-,-,INFO/AA \
-		--output-type z \
-		--output {output_directory}/DoS/ancestral_allele/{sample_group}/{sample_name}/{os.path.basename(os.path.splitext(os.path.splitext(vcf_file)[0])[0])}.aa.prog.vcf.gz \
-		--write-index \
+	bcftools annotate \\
+		--threads {options['cores']} \\
+		--header-line '##INFO=<ID=AA,Number=1,Type=Character,Description="Ancestral allele">' \\
+		--annotations {ancestral_allele_file} \\
+		--columns CHROM,POS,-,-,INFO/AA \\
+		--output-type z \\
+		--output {output_directory}/DoS/ancestral_allele/{sample_group}/{sample_name}/{os.path.basename(os.path.splitext(os.path.splitext(vcf_file)[0])[0])}.aa.prog.vcf.gz \\
+		--write-index \\
 		{vcf_file}
 	
 	mv {output_directory}/DoS/ancestral_allele/{sample_group}/{sample_name}/{os.path.basename(os.path.splitext(os.path.splitext(vcf_file)[0])[0])}.aa.prog.vcf.gz {outputs['aa_vcf']}
@@ -1728,7 +1728,7 @@ def dos_create_gene_bed(dos_genelist: str, gtf_annotation_file: str, gene_class:
 	
 	[ -d {output_directory}/DoS/{sample_group}/{sample_name} ] || mkdir -p {output_directory}/DoS/{sample_group}/{sample_name}
 	
-	awk \
+	awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -1740,7 +1740,7 @@ def dos_create_gene_bed(dos_genelist: str, gtf_annotation_file: str, gene_class:
 			}}
 			for (gene in targetarray)
 			{{
-				pattern="gene_id \\"" gene "\\""
+				pattern="gene_id \\\"" gene "\\""
 				if ($3 == "CDS" && $9 ~ pattern)
 				{{
 					if ($7 == "+") {{
@@ -1753,9 +1753,9 @@ def dos_create_gene_bed(dos_genelist: str, gtf_annotation_file: str, gene_class:
 					}}
 				}}
 			}}
-		}}' \
-		{dos_genelist} \
-		{gtf_annotation_file} \
+		}}' \\
+		{dos_genelist} \\
+		{gtf_annotation_file} \\
 		> {output_directory}/DoS/{sample_group}/{sample_name}/{gene_class}.prog.bed
 	
 	mv {output_directory}/DoS/{sample_group}/{sample_name}/{gene_class}.prog.bed {outputs['bed']}
@@ -1795,10 +1795,10 @@ def dos_ndel_ldrift(ancestral_allele_vcf_file: str, deleterious_bed_file: str, o
 	
 	[ -d {output_directory} ] || mkdir -p {output_directory}
 	
-	bcftools query \
-		-R {deleterious_bed_file} \
-		-f '%CHROM\\t%POS\\t%REF\\t%ALT\\t%INFO/AA\\t%INFO/AF\\n' \
-	| awk \
+	bcftools query \\
+		-R {deleterious_bed_file} \\
+		-f '%CHROM\\t%POS\\t%REF\\t%ALT\\t%INFO/AA\\t%INFO/AF\\n' \\
+	| awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
