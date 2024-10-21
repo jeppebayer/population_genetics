@@ -97,8 +97,8 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 		firstjob = (BATCHNR - 1) * batchsize
 		lastjob = BATCHNR * batchsize
 		if NBATCHES == BATCHNR:
-			if batchsize * NBATCHES - len(partitions) != 0:
-				lastjob += batchsize * NBATCHES - len(partitions)
+			if len(partitions) - batchsize * NBATCHES != 0:
+				lastjob += len(partitions) - batchsize * NBATCHES
 		
 		for GROUP in SAMPLE_LIST:
 			if not GROUP['bam_file_list']:
