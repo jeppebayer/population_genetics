@@ -169,12 +169,15 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 	# Non-batched branch. Includes all jobs.
 	else:
 		vcf_single_list = []
+		vcf_single_dict = {}
 		vcf_group_list = []
 
 		for GROUP in SAMPLE_LIST:
 			if not GROUP['bam_file_list']:
 				continue
 			GROUP_NAME: str = GROUP['group_name'].lower()
+
+			vcf_single_dict[GROUP_NAME] = []
 
 			for SAMPLE in GROUP['bam_file_list']:
 				SAMPLE_NAME: str = os.path.basename(os.path.dirname(SAMPLE))
@@ -248,6 +251,8 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 					
 					# Collect concatenated single population VCF files
 					vcf_single_list.append(concat_freebayes_single.outputs['concat_file'])
+					# Collect concatenated single population VCF files by group
+					vcf_single_dict[GROUP_NAME].append(concat_freebayes_single.outputs['concat_file'])
 			
 			# One VCF file per sample group.
 			if MODE == 2 or MODE == 4:
@@ -473,38 +478,72 @@ def freebayes_population_set_workflow(config_file: str = glob.glob('*config.y*ml
 		)
 
 		if MODE == 1 or MODE == 4:
-			if len(vcf_single_list) == 1:
-				norm_vcf_single = gwf.target_from_template(
-					name=f'normalize_vcf_single',
-					template=norm_vcf(
-						vcf_file=vcf_single_list[0],
-						reference_genome_file=index_reference.outputs['symlink'],
-						output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
-						output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/raw_vcf'
+			# if len(vcf_single_list) == 1:
+			# 	norm_vcf_single = gwf.target_from_template(
+			# 		name=f'normalize_vcf_single',
+			# 		template=norm_vcf(
+			# 			vcf_file=vcf_single_list[0],
+			# 			reference_genome_file=index_reference.outputs['symlink'],
+			# 			output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
+			# 			output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/raw_vcf'
+			# 		)
+			# 	)
+
+			# else:
+			# 	norm_vcf_single = gwf.target_from_template(
+			# 		name=f'merge_and_normalize_vcf_single',
+			# 		template=merge_and_norm_vcf(
+			# 			vcf_files=vcf_single_list,
+			# 			reference_genome_file=index_reference.outputs['symlink'],
+			# 			output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
+			# 			output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/raw_vcf'
+			# 		)
+			# 	)
+
+			# filter_vcf_single = gwf.target_from_template(
+			# 	name=f'filter_vcf_single',
+			# 	template=filter_vcf(
+			# 		vcf_file=norm_vcf_single.outputs['vcf'],
+			# 		depth_distribution_tsv=depth_plot.outputs['tsv'],
+			# 		output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/filtered_vcf',
+			# 		species_name=SPECIES_NAME,
+			# 		min_depth=FILTERING_MINDP
+			# 	)
+			# )
+
+			for group, vcf_files in vcf_single_dict.items():
+				if len(vcf_files) == 1:
+					norm_vcf_single = gwf.target_from_template(
+						name=f'normalize_vcf_single_{group}',
+						template=norm_vcf(
+							vcf_file=vcf_files,
+							reference_genome_file=index_reference.outputs['symlink'],
+							output_name=f'{species_abbreviation(SPECIES_NAME)}_{group}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
+							output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/raw_vcf'
+						)
+					)
+				
+				else:
+					norm_vcf_single = gwf.target_from_template(
+						name=f'merge_and_normalize_vcf_single_{group}',
+						template=merge_and_norm_vcf(
+							vcf_files=vcf_files,
+							reference_genome_file=index_reference.outputs['symlink'],
+							output_name=f'{species_abbreviation(SPECIES_NAME)}_{group}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
+							output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/raw_vcf'
+						)
+					)
+
+				filter_vcf_single = gwf.target_from_template(
+					name=f'filter_vcf_single',
+					template=filter_vcf(
+						vcf_file=norm_vcf_single.outputs['vcf'],
+						depth_distribution_tsv=depth_plot.outputs['tsv'],
+						output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/filtered_vcf',
+						species_name=SPECIES_NAME,
+						min_depth=FILTERING_MINDP
 					)
 				)
-
-			else:
-				norm_vcf_single = gwf.target_from_template(
-					name=f'merge_and_normalize_vcf_single',
-					template=merge_and_norm_vcf(
-						vcf_files=vcf_single_list,
-						reference_genome_file=index_reference.outputs['symlink'],
-						output_name=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
-						output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/raw_vcf'
-					)
-				)
-
-			filter_vcf_single = gwf.target_from_template(
-				name=f'filter_vcf_single',
-				template=filter_vcf(
-					vcf_file=norm_vcf_single.outputs['vcf'],
-					depth_distribution_tsv=depth_plot.outputs['tsv'],
-					output_directory=f'{top_out}' if OUTPUT_DIR else f'{top_dir}/filtered_vcf',
-					species_name=SPECIES_NAME,
-					min_depth=FILTERING_MINDP
-				)
-			)
 
 			merge_site_tables_single = gwf.target_from_template(
 				name=f'merge_site_tables_single',
