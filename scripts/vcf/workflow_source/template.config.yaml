@@ -3,54 +3,58 @@ TAG: jeppebayer:EcoGenetics,population_genetics,vcf:workflowconfiguration
 # (str). The name of the relevant project account.
 account: 
 # (str). Taxonomic group. Can be left empty.
-taxonomic_group: 
+taxonomicGroup: 
 # (str). Name of species being analyzed.
-species_name: 
+speciesName: 
 # (str). Path to reference genome.
-reference_genome_path: 
+referenceGenomePath: 
 # (str). BED file indicating intergenic regions of the reference genome.
-intergenic_bed_file: 
+intergenicBedFile: 
 # (str). BED file indicating repetitive regions of the reference genome. If left empty workflow will try to extract repetitive regions from reference genome.
-repeats_bed_file: 
+repeatsBedFile: 
 # (str). Directory for intermediary files.
-working_directory_path: 
+workingDirectoryPath: 
 # (str). Directory for final output files. (If left empty, output file will be placed within 'working_directory_path').
-output_directory_path: 
+outputDirectoryPath: 
 # (int). Partition size of genome in base pairs. If left empty defaults to '500000'.
-partition_size: 
+partitionSize: 
 # Variant caller, Freebayes settings.
-freebayes_settings:
+freebayesSettings:
+  # (0 | 1 | 2). Mode for creating VCF file.
+  # 1 = Separate VCF files for each sample/BAM file. 2 = One VCF containing data for all samples/BAM files. 0 = Both.
+  mode: 
   # (int). sample_ploidy = ploidy * n_individials. If left empty defaults to '100'.
-  sample_ploidy: 
+  samplePloidy: 
   # (int). Number of variants to consider and report when multiple are available. If left empty defaults to '3'
-  best_n_alleles: 
+  bestNAlleles: 
   # (0 | float). Lower threshold fraction for variant to be considered. If left empty defaults to '0'.
-  min_alternate_fraction: 
+  minAlternateFraction: 
   # (int). Lower threshold count for variant to be considered. If left empty defaults to '2'.
-  min_alternate_count: 
+  minAlternateCount: 
   # (int). Amount of memory, in GB, to reserve per VCF partition. If left empty defaults to '80'.
   memory: 
   # (str). Amount of time to reserve per VCF partition in format: 'tt:mm:ss'. If left empty defaults to '48:00:00'.
   time: 
 # Filtering settings.
 filtering:
-  # (int). Minimum required depth, inclusive.
-  minimum_depth: 
-# (int). Mode for creating VCF file (1 | 2 | 3 | 4).
-# 1 = Separate VCF files for each sample/BAM file. 2 = One VCF file per sample group. 3 = One VCF containing data for all samples/BAM files. 4 = All.
-mode: 
+  # (int). Minimum required depth for ingroups, inclusive. If left empty deafults to '200'.
+  ingroupMinimumDepth: 
+  # (int). Absolute minimum required depth for outgroups, inclusive. If left empty defaults to '5'.
+  outgroupMinimumDepth: 
 # Batch settings. Can be used to reduced the number of jobs sent to the queue at one time.
 # Only partial VCF files will be created when batching. To complete the full workflow one must do a no-batch run.
-batch_settings:
+batchSettings:
   # (int). The number of batches to create. 0 = don't batch jobs. If left empty defaults to '0'
-  number_of_batches: 
+  numberOfBatches: 
   # (int). Which of the created batches to run. Must be >=1 AND <=number_of_batches. Can be left empty if number_of_batches is '0'.
-  current_batch_number: 
+  currentBatchNumber: 
 # (list). Sample setup. List of dictionaries listing the configuration for each sample.
-sample_list:
+sampleList:
   - 
+    # ('i' | 'o'). Whether the sample group is to be considered ingroup (i) or outgroup (o).
+    groupStatus: 
     # (str). Name of sample group.
-    group_name: 
+    groupName: 
     # (list). List of paths to BAM files.
-    bam_file_list:
+    bamFileList:
       - 

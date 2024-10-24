@@ -4,17 +4,17 @@ import os, glob
 
 ########################## Functions ##########################
 
-def species_abbreviation(species_name: str) -> str:
+def species_abbreviation(speciesName: str) -> str:
 	"""Creates species abbreviation from species name.
 
-	:param str species_name:
+	:param str speciesName:
 		Species name written as *genus* *species*"""
-	genus, species = species_name.replace(' ', '_').split('_')
+	genus, species = speciesName.replace(' ', '_').split('_')
 	genus = genus[0].upper() + genus[1:3]
 	species = species[0].upper() + species[1:3]
 	return genus + species
 
-def parse_fasta(fasta_file: str):
+def parse_fasta(fastaFile: str):
 	"""
 	Parses :format:`FASTA` file returning all sequence names and lengths paired in a list of dictionaries.
 	
@@ -22,42 +22,42 @@ def parse_fasta(fasta_file: str):
 	
 		return [{'sequence_name': str, 'sequence_length': int}, ...]
 	
-	:param str fasta_file:
+	:param str fastaFile:
 		Sequence file in :format:`FASTA` format.
 	"""
-	fasta_list = []
-	seq_name = None
+	fastaList = []
+	seqName = None
 	length = 0
-	with open(fasta_file, 'r') as fasta:
+	with open(fastaFile, 'r') as fasta:
 		for entry in fasta:
 			entry = entry.strip()
 			if entry.startswith(">"):
-				if seq_name:
-					fasta_list.append({'sequence_name': seq_name, 'sequence_length': length})
+				if seqName:
+					fastaList.append({'sequence_name': seqName, 'sequence_length': length})
 					length = 0
 				entry = entry.split(" ", 1)
-				seq_name = entry[0][1:]
+				seqName = entry[0][1:]
 			else:
 				length += len(entry)
-		fasta_list.append({'sequence_name': seq_name, 'sequence_length': length})
-	return fasta_list
+		fastaList.append({'sequence_name': seqName, 'sequence_length': length})
+	return fastaList
 
-def padding_calculator(parse_fasta: list, size: int  | None = 500000):
+def padding_calculator(parseFasta: list, size: int  | None = 500000):
 	"""
 	Calculates proper 0 padding for numbers in **partition_chrom**.
 
-	:param list parse_fasta:
+	:param list parseFasta:
 		List of dictionaries produced by **parse_fasta**.
 	:param int size:
 		Size of partitions. Default 500kb.
 	"""
 	num = 1
-	for chrom in parse_fasta:
-		whole_chunks = chrom['sequence_length'] // size
-		num += (whole_chunks + 1)
+	for chrom in parseFasta:
+		wholeChunks = chrom['sequence_length'] // size
+		num += (wholeChunks + 1)
 	return len(str(num))
 
-def partition_chrom(parse_fasta: list, size: int = 500000, npad: int = 5):
+def partition_chrom(parseFasta: list, size: int = 500000, nPad: int = 5):
 	"""
 	Partitions :format:`FASTA` file parsed with **parse_fasta**.
 	
@@ -69,28 +69,28 @@ def partition_chrom(parse_fasta: list, size: int = 500000, npad: int = 5):
 	
 		return [{'num': int, 'region': str, 'start': int, 'end': int}, ...]
 	
-	:param list parse_fasta:
+	:param list parseFasta:
 		List of dictionaries produced by **parse_fasta**.
 	:param int size:
 		Size of partitions. Default 500kb.
 	"""
-	chrom_partition = []
+	chromPartition = []
 	num = 1
-	for chrom in parse_fasta:
-		whole_chunks = chrom['sequence_length'] // size
-		partial_chunk = chrom['sequence_length'] - whole_chunks * size
+	for chrom in parseFasta:
+		wholeChunks = chrom['sequence_length'] // size
+		partialChunk = chrom['sequence_length'] - wholeChunks * size
 		start = 0
-		for chunk in range(whole_chunks):
+		for chunk in range(wholeChunks):
 			end = start + size
-			chrom_partition.append({'num': f'{num:0{npad}}', 'region': chrom['sequence_name'], 'start': start, 'end': end})
+			chromPartition.append({'num': f'{num:0{nPad}}', 'region': chrom['sequence_name'], 'start': start, 'end': end})
 			start = end
 			num += 1
-		if partial_chunk:
-			chrom_partition.append({'num': f'{num:0{npad}}', 'region': chrom['sequence_name'], 'start': start, 'end': start + partial_chunk})
+		if partialChunk:
+			chromPartition.append({'num': f'{num:0{nPad}}', 'region': chrom['sequence_name'], 'start': start, 'end': start + partialChunk})
 			num += 1
-	return chrom_partition
+	return chromPartition
 
-def mpileup_partitions_filelist(partitions: list, top_dir: str, species_name: str, npad: int = 5):
+def mpileup_partitions_filelist(partitions: list, topDir: str, speciesName: str, nPad: int = 5):
 	"""
 	Generates list of dictionaries containing names of contigs and filenames of :format:`mpileup`-parts per contig based on **partition_chrom** output.
 
@@ -103,30 +103,30 @@ def mpileup_partitions_filelist(partitions: list, top_dir: str, species_name: st
 	
 	:param list partitions:
 		List of dictionaries produced by **partition_chrom**.
-	:param str top_dir:
+	:param str topDir:
 		Top most level of current working directory.
-	:param str species_name:
+	:param str speciesName:
 		Name of species currently being worked on.
 	"""
-	mpileup_filelists = []
-	contig_name = None
-	part_num = 0
+	mpileupFilelists = []
+	contigName = None
+	partNum = 0
 	for partition in partitions:
-		part_num += 1
-		if partition['region'] != contig_name:
-			if contig_name:
-				mpileup_filelists.append({'contig': contig_name, 'mpileup_files': [f'{top_dir}/tmp/mpileup/{species_abbreviation(species_name)}_{num:0{npad}}_{contig_name}.mpileup' for num in range(start, part_num)]})
-			start = part_num
-			contig_name = partition['region']
-	mpileup_filelists.append({'contig': contig_name, 'mpileup_files': [f'{top_dir}/tmp/mpileup/{species_abbreviation(species_name)}_{num:0{npad}}_{contig_name}.mpileup' for num in range(start, part_num + 1)]})
-	return mpileup_filelists
+		partNum += 1
+		if partition['region'] != contigName:
+			if contigName:
+				mpileupFilelists.append({'contig': contigName, 'mpileup_files': [f'{topDir}/tmp/mpileup/{species_abbreviation(speciesName)}_{num:0{nPad}}_{contigName}.mpileup' for num in range(start, partNum)]})
+			start = partNum
+			contigName = partition['region']
+	mpileupFilelists.append({'contig': contigName, 'mpileup_files': [f'{topDir}/tmp/mpileup/{species_abbreviation(speciesName)}_{num:0{nPad}}_{contigName}.mpileup' for num in range(start, partNum + 1)]})
+	return mpileupFilelists
 
 ########################## Freebayes ##########################
 
 def name_freebayes_chrom(idx: str, target: AnonymousTarget) -> str:
 	return f'{os.path.basename(target.outputs["vcf"].replace("-", "_"))}'
 
-# def freebayes_chrom(reference_genome_file: str, bam_file_list: list, output_directory: str, species_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2):
+# def freebayes_chrom(referenceGenomeFile: str, bamFileList: list, outputDirectory: str, speciesName: str, region: str, num: int, start: int, end: int, ploidy: int = 100, bestNAlleles: int = 3, minAlternateFraction: float | int = 0, minAlternateCount: int = 2):
 # 	"""
 # 	Template: Create VCF file for each 'chromosome' in pooled alignment.
 	
@@ -137,10 +137,10 @@ def name_freebayes_chrom(idx: str, target: AnonymousTarget) -> str:
 	
 # 	:param
 # 	"""
-# 	bam_file_string = ' -b '.join(bam_file_list)
-# 	inputs = {'reference': reference_genome_file,
-# 		   	  'bam': bam_file_list}
-# 	outputs = {'vcf': f'{output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf'}
+# 	bamFileString = ' -b '.join(bamFileList)
+# 	inputs = {'reference': referenceGenomeFile,
+# 		   	  'bam': bamFileList}
+# 	outputs = {'vcf': f'{outputDirectory}/freebayes_vcf/tmp/{species_abbreviation(speciesName)}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region}.vcf'}
 # 	options = {
 # 		'cores': 1,
 # 		'memory': '100g',
@@ -158,31 +158,31 @@ def name_freebayes_chrom(idx: str, target: AnonymousTarget) -> str:
 # 	echo "START: $(date)"
 # 	echo "JobID: $SLURM_JOBID"
 
-# 	[ -d {output_directory}/freebayes_vcf/tmp ] || mkdir -p {output_directory}/freebayes_vcf/tmp
+# 	[ -d {outputDirectory}/freebayes_vcf/tmp ] || mkdir -p {outputDirectory}/freebayes_vcf/tmp
 	
 # 	freebayes \\
-# 		-f {reference_genome_file} \\
-# 		-n {best_n_alleles} \\
+# 		-f {referenceGenomeFile} \\
+# 		-n {bestNAlleles} \\
 # 		-p {ploidy} \\
 # 		-r {region}:{start}-{end} \\
-# 		--min-alternate-fraction {min_alternate_fraction} \\
-# 		--min-alternate-count {min_alternate_count} \\
+# 		--min-alternate-fraction {minAlternateFraction} \\
+# 		--min-alternate-count {minAlternateCount} \\
 # 		--pooled-discrete \\
-#         -b {bam_file_string} \\
+#         -b {bamFileString} \\
 # 	| bcftools filter \\
 # 		-e 'INFO/TYPE~"del" || INFO/TYPE~"ins"' \\
 # 		-O v \\
 # 		- \\
-# 		> {output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf
+# 		> {outputDirectory}/freebayes_vcf/tmp/{species_abbreviation(speciesName)}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region}.prog.vcf
 	
-# 	mv {output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf {outputs['vcf']}
+# 	mv {outputDirectory}/freebayes_vcf/tmp/{species_abbreviation(speciesName)}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region}.prog.vcf {outputs['vcf']}
 	
 # 	echo "END: $(date)"
 # 	echo "$(jobinfo "$SLURM_JOBID")"
 # 	"""
 # 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def freebayes_chrom(reference_genome_file: str, bam_file_list: list, output_directory: str, species_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2):
+def freebayes_chrom(referenceGenomeFile: str, bamFileList: list, outputDirectory: str, speciesName: str, region: str, num: int, start: int, end: int, ploidy: int = 100, bestNAlleles: int = 3, minAlternateFraction: float | int = 0, minAlternateCount: int = 2):
 	"""
 	Template: Create VCF file for each 'chromosome' in pooled alignment.
 	
@@ -193,10 +193,10 @@ def freebayes_chrom(reference_genome_file: str, bam_file_list: list, output_dire
 	
 	:param
 	"""
-	bam_file_string = ' -b '.join(bam_file_list)
-	inputs = {'reference': reference_genome_file,
-		   	  'bam': bam_file_list}
-	outputs = {'vcf': f'{output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.vcf'}
+	bamFileString = ' -b '.join(bamFileList)
+	inputs = {'reference': referenceGenomeFile,
+		   	  'bam': bamFileList}
+	outputs = {'vcf': f'{outputDirectory}/freebayes_vcf/tmp/{species_abbreviation(speciesName)}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region}.vcf'}
 	options = {
 		'cores': 1,
 		'memory': '80g',
@@ -214,48 +214,48 @@ def freebayes_chrom(reference_genome_file: str, bam_file_list: list, output_dire
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 
-	[ -d {output_directory}/freebayes_vcf/tmp ] || mkdir -p {output_directory}/freebayes_vcf/tmp
+	[ -d {outputDirectory}/freebayes_vcf/tmp ] || mkdir -p {outputDirectory}/freebayes_vcf/tmp
 	
 	freebayes \\
-		-f {reference_genome_file} \\
-		-n {best_n_alleles} \\
+		-f {referenceGenomeFile} \\
+		-n {bestNAlleles} \\
 		-p {ploidy} \\
 		-r {region}:{start}-{end} \\
-		--min-alternate-fraction {min_alternate_fraction} \\
-		--min-alternate-count {min_alternate_count} \\
+		--min-alternate-fraction {minAlternateFraction} \\
+		--min-alternate-count {minAlternateCount} \\
 		--pooled-discrete \\
-		-b {bam_file_string} \\
-		> {output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf
+		-b {bamFileString} \\
+		> {outputDirectory}/freebayes_vcf/tmp/{species_abbreviation(speciesName)}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region}.prog.vcf
 	
-	mv {output_directory}/freebayes_vcf/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region}.prog.vcf {outputs['vcf']}
+	mv {outputDirectory}/freebayes_vcf/tmp/{species_abbreviation(speciesName)}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region}.prog.vcf {outputs['vcf']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def index_reference_genome(reference_genome_file: str, output_directory: str):
+def index_reference_genome(referenceGenomeFile: str, outputDirectory: str):
 	"""
 	Template: Index reference genome with :script:`bwa index` and :script:`samtools faidx`.
 	
 	Template I/O::
 	
-		inputs = {'reference': reference_genome_file}
+		inputs = {'reference': referenceGenomeFile}
 		outputs = {'symlink': *, 'bwa': [*.amb, *.ann, *.pac, *.bwt, *.sa], 'fai': *.fai}
 	
-	:param str reference_genome_file:
+	:param str referenceGenomeFile:
 		Path to reference genome.
-	:param str output_directory:
+	:param str outputDirectory:
 		Path to output directory.
 	"""
-	inputs = {'reference': reference_genome_file}
-	outputs = {'symlink': f'{output_directory}/reference/{os.path.basename(reference_genome_file)}',
-			   'bwa': [f'{output_directory}/reference/{os.path.basename(reference_genome_file)}.amb',
-					   f'{output_directory}/reference/{os.path.basename(reference_genome_file)}.ann',
-					   f'{output_directory}/reference/{os.path.basename(reference_genome_file)}.pac',
-					   f'{output_directory}/reference/{os.path.basename(reference_genome_file)}.bwt',
-					   f'{output_directory}/reference/{os.path.basename(reference_genome_file)}.sa'],
-			   'fai': f'{output_directory}/reference/{os.path.basename(reference_genome_file)}.fai'}
+	inputs = {'reference': referenceGenomeFile}
+	outputs = {'symlink': f'{outputDirectory}/reference/{os.path.basename(referenceGenomeFile)}',
+			   'bwa': [f'{outputDirectory}/reference/{os.path.basename(referenceGenomeFile)}.amb',
+					   f'{outputDirectory}/reference/{os.path.basename(referenceGenomeFile)}.ann',
+					   f'{outputDirectory}/reference/{os.path.basename(referenceGenomeFile)}.pac',
+					   f'{outputDirectory}/reference/{os.path.basename(referenceGenomeFile)}.bwt',
+					   f'{outputDirectory}/reference/{os.path.basename(referenceGenomeFile)}.sa'],
+			   'fai': f'{outputDirectory}/reference/{os.path.basename(referenceGenomeFile)}.fai'}
 	protect = [outputs['symlink'], outputs['bwa'][0], outputs['bwa'][1], outputs['bwa'][2], outputs['bwa'][3], outputs['bwa'][4], outputs['fai']]
 	options = {
 		'cores': 1,
@@ -272,26 +272,26 @@ def index_reference_genome(reference_genome_file: str, output_directory: str):
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/reference ] || mkdir -p {output_directory}/reference
-	[ -e {output_directory}/reference/{os.path.basename(reference_genome_file)} ] && rm -f {output_directory}/reference/{os.path.basename(reference_genome_file)}
-	ln -s {reference_genome_file} {output_directory}/reference/{os.path.basename(reference_genome_file)}
+	[ -d {outputDirectory}/reference ] || mkdir -p {outputDirectory}/reference
+	[ -e {outputDirectory}/reference/{os.path.basename(referenceGenomeFile)} ] && rm -f {outputDirectory}/reference/{os.path.basename(referenceGenomeFile)}
+	ln -s {referenceGenomeFile} {outputDirectory}/reference/{os.path.basename(referenceGenomeFile)}
 	
 	bwa index \\
-		-p {output_directory}/reference/{os.path.basename(reference_genome_file)} \\
-		{output_directory}/reference/{os.path.basename(reference_genome_file)}
+		-p {outputDirectory}/reference/{os.path.basename(referenceGenomeFile)} \\
+		{outputDirectory}/reference/{os.path.basename(referenceGenomeFile)}
 	
 	samtools faidx \\
-		-o {output_directory}/reference/{os.path.basename(reference_genome_file)}.prog.fai \\
-		{output_directory}/reference/{os.path.basename(reference_genome_file)}
+		-o {outputDirectory}/reference/{os.path.basename(referenceGenomeFile)}.prog.fai \\
+		{outputDirectory}/reference/{os.path.basename(referenceGenomeFile)}
 	
-	mv {output_directory}/reference/{os.path.basename(reference_genome_file)}.prog.fai {outputs['fai']}
+	mv {outputDirectory}/reference/{os.path.basename(referenceGenomeFile)}.prog.fai {outputs['fai']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def depth_distribution(bam_files: list, output_directory: str, species_name: str):
+def depth_distribution(bamFiles: list, outputDirectory: str, speciesName: str):
 	"""
 	Template: Calculate the per site depth distribution across all populations using :script:`samtools depth`.
 	
@@ -302,8 +302,8 @@ def depth_distribution(bam_files: list, output_directory: str, species_name: str
 	
 	:param
 	"""
-	inputs = {'bam': bam_files}
-	outputs = {'depth': f'{output_directory}/depth_distribution/{species_abbreviation(species_name)}.depth'}
+	inputs = {'bam': bamFiles}
+	outputs = {'depth': f'{outputDirectory}/depth_distribution/{species_abbreviation(speciesName)}.depth'}
 	options = {
 		'cores': 30,
 		'memory': '20g',
@@ -319,21 +319,21 @@ def depth_distribution(bam_files: list, output_directory: str, species_name: str
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/depth_distribution ] || mkdir -p {output_directory}/depth_distribution
+	[ -d {outputDirectory}/depth_distribution ] || mkdir -p {outputDirectory}/depth_distribution
 	
 	samtools depth \\
 		--threads {options['cores']} \\
-		-o {output_directory}/depth_distribution/{species_abbreviation(species_name)}.prog.depth \\
-		{' '.join(bam_files)}
+		-o {outputDirectory}/depth_distribution/{species_abbreviation(speciesName)}.prog.depth \\
+		{' '.join(bamFiles)}
 	
-	mv {output_directory}/depth_distribution/{species_abbreviation(species_name)}.prog.depth {outputs['depth']}
+	mv {outputDirectory}/depth_distribution/{species_abbreviation(speciesName)}.prog.depth {outputs['depth']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def depth_distribution_plot(depth_distribution_file: str, min_coverage_threshold: int, output_directory: str, plot_depth_distribution: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/depthdistribution.py'):
+def depth_distribution_plot(depthDistributionFile: str, minCoverageThreshold: int, outputDirectory: str, plotDepthDistribution: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/depthdistribution.py'):
 	"""
 	Template: template_description
 	
@@ -344,9 +344,9 @@ def depth_distribution_plot(depth_distribution_file: str, min_coverage_threshold
 	
 	:param
 	"""
-	inputs = {'depth': depth_distribution_file}
-	outputs = {'plot': f'{output_directory}/depth_distribution/{os.path.basename(depth_distribution_file)}.png',
-			   'tsv': f'{output_directory}/depth_distribution/{os.path.basename(depth_distribution_file)}.tsv'}
+	inputs = {'depth': depthDistributionFile}
+	outputs = {'plot': f'{outputDirectory}/depth_distribution/{os.path.basename(depthDistributionFile)}.png',
+			   'tsv': f'{outputDirectory}/depth_distribution/{os.path.basename(depthDistributionFile)}.tsv'}
 	options = {
 		'cores': 1,
 		'memory': '100g',
@@ -363,19 +363,19 @@ def depth_distribution_plot(depth_distribution_file: str, min_coverage_threshold
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/depth_distribution ] || mkdir -p {output_directory}/depth_distribution
+	[ -d {outputDirectory}/depth_distribution ] || mkdir -p {outputDirectory}/depth_distribution
 
-	python {plot_depth_distribution} \\
-		{min_coverage_threshold} \\
-		{depth_distribution_file} \\
-		{output_directory}/depth_distribution
+	python {plotDepthDistribution} \\
+		{minCoverageThreshold} \\
+		{depthDistributionFile} \\
+		{outputDirectory}/depth_distribution
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def shared_sites_within_threshold_bed(depth_distribution_file: str, depth_distribution_tsv: str, output_directory: str, species_name: str):
+def shared_sites_within_threshold_bed(depthDistributionFile: str, depthDistributionTsv: str, outputDirectory: str, speciesName: str):
 	"""
 	Template: template_description
 	
@@ -386,9 +386,9 @@ def shared_sites_within_threshold_bed(depth_distribution_file: str, depth_distri
 	
 	:param
 	"""
-	inputs = {'depth_file': depth_distribution_file,
-		   	  'depth_tsv': depth_distribution_tsv}
-	outputs = {'bed': f'{output_directory}/depth_distribution/{species_abbreviation(species_name)}.depththreshold.bed'}
+	inputs = {'depth_file': depthDistributionFile,
+		   	  'depth_tsv': depthDistributionTsv}
+	outputs = {'bed': f'{outputDirectory}/depth_distribution/{species_abbreviation(speciesName)}.depththreshold.bed'}
 	options = {
 		'cores': 1,
 		'memory': '10g',
@@ -405,12 +405,12 @@ def shared_sites_within_threshold_bed(depth_distribution_file: str, depth_distri
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/depth_distribution ] || mkdir -p {output_directory}/depth_distribution
+	[ -d {outputDirectory}/depth_distribution ] || mkdir -p {outputDirectory}/depth_distribution
 	
 	bedtools merge \\
 		-i <(awk \\
-		-v maxthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $8; exit}}}}' {depth_distribution_tsv}) \\
-		-v minthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depth_distribution_tsv}) \\
+		-v maxthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $8; exit}}}}' {depthDistributionTsv}) \\
+		-v minthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depthDistributionTsv}) \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -426,10 +426,10 @@ def shared_sites_within_threshold_bed(depth_distribution_file: str, depth_distri
 					print $1, $2 - 1, $2
 				}}
 		}}' \\
-		{depth_distribution_file}) \\
-		> {output_directory}/depth_distribution/{species_abbreviation(species_name)}.depththreshold.prog.bed
+		{depthDistributionFile}) \\
+		> {outputDirectory}/depth_distribution/{species_abbreviation(speciesName)}.depththreshold.prog.bed
 	
-	mv {output_directory}/depth_distribution/{species_abbreviation(species_name)}.depththreshold.prog.bed {outputs['bed']}
+	mv {outputDirectory}/depth_distribution/{species_abbreviation(speciesName)}.depththreshold.prog.bed {outputs['bed']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -439,7 +439,7 @@ def shared_sites_within_threshold_bed(depth_distribution_file: str, depth_distri
 def name_freebayes_partition_single(idx: str, target: AnonymousTarget) -> str:
 	return f'freebayes_part_single_{os.path.basename(target.outputs["vcf"]).replace("-", "_").replace("|", "_")}'
 
-def freebayes_partition_single(reference_genome_file: str, bam_file: str, output_directory: str, group_name: str, sample_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2, memory: int = 80, time: str = '48:00:00'):
+def freebayes_partition_single(referenceGenomeFile: str, bamFile: str, outputDirectory: str, groupName: str, sampleName: str, region: str, num: int, start: int, end: int, ploidy: int = 100, bestNAlleles: int = 3, minAlternateFraction: float | int = 0, minAlternateCount: int = 2, memory: int = 80, time: str = '48:00:00'):
 	"""
 	Template: Create VCF file for each partition in a single pooled alignment.
 	
@@ -450,10 +450,10 @@ def freebayes_partition_single(reference_genome_file: str, bam_file: str, output
 	
 	:param
 	"""
-	inputs = {'reference': reference_genome_file,
-		   	  'bam': bam_file}
-	outputs = {'vcf': f'{output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.vcf.gz',
-			   'index': f'{output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.vcf.gz.csi'}
+	inputs = {'reference': referenceGenomeFile,
+		   	  'bam': bamFile}
+	outputs = {'vcf': f'{outputDirectory}/raw_vcf/{groupName}/{sampleName}/tmp/{sampleName}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region.replace("|", "_")}.vcf.gz',
+			   'index': f'{outputDirectory}/raw_vcf/{groupName}/{sampleName}/tmp/{sampleName}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region.replace("|", "_")}.vcf.gz.csi'}
 	options = {
 		'cores': 1,
 		'memory': f'{memory}g',
@@ -471,25 +471,25 @@ def freebayes_partition_single(reference_genome_file: str, bam_file: str, output
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 
-	[ -d {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp ] || mkdir -p {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp
+	[ -d {outputDirectory}/raw_vcf/{groupName}/{sampleName}/tmp ] || mkdir -p {outputDirectory}/raw_vcf/{groupName}/{sampleName}/tmp
 	
 	freebayes \\
-		--fasta-reference {reference_genome_file} \\
-		--use-best-n-alleles {best_n_alleles} \\
+		--fasta-reference {referenceGenomeFile} \\
+		--use-best-n-alleles {bestNAlleles} \\
 		--ploidy {ploidy} \\
 		--region '{region}:{start}-{end}' \\
-		--min-alternate-fraction {min_alternate_fraction} \\
-		--min-alternate-count {min_alternate_count} \\
+		--min-alternate-fraction {minAlternateFraction} \\
+		--min-alternate-count {minAlternateCount} \\
 		--pooled-discrete \\
-		-b {bam_file} \\
+		-b {bamFile} \\
 	| bcftools view \\
 		--output-type z \\
-		--output {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz \\
+		--output {outputDirectory}/raw_vcf/{groupName}/{sampleName}/tmp/{sampleName}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region.replace("|", "_")}.prog.vcf.gz \\
 		--write-index \\
 		-
 	
-	mv {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz {outputs['vcf']}
-	mv {output_directory}/raw_vcf/{group_name}/{sample_name}/tmp/{sample_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz.csi {outputs['index']}
+	mv {outputDirectory}/raw_vcf/{groupName}/{sampleName}/tmp/{sampleName}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region.replace("|", "_")}.prog.vcf.gz {outputs['vcf']}
+	mv {outputDirectory}/raw_vcf/{groupName}/{sampleName}/tmp/{sampleName}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region.replace("|", "_")}.prog.vcf.gz.csi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -499,7 +499,7 @@ def freebayes_partition_single(reference_genome_file: str, bam_file: str, output
 def name_freebayes_partition_group(idx: str, target: AnonymousTarget) -> str:
 	return f'freebayes_part_group_{os.path.basename(target.outputs["vcf"]).replace("-", "_").replace("|", "_")}'
 
-def freebayes_partition_group(reference_genome_file: str, bam_files: list, output_directory: str, species_name: str, group_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2, memory: int = 80, time: str = '48:00:00'):
+def freebayes_partition_group(referenceGenomeFile: str, bamFiles: list, outputDirectory: str, speciesName: str, groupName: str, region: str, num: int, start: int, end: int, ploidy: int = 100, bestNAlleles: int = 3, minAlternateFraction: float | int = 0, minAlternateCount: int = 2, memory: int = 80, time: str = '48:00:00'):
 	"""
 	Template: Create VCF file for each partition in a group of pooled alignments.
 	
@@ -510,10 +510,10 @@ def freebayes_partition_group(reference_genome_file: str, bam_files: list, outpu
 	
 	:param
 	"""
-	inputs = {'reference': reference_genome_file,
-		   	  'bam': bam_files}
-	outputs = {'vcf': f'{output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.vcf.gz',
-			   'index': f'{output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.vcf.gz.csi'}
+	inputs = {'reference': referenceGenomeFile,
+		   	  'bam': bamFiles}
+	outputs = {'vcf': f'{outputDirectory}/raw_vcf/{groupName}/tmp/{species_abbreviation(speciesName)}_{groupName}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region.replace("|", "_")}.vcf.gz',
+			   'index': f'{outputDirectory}/raw_vcf/{groupName}/tmp/{species_abbreviation(speciesName)}_{groupName}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region.replace("|", "_")}.vcf.gz.csi'}
 	options = {
 		'cores': 1,
 		'memory': f'{memory}g',
@@ -531,25 +531,25 @@ def freebayes_partition_group(reference_genome_file: str, bam_files: list, outpu
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 
-	[ -d {output_directory}/raw_vcf/{group_name}/tmp ] || mkdir -p {output_directory}/raw_vcf/{group_name}/tmp
+	[ -d {outputDirectory}/raw_vcf/{groupName}/tmp ] || mkdir -p {outputDirectory}/raw_vcf/{groupName}/tmp
 	
 	freebayes \\
-		--fasta-reference {reference_genome_file} \\
-		--use-best-n-alleles {best_n_alleles} \\
+		--fasta-reference {referenceGenomeFile} \\
+		--use-best-n-alleles {bestNAlleles} \\
 		--ploidy {ploidy} \\
 		--region '{region}:{start}-{end}' \\
-		--min-alternate-fraction {min_alternate_fraction} \\
-		--min-alternate-count {min_alternate_count} \\
+		--min-alternate-fraction {minAlternateFraction} \\
+		--min-alternate-count {minAlternateCount} \\
 		--pooled-discrete \\
-		-b {' -b '.join(bam_files)} \\
+		-b {' -b '.join(bamFiles)} \\
 	| bcftools view \\
 		--output-type z \\
-		--output {output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz \\
+		--output {outputDirectory}/raw_vcf/{groupName}/tmp/{species_abbreviation(speciesName)}_{groupName}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region.replace("|", "_")}.prog.vcf.gz \\
 		--write-index \\
 		-
 	
-	mv {output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz {outputs['vcf']}
-	mv {output_directory}/raw_vcf/{group_name}/tmp/{species_abbreviation(species_name)}_{group_name}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz.csi {outputs['index']}
+	mv {outputDirectory}/raw_vcf/{groupName}/tmp/{species_abbreviation(speciesName)}_{groupName}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region.replace("|", "_")}.prog.vcf.gz {outputs['vcf']}
+	mv {outputDirectory}/raw_vcf/{groupName}/tmp/{species_abbreviation(speciesName)}_{groupName}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region.replace("|", "_")}.prog.vcf.gz.csi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -559,7 +559,7 @@ def freebayes_partition_group(reference_genome_file: str, bam_files: list, outpu
 def name_freebayes_partition_all(idx: str, target: AnonymousTarget) -> str:
 	return f'freebayes_part_all_{os.path.basename(target.outputs["vcf"]).replace("-", "_").replace("|", "_")}'
 
-def freebayes_partition_all(reference_genome_file: str, bam_files: list, output_directory: str, species_name: str, region: str, num: int, start: int, end: int, ploidy: int = 100, best_n_alleles: int = 3, min_alternate_fraction: float | int = 0, min_alternate_count: int = 2, memory: int = 80, time: str = '48:00:00'):
+def freebayes_partition_all(referenceGenomeFile: str, bamFiles: list, outputDirectory: str, speciesName: str, region: str, num: int, start: int, end: int, ploidy: int = 100, bestNAlleles: int = 3, minAlternateFraction: float | int = 0, minAlternateCount: int = 2, memory: int = 80, time: str = '48:00:00'):
 	"""
 	Template: Create VCF file for each partition in a large set of pooled alignments.
 	
@@ -570,10 +570,10 @@ def freebayes_partition_all(reference_genome_file: str, bam_files: list, output_
 	
 	:param
 	"""
-	inputs = {'reference': reference_genome_file,
-		   	  'bam': bam_files}
-	outputs = {'vcf': f'{output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.vcf.gz',
-			   'index': f'{output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.vcf.gz.csi'}
+	inputs = {'reference': referenceGenomeFile,
+		   	  'bam': bamFiles}
+	outputs = {'vcf': f'{outputDirectory}/raw_vcf/all/tmp/{species_abbreviation(speciesName)}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region.replace("|", "_")}.vcf.gz',
+			   'index': f'{outputDirectory}/raw_vcf/all/tmp/{species_abbreviation(speciesName)}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region.replace("|", "_")}.vcf.gz.csi'}
 	options = {
 		'cores': 1,
 		'memory': f'{memory}g',
@@ -591,56 +591,56 @@ def freebayes_partition_all(reference_genome_file: str, bam_files: list, output_
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 
-	[ -d {output_directory}/raw_vcf/all/tmp ] || mkdir -p {output_directory}/raw_vcf/all/tmp
+	[ -d {outputDirectory}/raw_vcf/all/tmp ] || mkdir -p {outputDirectory}/raw_vcf/all/tmp
 	
 	freebayes \\
-		--fasta-reference {reference_genome_file} \\
-		--use-best-n-alleles {best_n_alleles} \\
+		--fasta-reference {referenceGenomeFile} \\
+		--use-best-n-alleles {bestNAlleles} \\
 		--ploidy {ploidy} \\
 		--region '{region}:{start}-{end}' \\
-		--min-alternate-fraction {min_alternate_fraction} \\
-		--min-alternate-count {min_alternate_count} \\
+		--min-alternate-fraction {minAlternateFraction} \\
+		--min-alternate-count {minAlternateCount} \\
 		--pooled-discrete \\
-		-b {' -b '.join(bam_files)} \\
+		-b {' -b '.join(bamFiles)} \\
 	| bcftools view \\
 		--output-type z \\
-		--output {output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz \\
+		--output {outputDirectory}/raw_vcf/all/tmp/{species_abbreviation(speciesName)}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region.replace("|", "_")}.prog.vcf.gz \\
 		--write-index \\
 		-
 	
-	mv {output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz {outputs['vcf']}
-	mv {output_directory}/raw_vcf/all/tmp/{species_abbreviation(species_name)}.freebayes_n{best_n_alleles}_p{ploidy}_minaltfrc{min_alternate_fraction}_minaltcnt{min_alternate_count}.{num}_{region.replace("|", "_")}.prog.vcf.gz.csi {outputs['index']}
+	mv {outputDirectory}/raw_vcf/all/tmp/{species_abbreviation(speciesName)}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region.replace("|", "_")}.prog.vcf.gz {outputs['vcf']}
+	mv {outputDirectory}/raw_vcf/all/tmp/{species_abbreviation(speciesName)}.freebayes_n{bestNAlleles}_p{ploidy}_minaltfrc{minAlternateFraction}_minaltcnt{minAlternateCount}.{num}_{region.replace("|", "_")}.prog.vcf.gz.csi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def concat(files: list, output_name: str, output_directory: str | None = None, compress: bool = False):
+def concat(files: list, outputName: str, outputDirectory: str | None = None, compress: bool = False):
 	"""
 	Template: Name-sorts and concatenates files. Optionally compresses output using :script:`gzip`.
 	
 	Template I/O::
 	
 		inputs = {'files': files}
-		outputs = {'concat_file': output_name.ext | output_name.ext.gzip}
+		outputs = {'concat_file': outputName.ext | outputName.ext.gzip}
 	
 	:param list files:
 		List containing files to concatenate.
-	:param str output_name:
+	:param str outputName:
 		Desired name of output file, no extension.
-	:param str output_directory:
+	:param str outputDirectory:
 		Path to output directory. Default is directory of 'files[0]'.
 	:param bool compress:
 		Bool indicating whether the output file should be compressed or not.
 	"""
-	if output_directory is None:
-		output_directory = os.path.dirname(files[0])
+	if outputDirectory is None:
+		outputDirectory = os.path.dirname(files[0])
 	inputs = {'files': files}
 	if compress:
-		outputs = {'concat_file': f'{output_directory}/{output_name}{os.path.splitext(files[0])[1]}.gz'}
+		outputs = {'concat_file': f'{outputDirectory}/{outputName}{os.path.splitext(files[0])[1]}.gz'}
 	else:
-		outputs = {'concat_file': f'{output_directory}/{output_name}{os.path.splitext(files[0])[1]}'}
+		outputs = {'concat_file': f'{outputDirectory}/{outputName}{os.path.splitext(files[0])[1]}'}
 	options = {
 		'cores': 2,
 		'memory': '16g',
@@ -657,23 +657,23 @@ def concat(files: list, output_name: str, output_directory: str | None = None, c
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}] || mkdir -p {output_directory}
+	[ -d {outputDirectory}] || mkdir -p {outputDirectory}
 
 	if [ {compress} == 'False' ]; then
 		cat \\
 			{' '.join(files)} \\
-			> {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}
+			> {outputDirectory}/{outputName}.prog{os.path.splitext(files[0])[1]}
 		
-		mv {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]} {outputs['concat_file']}
+		mv {outputDirectory}/{outputName}.prog{os.path.splitext(files[0])[1]} {outputs['concat_file']}
 	else
 		cat \\
 			{' '.join(files)} \\
 		| gzip \\
 			-c \\
 			- \\
-			> {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}.gz
+			> {outputDirectory}/{outputName}.prog{os.path.splitext(files[0])[1]}.gz
 		
-		mv {output_directory}/{output_name}.prog{os.path.splitext(files[0])[1]}.gz {outputs['concat_file']}
+		mv {outputDirectory}/{outputName}.prog{os.path.splitext(files[0])[1]}.gz {outputs['concat_file']}
 	fi
 
 	echo "END: $(date)"
@@ -681,32 +681,32 @@ def concat(files: list, output_name: str, output_directory: str | None = None, c
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def concat_vcf(files: list, output_name: str, output_directory: str| None = None, compress: bool = True):
+def concat_vcf(files: list, outputName: str, outputDirectory: str| None = None, compress: bool = True):
 	"""
 	Template: Concatenates :format:`VCF` files. Optionally compresses output.
 	
 	Template I/O::
 	
 		inputs = {'files': files}
-		outputs = {'concat_file': output_name.ext | output_name.ext.gzip}
+		outputs = {'concat_file': outputName.ext | outputName.ext.gzip}
 	
 	:param list files:
 		List containing :format:`VCF` files to concatenate. Can already be gzipped.
-	:param str output_name:
+	:param str outputName:
 		Desired name of output file, no extension.
-	:param str output_directory:
+	:param str outputDirectory:
 		Path to output directory. Default is directory of 'files[0]'.
 	:param bool compress:
 		Bool indicating whether the output file should be compressed or not.
 	"""
-	if not output_directory:
-		output_directory = os.path.dirname(files[0])
+	if not outputDirectory:
+		outputDirectory = os.path.dirname(files[0])
 	inputs = {'files': files}
 	if compress:
-		outputs = {'concat_file': f'{output_directory}/{output_name}.vcf.gz',
-			 	   'index': f'{output_directory}/{output_name}.vcf.gz.csi'}
+		outputs = {'concat_file': f'{outputDirectory}/{outputName}.vcf.gz',
+			 	   'index': f'{outputDirectory}/{outputName}.vcf.gz.csi'}
 	else:
-		outputs = {'concat_file': f'{output_directory}/{output_name}.vcf'}
+		outputs = {'concat_file': f'{outputDirectory}/{outputName}.vcf'}
 	options = {
 		'cores': 32,
 		'memory': '40g',
@@ -723,29 +723,29 @@ def concat_vcf(files: list, output_name: str, output_directory: str| None = None
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory} ] || mkdir -p {output_directory}
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
 	
 	if [ {compress} == 'False' ]; then
 		bcftools concat \\
 			--threads {options['cores']} \\
 			--output-type v \\
-			--output {output_directory}/{output_name}.prog.vcf \\
+			--output {outputDirectory}/{outputName}.prog.vcf \\
 			{' '.join(files)}
 
-			mv {output_directory}/{output_name}.prog.vcf {outputs['concat_file']}
+			mv {outputDirectory}/{outputName}.prog.vcf {outputs['concat_file']}
 	else
 		bcftools concat \\
 			--threads {options['cores']} \\
 			--output-type z \\
-			--output {output_directory}/{output_name}.prog.vcf.gz \\
+			--output {outputDirectory}/{outputName}.prog.vcf.gz \\
 			{' '.join(files)}
 		
 		bcftools index \\
 			--threads {options['cores']} \\
-			{output_directory}/{output_name}.prog.vcf.gz
+			{outputDirectory}/{outputName}.prog.vcf.gz
 
-			mv {output_directory}/{output_name}.prog.vcf.gz {outputs['concat_file']}
-			mv {output_directory}/{output_name}.prog.vcf.gz.csi {outputs['index']}
+			mv {outputDirectory}/{outputName}.prog.vcf.gz {outputs['concat_file']}
+			mv {outputDirectory}/{outputName}.prog.vcf.gz.csi {outputs['index']}
 	fi
 	
 	echo "END: $(date)"
@@ -753,7 +753,7 @@ def concat_vcf(files: list, output_name: str, output_directory: str| None = None
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def merge_and_norm_vcf(vcf_files: list, reference_genome_file: str, output_name: str, output_directory: str):
+def merge_and_norm_vcf(vcfFiles: list, referenceGenomeFile: str, outputName: str, outputDirectory: str):
 	"""
 	Template: template_description
 	
@@ -764,9 +764,9 @@ def merge_and_norm_vcf(vcf_files: list, reference_genome_file: str, output_name:
 	
 	:param
 	"""
-	inputs = {'vcfs': vcf_files}
-	outputs = {'vcf': f'{output_directory}/{output_name}.merged.norm.vcf.gz',
-			   'index': f'{output_directory}/{output_name}.merged.norm.vcf.gz.csi'}
+	inputs = {'vcfs': vcfFiles}
+	outputs = {'vcf': f'{outputDirectory}/{outputName}.merged.norm.vcf.gz',
+			   'index': f'{outputDirectory}/{outputName}.merged.norm.vcf.gz.csi'}
 	options = {
 		'cores': 30,
 		'memory': '40g',
@@ -783,30 +783,30 @@ def merge_and_norm_vcf(vcf_files: list, reference_genome_file: str, output_name:
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory} ] || mkdir -p {output_directory}
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
 	
 	bcftools merge \\
 		--threads {options['cores']} \\
 		--output-type v \\
 		--missing-to-ref \\
-		{' '.join(vcf_files)} \\
+		{' '.join(vcfFiles)} \\
 	| bcftools norm \\
 		--threads {options['cores']} \\
 		--output-type z \\
-		--output {output_directory}/{output_name}.merged.norm.prog.vcf.gz \\
-		--fasta-ref {reference_genome_file} \\
+		--output {outputDirectory}/{outputName}.merged.norm.prog.vcf.gz \\
+		--fasta-ref {referenceGenomeFile} \\
 		--write-index \\
 		-
 	
-	mv {output_directory}/{output_name}.merged.norm.prog.vcf.gz {outputs['vcf']}
-	mv {output_directory}/{output_name}.merged.norm.prog.vcf.gz.csi {outputs['index']}
+	mv {outputDirectory}/{outputName}.merged.norm.prog.vcf.gz {outputs['vcf']}
+	mv {outputDirectory}/{outputName}.merged.norm.prog.vcf.gz.csi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def norm_vcf(vcf_file: str, reference_genome_file: str, output_name: str, output_directory: str):
+def norm_vcf(vcfFile: str, referenceGenomeFile: str, outputName: str, outputDirectory: str):
 	"""
 	Template: template_description
 	
@@ -817,9 +817,9 @@ def norm_vcf(vcf_file: str, reference_genome_file: str, output_name: str, output
 	
 	:param
 	"""
-	inputs = {'vcf': vcf_file}
-	outputs = {'vcf': f'{output_directory}/{output_name}.norm.vcf.gz',
-			   'index': f'{output_directory}/{output_name}.norm.vcf.gz.csi'}
+	inputs = {'vcf': vcfFile}
+	outputs = {'vcf': f'{outputDirectory}/{outputName}.norm.vcf.gz',
+			   'index': f'{outputDirectory}/{outputName}.norm.vcf.gz.csi'}
 	options = {
 		'cores': 30,
 		'memory': '40g',
@@ -836,25 +836,25 @@ def norm_vcf(vcf_file: str, reference_genome_file: str, output_name: str, output
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory} ] || mkdir -p {output_directory}
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
 	
 	bcftools norm \\
 		--threads {options['cores']} \\
 		--output-type z \\
-		--output {output_directory}/{output_name}.norm.prog.vcf.gz \\
-		--fasta-ref {reference_genome_file} \\
+		--output {outputDirectory}/{outputName}.norm.prog.vcf.gz \\
+		--fasta-ref {referenceGenomeFile} \\
 		--write-index \\
-		{vcf_file}
+		{vcfFile}
 	
-	mv {output_directory}/{output_name}.norm.prog.vcf.gz {outputs['vcf']}
-	mv {output_directory}/{output_name}.norm.prog.vcf.gz.csi {outputs['index']}
+	mv {outputDirectory}/{outputName}.norm.prog.vcf.gz {outputs['vcf']}
+	mv {outputDirectory}/{outputName}.norm.prog.vcf.gz.csi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def site_count_region(bam_files: list, depth_distribution_tsv: str, site_type: str, output_directory: str, species_name: str, bed_file: str | None = None):
+def site_count_region(bamFiles: list, depthDistributionTsv: str, siteType: str, outputDirectory: str, speciesName: str, bedFile: str | None = None):
 	"""
 	Template: template_description
 	
@@ -865,21 +865,21 @@ def site_count_region(bam_files: list, depth_distribution_tsv: str, site_type: s
 	
 	:param
 	"""
-	if bed_file:
-		inputs = {'bam': bam_files,
-			   	  'depth': depth_distribution_tsv,
-				  'bed': bed_file}
+	if bedFile:
+		inputs = {'bam': bamFiles,
+			   	  'depth': depthDistributionTsv,
+				  'bed': bedFile}
 	else:
-		inputs = {'bam': bam_files,
-			   	  'depth': depth_distribution_tsv}
-	outputs = {'sitetable': f'{output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.{site_type}.tsv'}
+		inputs = {'bam': bamFiles,
+			   	  'depth': depthDistributionTsv}
+	outputs = {'sitetable': f'{outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.{siteType}.tsv'}
 	options = {
 		'cores': 10,
 		'memory': '40g',
 		'walltime': '06:00:00'
 	}
 	protect = [outputs['sitetable']]
-	populations = '\034'.join([os.path.basename(i).split(sep=".")[0] for i in bam_files])
+	populations = '\034'.join([os.path.basename(i).split(sep=".")[0] for i in bamFiles])
 	spec = f"""
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
@@ -890,11 +890,11 @@ def site_count_region(bam_files: list, depth_distribution_tsv: str, site_type: s
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/sitetable ] || mkdir -p {output_directory}/sitetable
+	[ -d {outputDirectory}/sitetable ] || mkdir -p {outputDirectory}/sitetable
 	
 	awk \\
-		-v maxthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $8; exit}}}}' {depth_distribution_tsv}) \\
-		-v minthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depth_distribution_tsv}) \\
+		-v maxthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $8; exit}}}}' {depthDistributionTsv}) \\
+		-v minthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depthDistributionTsv}) \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -927,19 +927,19 @@ def site_count_region(bam_files: list, depth_distribution_tsv: str, site_type: s
 			for (i in allsites)
 			{{
 				split(i, allsitesarray, "\\034")
-				print "0", "total", allsitesarray[1], allsitesarray[2], "{site_type}", allsites[i]
+				print "0", "total", allsitesarray[1], allsitesarray[2], "{siteType}", allsites[i]
 			}}
 			for (i in thressites)
 			{{
 				split(i, thressitesarray, "\\034")
-				print "1", "within_threshold", thressitesarray[1], thressitesarray[2], "{site_type}", thressites[i]
+				print "1", "within_threshold", thressitesarray[1], thressitesarray[2], "{siteType}", thressites[i]
 			}}
 		}}' \\
 		<(echo -e "{populations}") \\
 		<(samtools depth \\
 			--threads {options['cores']} \\
-			{f'-b {bed_file}' if bed_file else ''} \\
-			{' '.join(bam_files)}) \\
+			{f'-b {bedFile}' if bedFile else ''} \\
+			{' '.join(bamFiles)}) \\
 	| awk \\
 		'{{
 			if (NR == 1)
@@ -949,16 +949,16 @@ def site_count_region(bam_files: list, depth_distribution_tsv: str, site_type: s
 			}}
 			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
 		}}' \\
-		> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.{site_type}.prog.tsv
+		> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.{siteType}.prog.tsv
 
-	mv {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.{site_type}.prog.tsv {outputs['sitetable']}
+	mv {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.{siteType}.prog.tsv {outputs['sitetable']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def extract_softmasked_intervals(reference_genome_file: str, output_directory: str):
+def extract_softmasked_intervals(referenceGenomeFile: str, outputDirectory: str):
 	"""
 	Template: template_description
 	
@@ -969,8 +969,8 @@ def extract_softmasked_intervals(reference_genome_file: str, output_directory: s
 	
 	:param
 	"""
-	inputs = {'reference': reference_genome_file}
-	outputs = {'bed': f'{output_directory}/annotation/{os.path.splitext(os.path.splitext(os.path.basename(reference_genome_file))[0])[0] if reference_genome_file.endswith('.gz') else os.path.splitext(os.path.basename(reference_genome_file))[0]}.repeats.bed'}
+	inputs = {'reference': referenceGenomeFile}
+	outputs = {'bed': f'{outputDirectory}/annotation/{os.path.splitext(os.path.splitext(os.path.basename(referenceGenomeFile))[0])[0] if referenceGenomeFile.endswith('.gz') else os.path.splitext(os.path.basename(referenceGenomeFile))[0]}.repeats.bed'}
 	options = {
 		'cores': 1,
 		'memory': '10g',
@@ -987,7 +987,7 @@ def extract_softmasked_intervals(reference_genome_file: str, output_directory: s
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/annotation ] || mkdir -p {output_directory}/annotation
+	[ -d {outputDirectory}/annotation ] || mkdir -p {outputDirectory}/annotation
 	
 	bedtools merge \\
 		-i <(awk \\
@@ -1018,17 +1018,17 @@ def extract_softmasked_intervals(reference_genome_file: str, output_directory: s
 				maskedinterval($0)
 				pos += length($0)
 			}}' \\
-			{'<(zcat' + reference_genome_file + ')' if reference_genome_file.endswith('.gz') else reference_genome_file}) \\
-		> {output_directory}/annotation/{os.path.splitext(os.path.splitext(os.path.basename(reference_genome_file))[0])[0] if reference_genome_file.endswith('.gz') else os.path.splitext(os.path.basename(reference_genome_file))[0]}.repeats.prog.bed
+			{'<(zcat' + referenceGenomeFile + ')' if referenceGenomeFile.endswith('.gz') else referenceGenomeFile}) \\
+		> {outputDirectory}/annotation/{os.path.splitext(os.path.splitext(os.path.basename(referenceGenomeFile))[0])[0] if referenceGenomeFile.endswith('.gz') else os.path.splitext(os.path.basename(referenceGenomeFile))[0]}.repeats.prog.bed
 	
-	mv {output_directory}/annotation/{os.path.splitext(os.path.splitext(os.path.basename(reference_genome_file))[0])[0] if reference_genome_file.endswith('.gz') else os.path.splitext(os.path.basename(reference_genome_file))[0]}.repeats.prog.bed {outputs['bed']}
+	mv {outputDirectory}/annotation/{os.path.splitext(os.path.splitext(os.path.basename(referenceGenomeFile))[0])[0] if referenceGenomeFile.endswith('.gz') else os.path.splitext(os.path.basename(referenceGenomeFile))[0]}.repeats.prog.bed {outputs['bed']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def bed_exclude_overlap(main_bed_file: str, subtraction_bed_file: str, output_directory: str, species_name: str):
+def bed_exclude_overlap(mainBedFile: str, subtractionBedFile: str, outputDirectory: str, speciesName: str):
 	"""
 	Template: template_description
 	
@@ -1039,9 +1039,9 @@ def bed_exclude_overlap(main_bed_file: str, subtraction_bed_file: str, output_di
 	
 	:param
 	"""
-	inputs = {'main': main_bed_file,
-		   	  'sub': subtraction_bed_file}
-	outputs = {'bed': f'{output_directory}/sitetable/{species_abbreviation(species_name)}.intergenic_excl_repeats.bed'}
+	inputs = {'main': mainBedFile,
+		   	  'sub': subtractionBedFile}
+	outputs = {'bed': f'{outputDirectory}/sitetable/{species_abbreviation(speciesName)}.intergenic_excl_repeats.bed'}
 	options = {
 		'cores': 1,
 		'memory': '10g',
@@ -1057,21 +1057,21 @@ def bed_exclude_overlap(main_bed_file: str, subtraction_bed_file: str, output_di
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/sitetable ] || mkdir -p {output_directory}/sitetable
+	[ -d {outputDirectory}/sitetable ] || mkdir -p {outputDirectory}/sitetable
 	
 	bedtools subtract \\
-		-a {main_bed_file} \\
-		-b {subtraction_bed_file} \\
-		> {output_directory}/sitetable/{species_abbreviation(species_name)}.intergenic_excl_repeats.prog.bed
+		-a {mainBedFile} \\
+		-b {subtractionBedFile} \\
+		> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.intergenic_excl_repeats.prog.bed
 	
-	mv {output_directory}/sitetable/{species_abbreviation(species_name)}.intergenic_excl_repeats.prog.bed {outputs['bed']}
+	mv {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.intergenic_excl_repeats.prog.bed {outputs['bed']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def filter_vcf(vcf_file: str, depth_distribution_tsv: str, output_directory: str, species_name: str, min_depth: int = 200):
+def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, speciesName: str, minDepth: int = 200):
 	"""
 	Template: template_description
 	
@@ -1082,11 +1082,11 @@ def filter_vcf(vcf_file: str, depth_distribution_tsv: str, output_directory: str
 	
 	:param
 	"""
-	inputs = {'vcf': vcf_file,
-		   	  'depth': depth_distribution_tsv}
-	outputs = {'vcf': f'{output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.vcf.gz',
-			   'index': f'{output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.vcf.gz.csi',
-			   'sitetable': f'{output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.tsv'}
+	inputs = {'vcf': vcfFile,
+		   	  'depth': depthDistributionTsv}
+	outputs = {'vcf': f'{outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{minDepth}-dynamic_AO1.vcf.gz',
+			   'index': f'{outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{minDepth}-dynamic_AO1.vcf.gz.csi',
+			   'sitetable': f'{outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.tsv'}
 	options = {
 		'cores': 18,
 		'memory': '30g',
@@ -1103,7 +1103,7 @@ def filter_vcf(vcf_file: str, depth_distribution_tsv: str, output_directory: str
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/sitetable ] || mkdir -p {output_directory}/sitetable
+	[ -d {outputDirectory}/sitetable ] || mkdir -p {outputDirectory}/sitetable
 
 	variablesitecount() {{
 		awk \\
@@ -1166,18 +1166,18 @@ def filter_vcf(vcf_file: str, depth_distribution_tsv: str, output_directory: str
 				exit
 			}}
 		}}' \\
-		{depth_distribution_tsv})
+		{depthDistributionTsv})
 	
 	bcftools view \\
 		--threads {options['cores']} \\
 		--output-type v \\
-		{vcf_file} \\
+		{vcfFile} \\
 	| tee \\
 		>(variablesitecount \\
 			1 \\
 			0 \\
 			"total" \\
-			> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \\
+			> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--include 'INFO/AF > 0' \\
@@ -1188,7 +1188,7 @@ def filter_vcf(vcf_file: str, depth_distribution_tsv: str, output_directory: str
 			0 \\
 			2 \\
 			"AF>0" \\
-			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \\
+			>> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.unsorted.tsv) \\
 	| bcftools filter \\
 		--threads {options['cores']} \\
 		--SnpGap 5:indel \\
@@ -1199,7 +1199,7 @@ def filter_vcf(vcf_file: str, depth_distribution_tsv: str, output_directory: str
 			0 \\
 			3 \\
 			"indel_proximity" \\
-			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \\
+			>> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--types snps \\
@@ -1210,7 +1210,7 @@ def filter_vcf(vcf_file: str, depth_distribution_tsv: str, output_directory: str
 			0 \\
 			4 \\
 			"snps_only" \\
-			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \\
+			>> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--max-alleles 2 \\
@@ -1221,10 +1221,10 @@ def filter_vcf(vcf_file: str, depth_distribution_tsv: str, output_directory: str
 			0 \\
 			5 \\
 			"biallelic_only" \\
-			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \\
+			>> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
-		--include "FMT/DP>={min_depth} & FMT/DP<=$maxdepth" \\
+		--include "FMT/DP>={minDepth} & FMT/DP<=$maxdepth" \\
 		--output-type v \\
 		- \\
 	| tee \\
@@ -1232,7 +1232,7 @@ def filter_vcf(vcf_file: str, depth_distribution_tsv: str, output_directory: str
 			0 \\
 			6 \\
 			"depth_thresholds" \\
-			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \\
+			>> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--include 'AVG(FMT/AO) > 1' \\
@@ -1243,11 +1243,11 @@ def filter_vcf(vcf_file: str, depth_distribution_tsv: str, output_directory: str
 			0 \\
 			7 \\
 			"AO>1" \\
-			>> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv) \\
+			>> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--output-type z \\
-		--output {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz \\
+		--output {outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{minDepth}-dynamic_AO1.prog.vcf.gz \\
 		--write-index \\
 		-
 	
@@ -1263,20 +1263,20 @@ def filter_vcf(vcf_file: str, depth_distribution_tsv: str, output_directory: str
 			}}
 			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
 		}}' \\
-		{output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv \\
-		> {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.prog.tsv
+		{outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.unsorted.tsv \\
+		> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.prog.tsv
 		
-	mv {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz {outputs['vcf']}
-	mv {output_directory}/{os.path.splitext(os.path.splitext(os.path.basename(vcf_file))[0])[0] if vcf_file.endswith(".gz") else os.path.splitext(os.path.basename(vcf_file))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{min_depth}-dynamic_AO1.prog.vcf.gz.csi {outputs['index']}
-	mv {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.prog.tsv {outputs['sitetable']}
-	rm {output_directory}/sitetable/{species_abbreviation(species_name)}.sitetable.variable.unsorted.tsv
+	mv {outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{minDepth}-dynamic_AO1.prog.vcf.gz {outputs['vcf']}
+	mv {outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{minDepth}-dynamic_AO1.prog.vcf.gz.csi {outputs['index']}
+	mv {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.prog.tsv {outputs['sitetable']}
+	rm {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.unsorted.tsv
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def merge_site_tables(site_tables: list, output_name: str, output_directory: str):
+def merge_site_tables(siteTables: list, outputName: str, outputDirectory: str):
 	"""
 	Template: template_description
 	
@@ -1287,8 +1287,8 @@ def merge_site_tables(site_tables: list, output_name: str, output_directory: str
 	
 	:param
 	"""
-	inputs = {'tables': site_tables}
-	outputs = {'sitetable': f'{output_directory}/sitetable/{output_name}.sitetable.tsv'}
+	inputs = {'tables': siteTables}
+	outputs = {'sitetable': f'{outputDirectory}/sitetable/{outputName}.sitetable.tsv'}
 	options = {
 		'cores': 1,
 		'memory': '10g',
@@ -1305,7 +1305,7 @@ def merge_site_tables(site_tables: list, output_name: str, output_directory: str
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory}/sitetable ] || mkdir -p {output_directory}/sitetable
+	[ -d {outputDirectory}/sitetable ] || mkdir -p {outputDirectory}/sitetable
 	
 	awk \\
 		'BEGIN{{
@@ -1322,17 +1322,17 @@ def merge_site_tables(site_tables: list, output_name: str, output_directory: str
 			}}
 			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
 		}}' \\
-		{' '.join(site_tables)} \\
-		> {output_directory}/sitetable/{output_name}.sitetable.prog.tsv
+		{' '.join(siteTables)} \\
+		> {outputDirectory}/sitetable/{outputName}.sitetable.prog.tsv
 	
-	mv {output_directory}/sitetable/{output_name}.sitetable.prog.tsv {outputs['sitetable']}
+	mv {outputDirectory}/sitetable/{outputName}.sitetable.prog.tsv {outputs['sitetable']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def singleton_proportion(output_directory: str, species_name: str):
+def singleton_proportion(outputDirectory: str, speciesName: str):
 	"""
 	Template: template_description
 	
@@ -1360,7 +1360,7 @@ def singleton_proportion(output_directory: str, species_name: str):
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {output_directory} ] || mkdir -p {output_directory}
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
 	
 	awk \\
 		-v minthreshold="$min" \\
