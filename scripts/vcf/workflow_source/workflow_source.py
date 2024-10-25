@@ -35,7 +35,7 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 	INGROUP_FILTERING_MINDP: int | None = FILTERING['ingroupMinimumDepth'] if FILTERING['ingroupMinimumDepth'] else 200
 	OUTGROUP_FILTERING_MINDP: int | None = FILTERING['outgroupMinimumDepth'] if FILTERING['outgroupMinimumDepth'] else 5
 	SAMPLE_LIST: list = CONFIG['sampleList']
-	INTERGENIC_BED: str | None = CONFIG['intergenicBedFile']
+	INTERGENIC_BED: str = CONFIG['intergenicBedFile']
 	REPEATS_BED: str | None = CONFIG['repeatsBedFile']
 	BATCHSETTINGS: dict = CONFIG['batchSettings']
 	NBATCHES: int = BATCHSETTINGS['numberOfBatches'] if BATCHSETTINGS['numberOfBatches'] else 0
@@ -118,16 +118,16 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 						template_func=freebayes_partition_single,
 						inputs=partitions[firstJob:lastJob],
 						extra={'referenceGenomeFile': indexReferenceGenome.outputs['symlink'],
-							'bamFile': SAMPLE,
-							'outputDirectory': topDir,
-							'groupName': GROUP_NAME,
-							'sampleName': SAMPLE_NAME,
-							'ploidy': FREEBAYES_PLOIDY,
-							'bestNAlleles': FREEBAYES_BESTN,
-							'minAlternateFraction': FREEBAYES_MINALTFRC,
-							'minAlternateCount': FREEBAYES_MINALTCNT,
-							'memory': VCF_MEM,
-							'time': VCF_TIME}
+							   'bamFile': SAMPLE,
+							   'outputDirectory': topDir,
+							   'groupName': GROUP_NAME,
+							   'sampleName': SAMPLE_NAME,
+							   'ploidy': FREEBAYES_PLOIDY,
+							   'bestNAlleles': FREEBAYES_BESTN,
+							   'minAlternateFraction': FREEBAYES_MINALTFRC,
+							   'minAlternateCount': FREEBAYES_MINALTCNT,
+							   'memory': VCF_MEM,
+							   'time': VCF_TIME}
 					)
 		
 		# One VCF file containing all sample files.
@@ -137,28 +137,150 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 				template_func=freebayes_partition_all,
 				inputs=partitions[firstJob:lastJob],
 				extra={'referenceGenomeFile': indexReferenceGenome.outputs['symlink'],
-					'bamFiles': fullBamList,
-					'outputDirectory': topDir,
-					'speciesName': SPECIES_NAME,
-					'ploidy': FREEBAYES_PLOIDY,
-					'bestNAlleles': FREEBAYES_BESTN,
-					'minAlternateFraction': FREEBAYES_MINALTFRC,
-					'minAlternateCount': FREEBAYES_MINALTCNT,
-					'memory': VCF_MEM,
-					'time': VCF_TIME}
+					   'bamFiles': fullBamList,
+					   'outputDirectory': topDir,
+					   'speciesName': SPECIES_NAME,
+					   'ploidy': FREEBAYES_PLOIDY,
+					   'bestNAlleles': FREEBAYES_BESTN,
+					   'minAlternateFraction': FREEBAYES_MINALTFRC,
+					   'minAlternateCount': FREEBAYES_MINALTCNT,
+					   'memory': VCF_MEM,
+					   'time': VCF_TIME}
 			)
 
 	# Non-batched branch. Includes all jobs.
 	else:
-		vcfSingleList = []
 		vcfSingleDict = {}
+		groupStatusDict = {}
+
+		if REPEATS_BED:
+			bedExcludeOverlapRepeats = gwf.target_from_template(
+				name=f'intergenic_exluding_repeats_bed',
+				template=bed_exclude_overlap(
+					mainBedFile=INTERGENIC_BED,
+					subtractionBedFile=REPEATS_BED,
+					outputDirectory=topDir,
+					speciesName=SPECIES_NAME
+				)
+			)
+
+		else:
+			extractSoftmaskedIntervals = gwf.target_from_template(
+				name=f'extract_repetitive_intervals',
+				template=extract_softmasked_intervals(
+					referenceGenomeFile=REFERENCE_GENOME,
+					outputDirectory=topOut if OUTPUT_DIR else topDir
+				)
+			)
+
+			bedExcludeOverlapRepeats = gwf.target_from_template(
+				name=f'intergenic_exluding_repeats_bed',
+				template=bed_exclude_overlap(
+					mainBedFile=INTERGENIC_BED,
+					subtractionBedFile=extractSoftmaskedIntervals.outputs['bed'],
+					outputDirectory=topDir,
+					speciesName=SPECIES_NAME
+				)
+			)
 
 		for GROUP in SAMPLE_LIST:
 			if not GROUP['bamFileList']:
 				continue
+			GROUP_STATUS: str = GROUP['groupStatus'].lower() if GROUP['groupStatus'] else 'i'
 			GROUP_NAME: str = GROUP['groupName'].lower()
+			GROUP_BAMS: list = GROUP['bamFileList']
+			vcfSingleList = []
 
 			vcfSingleDict[GROUP_NAME] = []
+			groupStatusDict[GROUP_NAME] = GROUP_STATUS
+
+			depthDistribution = gwf.target_from_template(
+				name=f'depth_distribution_{GROUP_NAME}',
+				template=depth_distribution(
+					bamFiles=GROUP_BAMS,
+					outputDirectory=topDir,
+					outputName=f'{species_abbreviation(SPECIES_NAME)}_{GROUP_NAME}.{'ingroup' if GROUP_STATUS == 'i' else 'outgroup'}'
+				)
+			)
+
+			if GROUP_STATUS == 'i':
+				depthDistributionPlot = gwf.target_from_template(
+					name=f'depth_distribution_plot_{GROUP_NAME}',
+					template=depth_distribution_plot(
+						depthDistributionFile=depthDistribution.outputs['depth'],
+						minCoverageThreshold=INGROUP_FILTERING_MINDP,
+						outputDirectory=topOut if OUTPUT_DIR else topDir
+						mode=0
+					)
+				)
+
+			elif GROUP_STATUS == 'o':
+				depthDistributionPlot = gwf.target_from_template(
+					name=f'depth_distribution_plot_{GROUP_NAME}',
+					template=depth_distribution_plot(
+						depthDistributionFile=depthDistribution.outputs['depth'],
+						minCoverageThreshold=OUTGROUP_FILTERING_MINDP,
+						outputDirectory=topOut if OUTPUT_DIR else topDir
+						mode=1
+					)
+				)
+
+			sharedSitesWithinThresholdBed = gwf.target_from_template(
+				name=f'depth_threshold_bed_{GROUP_NAME}',
+				template=shared_sites_within_threshold_bed(
+					depthDistributionFile=depthDistribution.outputs['depth'],
+					depthDistributionTsv=depthDistributionPlot.outputs['tsv'],
+					outputDirectory=topOut if OUTPUT_DIR else topDir,
+					outputName=f'{species_abbreviation(SPECIES_NAME)}_{GROUP_NAME}.{'ingroup' if GROUP_STATUS == 'i' else 'outgroup'}'
+				)
+			)
+
+			siteCountAll = gwf.target_from_template(
+				name=f'site_count_all_{GROUP_NAME}',
+				template=site_count_region(
+					bamFiles=GROUP_BAMS,
+					depthDistributionTsv=depthDistributionPlot.outputs['tsv'],
+					bedFile=None,
+					siteType='all',
+					outputDirectory=topDir,
+					outputName=f'{species_abbreviation(SPECIES_NAME)}_{GROUP_NAME}.{'ingroup' if GROUP_STATUS == 'i' else 'outgroup'}'
+				)
+			)
+
+			siteCountIntergenic = gwf.target_from_template(
+				name=f'site_count_intergenic_{GROUP_NAME}',
+				template=site_count_region(
+					bamFiles=GROUP_BAMS,
+					depthDistributionTsv=depthDistributionPlot.outputs['tsv'],
+					siteType='intergenic',
+					outputDirectory=topDir,
+					outputName=f'{species_abbreviation(SPECIES_NAME)}_{GROUP_NAME}.{'ingroup' if GROUP_STATUS == 'i' else 'outgroup'}',
+					bedFile=INTERGENIC_BED
+				)
+			)
+
+			siteCountRegionIntergenicExclRepeats = gwf.target_from_template(
+				name=f'site_count_intergenic_excl_repeats_{GROUP_NAME}',
+				template=site_count_region(
+					bamFiles=GROUP_BAMS,
+					depthDistributionTsv=depthDistributionPlot.outputs['tsv'],
+					siteType='intergenic_excl_repeats',
+					outputDirectory=topDir,
+					outputName=f'{species_abbreviation(SPECIES_NAME)}_{GROUP_NAME}.{'ingroup' if GROUP_STATUS == 'i' else 'outgroup'}',
+					bedFile=bedExcludeOverlapRepeats.outputs['bed']
+				)
+			)
+
+			mergeSiteTablesSingle = gwf.target_from_template(
+				name=f'merge_site_tables_single_{GROUP_NAME}',
+				template=merge_site_tables(
+					siteTables=[siteCountAll.outputs['sitetable'],
+								siteCountIntergenic.outputs['sitetable'],
+								siteCountRegionIntergenicExclRepeats.outputs['sitetable']],
+					outputName=f'{species_abbreviation(SPECIES_NAME)}_{GROUP_NAME}.{'ingroup' if GROUP_STATUS == 'i' else 'outgroup'}.singlecall' if FREEBAYES_MODE == 0 else f'{species_abbreviation(SPECIES_NAME)}_{GROUP_NAME}.{'ingroup' if GROUP_STATUS == 'i' else 'outgroup'}',
+					outputDirectory=topOut if OUTPUT_DIR else topDir
+				)
+			)
 
 			for SAMPLE in GROUP['bamFileList']:
 				SAMPLE_NAME: str = os.path.basename(os.path.dirname(SAMPLE))
@@ -172,16 +294,16 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 						template_func=freebayes_partition_single,
 						inputs=partitions,
 						extra={'referenceGenomeFile': indexReferenceGenome.outputs['symlink'],
-							'bamFile': SAMPLE,
-							'outputDirectory': topDir,
-							'groupName': GROUP_NAME,
-							'sampleName': SAMPLE_NAME,
-							'ploidy': FREEBAYES_PLOIDY,
-							'bestNAlleles': FREEBAYES_BESTN,
-							'minAlternateFraction': FREEBAYES_MINALTFRC,
-							'minAlternateCount': FREEBAYES_MINALTCNT,
-							'memory': VCF_MEM,
-							'time': VCF_TIME}
+							   'bamFile': SAMPLE,
+							   'outputDirectory': topDir,
+							   'groupName': GROUP_NAME,
+							   'sampleName': SAMPLE_NAME,
+							   'ploidy': FREEBAYES_PLOIDY,
+							   'bestNAlleles': FREEBAYES_BESTN,
+							   'minAlternateFraction': FREEBAYES_MINALTFRC,
+							   'minAlternateCount': FREEBAYES_MINALTCNT,
+							   'memory': VCF_MEM,
+							   'time': VCF_TIME}
 					)
 
 					if nSegments <= 1:
@@ -234,6 +356,38 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 					vcfSingleList.append(concatenateFreebayesSingle.outputs['concat_file'])
 					# Collect concatenated single population VCF files by group
 					vcfSingleDict[GROUP_NAME].append(concatenateFreebayesSingle.outputs['concat_file'])
+				
+			if len(vcfSingleList) == 1:
+				normVcfSingle = gwf.target_from_template(
+					name=f'normalize_vcf_single_{GROUP_NAME}',
+					template=norm_vcf(
+						vcfFile=vcfSingleList,
+						referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
+						outputName=f'{species_abbreviation(SPECIES_NAME)}_{GROUP_NAME}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
+						outputDirectory=f'{topOut}' if OUTPUT_DIR else f'{topDir}/raw_vcf'
+					)
+				)
+				
+			else:
+				normVcfSingle = gwf.target_from_template(
+					name=f'merge_and_normalize_vcf_single_{GROUP_NAME}',
+					template=merge_and_norm_vcf(
+						vcfFiles=vcfSingleList,
+						referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
+						outputName=f'{species_abbreviation(SPECIES_NAME)}_{GROUP_NAME}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
+						outputDirectory=f'{topOut}' if OUTPUT_DIR else f'{topDir}/raw_vcf'
+					)
+				)
+
+			filterVcfSingle = gwf.target_from_template(
+				name=f'filter_vcf_single',
+				template=filter_vcf(
+					vcfFile=normVcfSingle.outputs['vcf'],
+					depthDistributionTsv=depthDistributionPlot.outputs['tsv'],
+					outputDirectory=f'{topOut}' if OUTPUT_DIR else f'{topDir}/filtered_vcf',
+					groupStatus=GROUP_STATUS
+				)
+			)
 		
 		# One VCF file containing all sample files.
 		if FREEBAYES_MODE == 2 or FREEBAYES_MODE == 0:
@@ -242,15 +396,15 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 				template_func=freebayes_partition_all,
 				inputs=partitions,
 				extra={'referenceGenomeFile': indexReferenceGenome.outputs['symlink'],
-					'bamFiles': fullBamList,
-					'outputDirectory': topDir,
-					'speciesName': SPECIES_NAME,
-					'ploidy': FREEBAYES_PLOIDY,
-					'bestNAlleles': FREEBAYES_BESTN,
-					'minAlternateFraction': FREEBAYES_MINALTFRC,
-					'minAlternateCount': FREEBAYES_MINALTCNT,
-					'memory': VCF_MEM,
-					'time': VCF_TIME}
+					   'bamFiles': fullBamList,
+					   'outputDirectory': topDir,
+					   'speciesName': SPECIES_NAME,
+					   'ploidy': FREEBAYES_PLOIDY,
+					   'bestNAlleles': FREEBAYES_BESTN,
+					   'minAlternateFraction': FREEBAYES_MINALTFRC,
+					   'minAlternateCount': FREEBAYES_MINALTCNT,
+					   'memory': VCF_MEM,
+					   'time': VCF_TIME}
 			)
 
 			if nSegments <= 1:
@@ -299,179 +453,38 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 					)
 				)
 
-		depthDistribution = gwf.target_from_template(
-			name=f'depth_distribution',
-			template=depth_distribution(
-				bamFiles=fullBamList,
-				outputDirectory=topDir,
-				speciesName=SPECIES_NAME
-			)
-		)
+		# if FREEBAYES_MODE == 2 or FREEBAYES_MODE == 0:
+		# 	normVcfAll = gwf.target_from_template(
+		# 		name=f'normalize_vcf_all',
+		# 		template=norm_vcf(
+		# 			vcfFile=concatenateFreebayesAll.outputs['concat_file'],
+		# 			referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
+		# 			outputName=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_allcall',
+		# 			outputDirectory=f'{topOut}' if OUTPUT_DIR else f'{topDir}/raw_vcf'
+		# 		)
+		# 	)
 
-		depthDistributionPlot = gwf.target_from_template(
-			name=f'depth_distribution_plot',
-			template=depth_distribution_plot(
-				depthDistributionFile=depthDistribution.outputs['depth'],
-				minCoverageThreshold=INGROUP_FILTERING_MINDP,
-				outputDirectory=topOut if OUTPUT_DIR else topDir
-			)
-		)
+		# 	filterVcfAll = gwf.target_from_template(
+		# 		name=f'filter_vcf_all',
+		# 		template=filter_vcf(
+		# 			normVcfAll.outputs['vcf'],
+		# 			depthDistributionTsv=depthDistributionPlot.outputs['tsv'],
+		# 			outputDirectory=topOut if OUTPUT_DIR else f'{topDir}/filtered_vcf',
+		# 			speciesName=SPECIES_NAME,
+		# 			minDepth=INGROUP_FILTERING_MINDP
+		# 		)
+		# 	)
 
-		sharedSitesWithinThresholdBed = gwf.target_from_template(
-			name=f'depth_threshold_bed',
-			template=shared_sites_within_threshold_bed(
-				depthDistributionFile=depthDistribution.outputs['depth'],
-				depthDistributionTsv=depthDistributionPlot.outputs['tsv'],
-				outputDirectory=topOut if OUTPUT_DIR else topDir,
-				speciesName=SPECIES_NAME
-			)
-		)
-
-		siteCountAll = gwf.target_from_template(
-			name=f'site_count_all',
-			template=site_count_region(
-				bamFiles=fullBamList,
-				depthDistributionTsv=depthDistributionPlot.outputs['tsv'],
-				bedFile=None,
-				siteType='all',
-				outputDirectory=topDir,
-				speciesName=SPECIES_NAME
-			)
-		)
-
-		siteCountIntergenic = gwf.target_from_template(
-			name=f'site_count_intergenic',
-			template=site_count_region(
-				bamFiles=fullBamList,
-				depthDistributionTsv=depthDistributionPlot.outputs['tsv'],
-				siteType='intergenic',
-				outputDirectory=topDir,
-				speciesName=SPECIES_NAME,
-				bedFile=INTERGENIC_BED
-			)
-		)
-
-		if REPEATS_BED:
-			bedExcludeOverlapRepeats = gwf.target_from_template(
-				name=f'intergenic_exluding_repeats_bed',
-				template=bed_exclude_overlap(
-					mainBedFile=INTERGENIC_BED,
-					subtractionBedFile=REPEATS_BED,
-					outputDirectory=topDir,
-					speciesName=SPECIES_NAME
-				)
-			)
-
-		else:
-			extractSoftmaskedIntervals = gwf.target_from_template(
-				name=f'extract_repetitive_intervals',
-				template=extract_softmasked_intervals(
-					referenceGenomeFile=REFERENCE_GENOME,
-					outputDirectory=topOut if OUTPUT_DIR else topDir
-				)
-			)
-
-			bedExcludeOverlapRepeats = gwf.target_from_template(
-				name=f'intergenic_exluding_repeats_bed',
-				template=bed_exclude_overlap(
-					mainBedFile=INTERGENIC_BED,
-					subtractionBedFile=extractSoftmaskedIntervals.outputs['bed'],
-					outputDirectory=topDir,
-					speciesName=SPECIES_NAME
-				)
-			)
-
-		SiteCountRegionIntergenicExclRepeats = gwf.target_from_template(
-			name=f'site_count_intergenic_excl_repeats',
-			template=site_count_region(
-				bamFiles=fullBamList,
-				depthDistributionTsv=depthDistributionPlot.outputs['tsv'],
-				siteType='intergenic_excl_repeats',
-				outputDirectory=topDir,
-				speciesName=SPECIES_NAME,
-				bedFile=bedExcludeOverlapRepeats.outputs['bed']
-			)
-		)
-
-		if FREEBAYES_MODE == 1 or FREEBAYES_MODE == 0:
-			for group, vcfFiles in vcfSingleDict.items():
-				if len(vcfFiles) == 1:
-					normVcfSingle = gwf.target_from_template(
-						name=f'normalize_vcf_single_{group}',
-						template=norm_vcf(
-							vcfFile=vcfFiles,
-							referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
-							outputName=f'{species_abbreviation(SPECIES_NAME)}_{group}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
-							outputDirectory=f'{topOut}' if OUTPUT_DIR else f'{topDir}/raw_vcf'
-						)
-					)
-				
-				else:
-					normVcfSingle = gwf.target_from_template(
-						name=f'merge_and_normalize_vcf_single_{group}',
-						template=merge_and_norm_vcf(
-							vcfFiles=vcfFiles,
-							referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
-							outputName=f'{species_abbreviation(SPECIES_NAME)}_{group}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
-							outputDirectory=f'{topOut}' if OUTPUT_DIR else f'{topDir}/raw_vcf'
-						)
-					)
-
-				filterVcfSingle = gwf.target_from_template(
-					name=f'filter_vcf_single',
-					template=filter_vcf(
-						vcfFile=normVcfSingle.outputs['vcf'],
-						depthDistributionTsv=depthDistributionPlot.outputs['tsv'],
-						outputDirectory=f'{topOut}' if OUTPUT_DIR else f'{topDir}/filtered_vcf',
-						speciesName=SPECIES_NAME,
-						minDepth=INGROUP_FILTERING_MINDP
-					)
-				)
-
-			mergeSiteTablesSingle = gwf.target_from_template(
-				name=f'merge_site_tables_single',
-				template=merge_site_tables(
-					siteTables=[siteCountAll.outputs['sitetable'],
-								siteCountIntergenic.outputs['sitetable'],
-								SiteCountRegionIntergenicExclRepeats.outputs['sitetable'],
-								filterVcfSingle.outputs['sitetable']],
-					outputName=f'{species_abbreviation(SPECIES_NAME)}.singlecall' if FREEBAYES_MODE == 0 else f'{species_abbreviation(SPECIES_NAME)}',
-					outputDirectory=topOut if OUTPUT_DIR else topDir
-				)
-			)
-
-		if FREEBAYES_MODE == 2 or FREEBAYES_MODE == 0:
-			normVcfAll = gwf.target_from_template(
-				name=f'normalize_vcf_all',
-				template=norm_vcf(
-					vcfFile=concatenateFreebayesAll.outputs['concat_file'],
-					referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
-					outputName=f'{species_abbreviation(SPECIES_NAME)}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_allcall',
-					outputDirectory=f'{topOut}' if OUTPUT_DIR else f'{topDir}/raw_vcf'
-				)
-			)
-
-			filterVcfAll = gwf.target_from_template(
-				name=f'filter_vcf_all',
-				template=filter_vcf(
-					normVcfAll.outputs['vcf'],
-					depthDistributionTsv=depthDistributionPlot.outputs['tsv'],
-					outputDirectory=topOut if OUTPUT_DIR else f'{topDir}/filtered_vcf',
-					speciesName=SPECIES_NAME,
-					minDepth=INGROUP_FILTERING_MINDP
-				)
-			)
-
-			mergeSiteTablesAll = gwf.target_from_template(
-				name=f'merge_site_tables_all',
-				template=merge_site_tables(
-					siteTables=[siteCountAll.outputs['sitetable'],
-								siteCountIntergenic.outputs['sitetable'],
-								SiteCountRegionIntergenicExclRepeats.outputs['sitetable'],
-								filterVcfAll.outputs['sitetable']],
-					outputName=f'{species_abbreviation(SPECIES_NAME)}.allcall' if FREEBAYES_MODE == 0 else f'{species_abbreviation(SPECIES_NAME)}',
-					outputDirectory=topOut if OUTPUT_DIR else topDir
-				)
-			)
+		# 	mergeSiteTablesAll = gwf.target_from_template(
+		# 		name=f'merge_site_tables_all',
+		# 		template=merge_site_tables(
+		# 			siteTables=[siteCountAll.outputs['sitetable'],
+		# 						siteCountIntergenic.outputs['sitetable'],
+		# 						siteCountRegionIntergenicExclRepeats.outputs['sitetable'],
+		# 						filterVcfAll.outputs['sitetable']],
+		# 			outputName=f'{species_abbreviation(SPECIES_NAME)}.allcall' if FREEBAYES_MODE == 0 else f'{species_abbreviation(SPECIES_NAME)}',
+		# 			outputDirectory=topOut if OUTPUT_DIR else topDir
+		# 		)
+		# 	)
 	
 	return gwf

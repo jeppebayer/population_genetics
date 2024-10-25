@@ -291,7 +291,7 @@ def index_reference_genome(referenceGenomeFile: str, outputDirectory: str):
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def depth_distribution(bamFiles: list, outputDirectory: str, speciesName: str):
+def depth_distribution(bamFiles: list, outputDirectory: str, outputName: str):
 	"""
 	Template: Calculate the per site depth distribution across all populations using :script:`samtools depth`.
 	
@@ -303,7 +303,7 @@ def depth_distribution(bamFiles: list, outputDirectory: str, speciesName: str):
 	:param
 	"""
 	inputs = {'bam': bamFiles}
-	outputs = {'depth': f'{outputDirectory}/depth_distribution/{species_abbreviation(speciesName)}.depth'}
+	outputs = {'depth': f'{outputDirectory}/depth_distribution/{outputName}.depth'}
 	options = {
 		'cores': 30,
 		'memory': '20g',
@@ -323,17 +323,17 @@ def depth_distribution(bamFiles: list, outputDirectory: str, speciesName: str):
 	
 	samtools depth \\
 		--threads {options['cores']} \\
-		-o {outputDirectory}/depth_distribution/{species_abbreviation(speciesName)}.prog.depth \\
+		-o {outputDirectory}/depth_distribution/{outputName}.prog.depth \\
 		{' '.join(bamFiles)}
 	
-	mv {outputDirectory}/depth_distribution/{species_abbreviation(speciesName)}.prog.depth {outputs['depth']}
+	mv {outputDirectory}/depth_distribution/{outputName}.prog.depth {outputs['depth']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def depth_distribution_plot(depthDistributionFile: str, minCoverageThreshold: int, outputDirectory: str, plotDepthDistribution: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/depthdistribution.py'):
+def depth_distribution_plot(depthDistributionFile: str, minCoverageThreshold: int, outputDirectory: str, mode: int = 0, plotDepthDistribution: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/depthdistribution.py'):
 	"""
 	Template: template_description
 	
@@ -367,6 +367,7 @@ def depth_distribution_plot(depthDistributionFile: str, minCoverageThreshold: in
 
 	python {plotDepthDistribution} \\
 		{minCoverageThreshold} \\
+		{mode} \\
 		{depthDistributionFile} \\
 		{outputDirectory}/depth_distribution
 
@@ -375,7 +376,7 @@ def depth_distribution_plot(depthDistributionFile: str, minCoverageThreshold: in
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def shared_sites_within_threshold_bed(depthDistributionFile: str, depthDistributionTsv: str, outputDirectory: str, speciesName: str):
+def shared_sites_within_threshold_bed(depthDistributionFile: str, depthDistributionTsv: str, outputDirectory: str, outputName: str):
 	"""
 	Template: template_description
 	
@@ -388,7 +389,7 @@ def shared_sites_within_threshold_bed(depthDistributionFile: str, depthDistribut
 	"""
 	inputs = {'depth_file': depthDistributionFile,
 		   	  'depth_tsv': depthDistributionTsv}
-	outputs = {'bed': f'{outputDirectory}/depth_distribution/{species_abbreviation(speciesName)}.depththreshold.bed'}
+	outputs = {'bed': f'{outputDirectory}/depth_distribution/{outputName}.depththreshold.bed'}
 	options = {
 		'cores': 1,
 		'memory': '10g',
@@ -427,9 +428,9 @@ def shared_sites_within_threshold_bed(depthDistributionFile: str, depthDistribut
 				}}
 		}}' \\
 		{depthDistributionFile}) \\
-		> {outputDirectory}/depth_distribution/{species_abbreviation(speciesName)}.depththreshold.prog.bed
+		> {outputDirectory}/depth_distribution/{outputName}.depththreshold.prog.bed
 	
-	mv {outputDirectory}/depth_distribution/{species_abbreviation(speciesName)}.depththreshold.prog.bed {outputs['bed']}
+	mv {outputDirectory}/depth_distribution/{outputName}.depththreshold.prog.bed {outputs['bed']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -854,7 +855,7 @@ def norm_vcf(vcfFile: str, referenceGenomeFile: str, outputName: str, outputDire
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def site_count_region(bamFiles: list, depthDistributionTsv: str, siteType: str, outputDirectory: str, speciesName: str, bedFile: str | None = None):
+def site_count_region(bamFiles: list, depthDistributionTsv: str, siteType: str, outputDirectory: str, outputName: str, bedFile: str | None = None):
 	"""
 	Template: template_description
 	
@@ -872,7 +873,7 @@ def site_count_region(bamFiles: list, depthDistributionTsv: str, siteType: str, 
 	else:
 		inputs = {'bam': bamFiles,
 			   	  'depth': depthDistributionTsv}
-	outputs = {'sitetable': f'{outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.{siteType}.tsv'}
+	outputs = {'sitetable': f'{outputDirectory}/sitetable/{outputName}.sitetable.{siteType}.tsv'}
 	options = {
 		'cores': 10,
 		'memory': '40g',
@@ -949,9 +950,9 @@ def site_count_region(bamFiles: list, depthDistributionTsv: str, siteType: str, 
 			}}
 			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
 		}}' \\
-		> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.{siteType}.prog.tsv
+		> {outputDirectory}/sitetable/{outputName}.sitetable.{siteType}.prog.tsv
 
-	mv {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.{siteType}.prog.tsv {outputs['sitetable']}
+	mv {outputDirectory}/sitetable/{outputName}.sitetable.{siteType}.prog.tsv {outputs['sitetable']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -1071,7 +1072,7 @@ def bed_exclude_overlap(mainBedFile: str, subtractionBedFile: str, outputDirecto
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, speciesName: str, minDepth: int = 200):
+def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, groupStatus: str):
 	"""
 	Template: template_description
 	
@@ -1084,9 +1085,9 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, sp
 	"""
 	inputs = {'vcf': vcfFile,
 		   	  'depth': depthDistributionTsv}
-	outputs = {'vcf': f'{outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{minDepth}-dynamic_AO1.vcf.gz',
-			   'index': f'{outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{minDepth}-dynamic_AO1.vcf.gz.csi',
-			   'sitetable': f'{outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.tsv'}
+	outputs = {'vcf': f'{outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DPdynamic_AO1.{'ingroup' if groupStatus == 'i' else 'outgroup'}.vcf.gz',
+			   'index': f'{outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DPdynamic_AO1.{'ingroup' if groupStatus == 'i' else 'outgroup'}.vcf.gz.csi',
+			   'sitetable': f'{outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.tsv'}
 	options = {
 		'cores': 18,
 		'memory': '30g',
@@ -1168,6 +1169,19 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, sp
 		}}' \\
 		{depthDistributionTsv})
 	
+	mindepth=$(awk \\
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			if (NR == 2)
+			{{
+				print $7
+				exit
+			}}
+		}}' \\
+		{depthDistributionTsv})
+	
 	bcftools view \\
 		--threads {options['cores']} \\
 		--output-type v \\
@@ -1177,7 +1191,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, sp
 			1 \\
 			0 \\
 			"total" \\
-			> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.unsorted.tsv) \\
+			> {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--include 'INFO/AF > 0' \\
@@ -1188,7 +1202,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, sp
 			0 \\
 			2 \\
 			"AF>0" \\
-			>> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.unsorted.tsv) \\
+			>> {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools filter \\
 		--threads {options['cores']} \\
 		--SnpGap 5:indel \\
@@ -1199,7 +1213,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, sp
 			0 \\
 			3 \\
 			"indel_proximity" \\
-			>> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.unsorted.tsv) \\
+			>> {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--types snps \\
@@ -1210,7 +1224,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, sp
 			0 \\
 			4 \\
 			"snps_only" \\
-			>> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.unsorted.tsv) \\
+			>> {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--max-alleles 2 \\
@@ -1221,10 +1235,10 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, sp
 			0 \\
 			5 \\
 			"biallelic_only" \\
-			>> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.unsorted.tsv) \\
+			>> {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
-		--include "FMT/DP>={minDepth} & FMT/DP<=$maxdepth" \\
+		--include "FMT/DP>=$mindepth & FMT/DP<=$maxdepth" \\
 		--output-type v \\
 		- \\
 	| tee \\
@@ -1232,7 +1246,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, sp
 			0 \\
 			6 \\
 			"depth_thresholds" \\
-			>> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.unsorted.tsv) \\
+			>> {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--include 'AVG(FMT/AO) > 1' \\
@@ -1243,11 +1257,11 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, sp
 			0 \\
 			7 \\
 			"AO>1" \\
-			>> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.unsorted.tsv) \\
+			>> {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--output-type z \\
-		--output {outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{minDepth}-dynamic_AO1.prog.vcf.gz \\
+		--output {outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DPdynamic_AO1.{'ingroup' if groupStatus == 'i' else 'outgroup'}.prog.vcf.gz \\
 		--write-index \\
 		-
 	
@@ -1263,13 +1277,13 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, sp
 			}}
 			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
 		}}' \\
-		{outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.unsorted.tsv \\
-		> {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.prog.tsv
+		{outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv \\
+		> {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.prog.tsv
 		
-	mv {outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{minDepth}-dynamic_AO1.prog.vcf.gz {outputs['vcf']}
-	mv {outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DP{minDepth}-dynamic_AO1.prog.vcf.gz.csi {outputs['index']}
-	mv {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.prog.tsv {outputs['sitetable']}
-	rm {outputDirectory}/sitetable/{species_abbreviation(speciesName)}.sitetable.variable.unsorted.tsv
+	mv {outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DPdynamic_AO1.{'ingroup' if groupStatus == 'i' else 'outgroup'}.prog.vcf.gz {outputs['vcf']}
+	mv {outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DPdynamic_AO1.{'ingroup' if groupStatus == 'i' else 'outgroup'}.prog.vcf.gz.csi {outputs['index']}
+	mv {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.prog.tsv {outputs['sitetable']}
+	rm {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
