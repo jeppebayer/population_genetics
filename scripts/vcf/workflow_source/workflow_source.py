@@ -64,8 +64,8 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 		with open(f'reference_sequences.txt', 'w') as outfile:
 			outfile.write('\n'.join('\t'.join(str(i) for i in entry.values()) for entry in sequences))
 		# Partitions reference genome
-		nPadding = padding_calculator(parse_fasta=sequences, size=PARTITION_SIZE)
-		partitions = partition_chrom(parse_fasta=sequences, size=PARTITION_SIZE, npad=nPadding)
+		nPadding = padding_calculator(parseFasta=sequences, size=PARTITION_SIZE)
+		partitions = partition_chrom(parseFasta=sequences, size=PARTITION_SIZE, nPad=nPadding)
 		with open(f'reference_partitions.{PARTITION_SIZE}bp.txt', 'w') as outfile:
 			outfile.write('\n'.join('\t'.join(str(i) for i in entry.values()) for entry in partitions))
 		# Creates list of contigs in reference genome
@@ -361,7 +361,7 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 				normVcfSingle = gwf.target_from_template(
 					name=f'normalize_vcf_single_{GROUP_NAME}',
 					template=norm_vcf(
-						vcfFile=vcfSingleList,
+						vcfFile=vcfSingleList[0],
 						referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
 						outputName=f'{species_abbreviation(SPECIES_NAME)}_{GROUP_NAME}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
 						outputDirectory=f'{topOut}' if OUTPUT_DIR else f'{topDir}/raw_vcf'
