@@ -209,7 +209,7 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 					template=depth_distribution_plot(
 						depthDistributionFile=depthDistribution.outputs['depth'],
 						minCoverageThreshold=INGROUP_FILTERING_MINDP,
-						outputDirectory=topOut if OUTPUT_DIR else topDir
+						outputDirectory=topOut if OUTPUT_DIR else topDir,
 						mode=0
 					)
 				)
@@ -220,7 +220,7 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 					template=depth_distribution_plot(
 						depthDistributionFile=depthDistribution.outputs['depth'],
 						minCoverageThreshold=OUTGROUP_FILTERING_MINDP,
-						outputDirectory=topOut if OUTPUT_DIR else topDir
+						outputDirectory=topOut if OUTPUT_DIR else topDir,
 						mode=1
 					)
 				)
@@ -380,7 +380,7 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 				)
 
 			filterVcfSingle = gwf.target_from_template(
-				name=f'filter_vcf_single',
+				name=f'filter_vcf_single_{GROUP_NAME}',
 				template=filter_vcf(
 					vcfFile=normVcfSingle.outputs['vcf'],
 					depthDistributionTsv=depthDistributionPlot.outputs['tsv'],
