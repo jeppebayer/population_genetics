@@ -349,7 +349,7 @@ def depth_distribution_plot(depthDistributionFile: str, minCoverageThreshold: in
 			   'tsv': f'{outputDirectory}/depth_distribution/{os.path.basename(depthDistributionFile)}.tsv'}
 	options = {
 		'cores': 1,
-		'memory': '100g',
+		'memory': '350g',
 		'walltime': '04:00:00'
 	}
 	protect = [outputs['plot'], outputs['tsv']]
@@ -1087,7 +1087,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, gr
 		   	  'depth': depthDistributionTsv}
 	outputs = {'vcf': f'{outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DPdynamic_AO1.{'ingroup' if groupStatus == 'i' else 'outgroup'}.vcf.gz',
 			   'index': f'{outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DPdynamic_AO1.{'ingroup' if groupStatus == 'i' else 'outgroup'}.vcf.gz.csi',
-			   'sitetable': f'{outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.tsv'}
+			   'sitetable': f'{outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.tsv'}
 	options = {
 		'cores': 18,
 		'memory': '30g',
@@ -1191,7 +1191,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, gr
 			1 \\
 			0 \\
 			"total" \\
-			> {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
+			> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--include 'INFO/AF > 0' \\
@@ -1202,7 +1202,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, gr
 			0 \\
 			2 \\
 			"AF>0" \\
-			>> {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
+			>> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools filter \\
 		--threads {options['cores']} \\
 		--SnpGap 5:indel \\
@@ -1213,7 +1213,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, gr
 			0 \\
 			3 \\
 			"indel_proximity" \\
-			>> {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
+			>> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--types snps \\
@@ -1224,7 +1224,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, gr
 			0 \\
 			4 \\
 			"snps_only" \\
-			>> {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
+			>> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--max-alleles 2 \\
@@ -1235,7 +1235,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, gr
 			0 \\
 			5 \\
 			"biallelic_only" \\
-			>> {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
+			>> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--include "FMT/DP>=$mindepth & FMT/DP<=$maxdepth" \\
@@ -1246,7 +1246,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, gr
 			0 \\
 			6 \\
 			"depth_thresholds" \\
-			>> {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
+			>> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--include 'AVG(FMT/AO) > 1' \\
@@ -1257,7 +1257,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, gr
 			0 \\
 			7 \\
 			"AO>1" \\
-			>> {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
+			>> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--output-type z \\
@@ -1277,13 +1277,13 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, gr
 			}}
 			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
 		}}' \\
-		{outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv \\
-		> {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.prog.tsv
+		{outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv \\
+		> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.prog.tsv
 		
 	mv {outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DPdynamic_AO1.{'ingroup' if groupStatus == 'i' else 'outgroup'}.prog.vcf.gz {outputs['vcf']}
 	mv {outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DPdynamic_AO1.{'ingroup' if groupStatus == 'i' else 'outgroup'}.prog.vcf.gz.csi {outputs['index']}
-	mv {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.prog.tsv {outputs['sitetable']}
-	rm {outputDirectory}/sitetable/{vcfFile.split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv
+	mv {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.prog.tsv {outputs['sitetable']}
+	rm {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"

@@ -56,5 +56,8 @@ sampleList:
     # (str). Name of sample group.
     groupName: 
     # (list). List of paths to BAM files.
+    # After each path a ': <QUALITY>' can be added to explicitly declare the quality of the data. <QUALITY> can be either 'HIGH' or 'LOW'. Default is 'HIGH'.
+    # If multiple qualities occur, a VCF with all files and a VCF file for only HIGH quality will be made for the group
     bamFileList:
-      - 
+      - foo: l
+      - bar
