@@ -349,7 +349,7 @@ def depth_distribution_plot(depthDistributionFile: str, minCoverageThreshold: in
 			   'tsv': f'{outputDirectory}/depth_distribution/{os.path.basename(depthDistributionFile)}.tsv'}
 	options = {
 		'cores': 1,
-		'memory': '350g',
+		'memory': '500g',
 		'walltime': '04:00:00'
 	}
 	protect = [outputs['plot'], outputs['tsv']]
