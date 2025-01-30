@@ -303,7 +303,7 @@ def depth_distribution(bamFiles: list, outputDirectory: str, outputName: str):
 	:param
 	"""
 	inputs = {'bam': bamFiles}
-	outputs = {'depth': f'{outputDirectory}/depth_distribution/{outputName}.depth'}
+	outputs = {'depth': f'{outputDirectory}/depth_distribution/{outputName}.depth.gz'}
 	options = {
 		'cores': 30,
 		'memory': '20g',
@@ -322,18 +322,20 @@ def depth_distribution(bamFiles: list, outputDirectory: str, outputName: str):
 	[ -d {outputDirectory}/depth_distribution ] || mkdir -p {outputDirectory}/depth_distribution
 	
 	samtools depth \\
-		--threads {options['cores']} \\
-		-o {outputDirectory}/depth_distribution/{outputName}.prog.depth \\
-		{' '.join(bamFiles)}
+		--threads {options['cores'] - 1} \\
+		{' '.join(bamFiles)} \\
+	| gzip \\
+		-c \\
+		> {outputDirectory}/depth_distribution/{outputName}.prog.depth.gz
 	
-	mv {outputDirectory}/depth_distribution/{outputName}.prog.depth {outputs['depth']}
+	mv {outputDirectory}/depth_distribution/{outputName}.prog.depth.gz {outputs['depth']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def depth_distribution_plot(depthDistributionFile: str, minCoverageThreshold: int, outputDirectory: str, mode: int = 0, plotDepthDistribution: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/depthdistribution.py'):
+def depth_distribution_plot(depthDistributionFile: str, minCoverageThreshold: int, outputDirectory: str, mode: int = 0, plotDepthDistribution: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/depthDistribution.py'):
 	"""
 	Template: template_description
 	
@@ -349,7 +351,7 @@ def depth_distribution_plot(depthDistributionFile: str, minCoverageThreshold: in
 			   'tsv': f'{outputDirectory}/depth_distribution/{os.path.basename(depthDistributionFile)}.tsv'}
 	options = {
 		'cores': 1,
-		'memory': '500g',
+		'memory': '10g',
 		'walltime': '04:00:00'
 	}
 	protect = [outputs['plot'], outputs['tsv']]
@@ -427,7 +429,7 @@ def shared_sites_within_threshold_bed(depthDistributionFile: str, depthDistribut
 					print $1, $2 - 1, $2
 				}}
 		}}' \\
-		{depthDistributionFile}) \\
+		{'<(zcat {depthDistributionFile})' if depthDistributionFile.endswith('.gz') else depthDistributionFile}) \\
 		> {outputDirectory}/depth_distribution/{outputName}.depththreshold.prog.bed
 	
 	mv {outputDirectory}/depth_distribution/{outputName}.depththreshold.prog.bed {outputs['bed']}
@@ -807,6 +809,53 @@ def merge_and_norm_vcf(vcfFiles: list, referenceGenomeFile: str, outputName: str
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
+def merge_vcf(vcfFiles: list, outputName: str, outputDirectory: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'vcfs': vcfFiles}
+	outputs = {'vcf': f'{outputDirectory}/{outputName}.merged.vcf.gz',
+			   'index': f'{outputDirectory}/{outputName}.merged.vcf.gz.csi'}
+	options = {
+		'cores': 30,
+		'memory': '40g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+	bcftools merge \\
+		--threads {options['cores']} \\
+		--output-type z \\
+		--output {outputDirectory}/{outputName}.merged.prog.vcf.gz \\
+		--missing-to-ref \\
+		--write-index \\
+		{' '.join(vcfFiles)}
+	
+	mv {outputDirectory}/{outputName}.merged.prog.vcf.gz {outputs['vcf']}
+	mv {outputDirectory}/{outputName}.merged.prog.vcf.gz.csi {outputs['index']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
 def norm_vcf(vcfFile: str, referenceGenomeFile: str, outputName: str, outputDirectory: str):
 	"""
 	Template: template_description
@@ -826,7 +875,6 @@ def norm_vcf(vcfFile: str, referenceGenomeFile: str, outputName: str, outputDire
 		'memory': '40g',
 		'walltime': '12:00:00'
 	}
-	protect = [outputs['vcf'], outputs['index']]
 	spec = f"""
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
@@ -853,7 +901,7 @@ def norm_vcf(vcfFile: str, referenceGenomeFile: str, outputName: str, outputDire
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
 def site_count_region(bamFiles: list, depthDistributionTsv: str, siteType: str, outputDirectory: str, outputName: str, bedFile: str | None = None):
 	"""
@@ -1192,6 +1240,55 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, gr
 			0 \\
 			"total" \\
 			> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
+	| awk \\
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			if ($0 ~ /^##/)
+			{{
+				print $0
+				next
+			}}
+			if ($0 ~ /^#/)
+			{{
+				print "##awk_script='BEGIN{{FS = OFS = \"\\t\"}} {{if ($0 ~ /^##/) {{print $0; next}}; if ($0 ~ /^#/) {{print $0; next}}; if (previousPosition == -1) {{previousLine = $0; previousPosition = $2; next}}; if (previousPosition == $2) {{previousPosition = -1; next}}; if (previousPosition && previousPosition != $2 && previousPosition != -1) {{print previousLine}}; previousLine = $0; previousPosition = $2}} END{{if (previousPosition != -1) {{print $0}}}}' " system("basename "FILENAME)
+				print $0
+				next
+			}}
+			if (previousPosition == -1)
+			{{
+				previousLine = $0
+				previousPosition = $2
+				next
+			}}
+			if (previousPosition == $2)
+			{{
+				previousPosition = -1
+				duplicateCount += 1
+				next
+			}}
+			if (previousPosition && previousPosition != $2 && previousPosition != -1)
+			{{
+				print previousLine
+			}}
+			previousLine = $0
+			previousPosition = $2
+		}}
+		END{{
+			if (previousPosition != -1)
+			{{
+				print $0
+			}}
+			print "Duplicate position pairs: ", duplicateCount > "dev/stderr"
+		}}' \\
+		- \\
+	| tee \\
+		>(variablesitecount \\
+			0 \\
+			2 \\
+			"duplicate_positions" \\
+			>> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--include 'INFO/AF > 0' \\
@@ -1200,7 +1297,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, gr
 	| tee \\
 		>(variablesitecount \\
 			0 \\
-			2 \\
+			3 \\
 			"AF>0" \\
 			>> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools filter \\
@@ -1211,7 +1308,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, gr
 	| tee \\
 		>(variablesitecount \\
 			0 \\
-			3 \\
+			4 \\
 			"indel_proximity" \\
 			>> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
@@ -1222,7 +1319,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, gr
 	| tee \\
 		>(variablesitecount \\
 			0 \\
-			4 \\
+			5 \\
 			"snps_only" \\
 			>> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
@@ -1233,7 +1330,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, gr
 	| tee \\
 		>(variablesitecount \\
 			0 \\
-			5 \\
+			6 \\
 			"biallelic_only" \\
 			>> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
@@ -1244,18 +1341,18 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, gr
 	| tee \\
 		>(variablesitecount \\
 			0 \\
-			6 \\
+			7 \\
 			"depth_thresholds" \\
 			>> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
-		--include 'AVG(FMT/AO) > 1' \\
+		--include 'FMT/AO > 1' \\
 		--output-type v \\
 		- \\
 	| tee \\
 		>(variablesitecount \\
 			0 \\
-			7 \\
+			8 \\
 			"AO>1" \\
 			>> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
