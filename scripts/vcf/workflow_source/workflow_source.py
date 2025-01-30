@@ -321,7 +321,7 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 							name=f'normalize_vcf_{GROUP_NAME}_{SAMPLE_NAME.replace("-", "_")}',
 							template=norm_vcf(
 								vcfFile=concatenateFreebayesSingle.outputs['concat_file'],
-								referenceGenomeFile=REFERENCE_GENOME,
+								referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
 								outputName=f'{SAMPLE_NAME}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
 								outputDirectory=f'{topDir}/raw_vcf/{GROUP_NAME}/{SAMPLE_NAME}'
 							)
@@ -366,7 +366,7 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 							name=f'normalize_vcf_{GROUP_NAME}_{SAMPLE_NAME.replace("-", "_")}',
 							template=norm_vcf(
 								vcfFile=concatenateFreebayesSingle.outputs['concat_file'],
-								referenceGenomeFile=REFERENCE_GENOME,
+								referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
 								outputName=f'{SAMPLE_NAME}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
 								outputDirectory=f'{topDir}/raw_vcf/{GROUP_NAME}/{SAMPLE_NAME}'
 							)
