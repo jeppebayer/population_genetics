@@ -383,14 +383,14 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 					template=merge_vcf(
 						vcfFiles=vcfSingleList,
 						outputName=f'{species_abbreviation(SPECIES_NAME)}_{GROUP_NAME}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall.norm',
-						outputDirectory=f'{topDir}/raw_vcf'
+						outputDirectory=f'{topDir}/raw_vcf/{GROUP_NAME}'
 					)
 				)
 
 			filterVcfSingle = gwf.target_from_template(
 				name=f'filter_vcf_single_{GROUP_NAME}',
 				template=filter_vcf(
-					vcfFile=normVcfSingle.outputs['vcf'] if len(vcfSingleList) > 1 else vcfSingleList[0],
+					vcfFile=mergeVcfSingle.outputs['vcf'] if len(vcfSingleList) > 1 else vcfSingleList[0],
 					depthDistributionTsv=depthDistributionPlot.outputs['tsv'],
 					outputDirectory=f'{topOut}' if OUTPUT_DIR else f'{topDir}/filtered_vcf',
 					groupStatus=GROUP_STATUS

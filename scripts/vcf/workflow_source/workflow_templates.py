@@ -1139,7 +1139,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, gr
 	options = {
 		'cores': 18,
 		'memory': '30g',
-		'walltime': '12:00:00'
+		'walltime': '24:00:00'
 	}
 	protect = [outputs['vcf'], outputs['index'], outputs['sitetable']]
 	spec = f"""
@@ -1252,7 +1252,7 @@ def filter_vcf(vcfFile: str, depthDistributionTsv: str, outputDirectory: str, gr
 			}}
 			if ($0 ~ /^#/)
 			{{
-				print "##awk_script="remove duplicate positions""
+				print "##awk_script=BEGIN{{FS = OFS = \"t\"}} {{if ($0 ~ /^##/) {{print $0; next}}; if ($0 ~ /^#/) {{print $0; next}}; if (previousPosition == -1) {{previousLine = $0; previousPosition = $2; next}}; if (previousPosition == $2) {{previousPosition = -1; next}}; if (previousPosition && previousPosition != $2 && previousPosition != -1) {{print previousLine}}; previousLine = $0; previousPosition = $2}} END{{if (previousPosition != -1) {{print $0}}}} " FILENAME
 				print $0
 				next
 			}}
