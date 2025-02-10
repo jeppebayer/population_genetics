@@ -107,8 +107,9 @@ def concat_depth_fractions_tsv(tsvFiles: list, outputDirectory: str, outputName:
 			if (NR == 1 && FNR == 1)
 			{{
 				print $0
+				next
 			}}
-			if (NR >= 2)
+			if (FNR >= 2)
 			{{
 				print $0
 			}}
