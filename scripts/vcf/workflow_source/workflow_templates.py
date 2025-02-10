@@ -429,7 +429,7 @@ def shared_sites_within_threshold_bed(depthDistributionFile: str, depthDistribut
 					print $1, $2 - 1, $2
 				}}
 		}}' \\
-		{'<(zcat {depthDistributionFile})' if depthDistributionFile.endswith('.gz') else depthDistributionFile}) \\
+		{f'<(zcat {depthDistributionFile})' if depthDistributionFile.endswith('.gz') else depthDistributionFile}) \\
 		> {outputDirectory}/depth_distribution/{outputName}.depththreshold.prog.bed
 	
 	mv {outputDirectory}/depth_distribution/{outputName}.depththreshold.prog.bed {outputs['bed']}

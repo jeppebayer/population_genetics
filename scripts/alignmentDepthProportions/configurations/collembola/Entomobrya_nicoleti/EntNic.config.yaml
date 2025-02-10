@@ -1,0 +1,78 @@
+# Tag identifying file association.
+TAG: jeppebayer:EcoGenetics,population_genetics,alignment,depth:workflowconfiguration
+# (str). The name of the relevant project account.
+account: EcoGenetics
+# (str). Taxonomic group. Can be left empty.
+taxonomicGroup: collembola
+# (str). Name of species being analyzed.
+speciesName: Entomobrya nicoleti
+# (str). Directory for intermediary files.
+workingDirectoryPath: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps
+# (str). Directory for final output files. (If left empty, output file will be placed within 'workingDirectoryPath').
+outputDirectoryPath: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics
+# (int). A lower coverage threshold for the identification of a coverage distribution peak.
+lowerCoverageThreshold: 200
+# (list). Sample setup. List of dictionaries listing the configuration for each sample.
+sampleList:
+  - 
+    # (str). Name of sample group.
+    groupName: Grassland
+    # (list). List of paths to BAM files.
+    bamFileList:
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_aaRJ-C225/EntNic_aaRJ-C225.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_aeRoe-C36/EntNic_aeRoe-C36.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_BIJ-C30/EntNic_BIJ-C30.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_BJJ-C34/EntNic_BJJ-C34.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_BRS-C268/EntNic_BRS-C268.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_DoeJ-C27/EntNic_DoeJ-C27.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_DSJ-C190/EntNic_DSJ-C190.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_FHJ-C38/EntNic_FHJ-C38.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_FUR-C230/EntNic_FUR-C230.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_GEJ-C42/EntNic_GEJ-C42.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_GoeJ-C19/EntNic_GoeJ-C19.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_GSJ-C274/EntNic_GSJ-C274.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_GUS-C41/EntNic_GUS-C41.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_HAS-C59/EntNic_HAS-C59.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_HHJ-C162/EntNic_HHJ-C162.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_JEJ-C119/EntNic_JEJ-C119.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_JHJ-C220/EntNic_JHJ-C220.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_JoeJ-C252/EntNic_JoeJ-C252.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_KLJ-C127/EntNic_KLJ-C127.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_KoeJ-C212/EntNic_KoeJ-C212.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_KOS-C293/EntNic_KOS-C293.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_KRS-C23/EntNic_KRS-C23.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_LEJ-C64/EntNic_LEJ-C64.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_LVJ-C76/EntNic_LVJ-C76.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_MMS-C295/EntNic_MMS-C295.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_MSJ-C2/EntNic_MSJ-C2.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_NOJ-C37/EntNic_NOJ-C37.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_ORoe-C299/EntNic_ORoe-C299.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_RDJ-C344/EntNic_RDJ-C344.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_RYJ-C139/EntNic_RYJ-C139.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_SBJ-C52/EntNic_SBJ-C52.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_SHJ-C48/EntNic_SHJ-C48.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_SKJ-C16/EntNic_SKJ-C16.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_SKJ-C216/EntNic_SKJ-C216.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_SKS-C55/EntNic_SKS-C55.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_SSJ-C259/EntNic_SSJ-C259.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_STF-C266/EntNic_STF-C266.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_SUJ-C130/EntNic_SUJ-C130.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_TOJ-C71/EntNic_TOJ-C71.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_ULJ-C122/EntNic_ULJ-C122.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_ULJ-C60/EntNic_ULJ-C60.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_UTJ-C22/EntNic_UTJ-C22.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_VAJ-C24/EntNic_VAJ-C24.filtered.bam
+  - 
+    # (str). Name of sample group.
+    groupName: Conventional agriculture
+    # (list). List of paths to BAM files.
+    bamFileList:
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/conventional_agriculture/EntNic_K-JES-C323/EntNic_K-JES-C323.filtered.bam
+  - 
+    # (str). Name of sample group.
+    groupName: Conservation agriculture
+    # (list). List of paths to BAM files.
+    bamFileList:
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/conservation_agriculture/EntNic_CA-MOJ-C55/EntNic_CA-MOJ-C55.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/conservation_agriculture/EntNic_CA-ST-6J-C84/EntNic_CA-ST-6J-C84.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/conservation_agriculture/EntNic_CA-ToeJ-C85/EntNic_CA-ToeJ-C85.filtered.bam
