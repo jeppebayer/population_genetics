@@ -76,3 +76,12 @@ sampleList:
       - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/conservation_agriculture/EntNic_CA-MOJ-C55/EntNic_CA-MOJ-C55.filtered.bam
       - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/conservation_agriculture/EntNic_CA-ST-6J-C84/EntNic_CA-ST-6J-C84.filtered.bam
       - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/conservation_agriculture/EntNic_CA-ToeJ-C85/EntNic_CA-ToeJ-C85.filtered.bam
+  - 
+    # (str). Name of sample group.
+    groupName: Outgroup Entomobrya nivalis
+    # (list). List of paths to BAM files.
+    bamFileList:
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/outgroup_entomobrya_nivalis/EntNiv_MSJ-C93/EntNiv_MSJ-C93.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/outgroup_entomobrya_nivalis/EntNiv_RYJ-ENNI/EntNiv_RYJ-ENNI.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/outgroup_entomobrya_nivalis/EntNiv_SBJ-C104/EntNiv_SBJ-C104.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/outgroup_entomobrya_nivalis/EntNiv_ULJ-C124/EntNiv_ULJ-C124.filtered.bam

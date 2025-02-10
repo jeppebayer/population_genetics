@@ -37,7 +37,7 @@ def depth_fractions(bamFile: str, lowerThreshold: int, outputDirectory: str, sam
 	options = {
 		'cores': 10,
 		'memory': '50g',
-		'walltime': '04:00:00'
+		'walltime': '06:00:00'
 	}
 	spec = f"""
 	# Sources environment

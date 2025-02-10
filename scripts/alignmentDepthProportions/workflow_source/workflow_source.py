@@ -57,7 +57,7 @@ def depthFractions_workflow(configFile: str = glob.glob('*config.y*ml')[0]):
 			template=concat_depth_fractions_tsv(
 				tsvFiles=collect(depthFractions.outputs, ['tsv'])['tsvs'],
 				outputDirectory=f'{topOut}/{GROUP_NAME}/depth' if OUTPUT_DIR else f'{topDir}/{GROUP_NAME}/depth',
-				outputName=f'{GROUP_NAME}.depthFractions'
+				outputName=f'{speciesAbbreviation(SPECIES_NAME)}.{GROUP_NAME}.depthFractions'
 			)
 		)
 
@@ -66,7 +66,7 @@ def depthFractions_workflow(configFile: str = glob.glob('*config.y*ml')[0]):
 			template=concat_depth_fractions_plots(
 				plotFiles=collect(depthFractions.outputs, ['png'])['pngs'],
 				outputDirectory=f'{topOut}/{GROUP_NAME}/depth' if OUTPUT_DIR else f'{topDir}/{GROUP_NAME}/depth',
-				outputName=f'{GROUP_NAME}.depthFractions'
+				outputName=f'{speciesAbbreviation(SPECIES_NAME)}.{GROUP_NAME}.depthFractions'
 			)
 		)
 
