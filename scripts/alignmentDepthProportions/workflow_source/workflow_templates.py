@@ -60,8 +60,8 @@ def depth_fractions(bamFile: str, lowerThreshold: int, outputDirectory: str, sam
 		{lowerThreshold} \\
 		{outputDirectory}/{sampleName}.prog
 	
-	mv {outputDirectory}/{sampleName}.prog.tsv {outputDirectory}/{sampleName}.tsv
-	mv {outputDirectory}/{sampleName}.prog.png {outputDirectory}/{sampleName}.png
+	mv {outputDirectory}/{sampleName}.prog.tsv {outputs['tsv']}
+	mv {outputDirectory}/{sampleName}.prog.png {outputs['png']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -117,7 +117,7 @@ def concat_depth_fractions_tsv(tsvFiles: list, outputDirectory: str, outputName:
 		{' '.join(tsvFiles)} \
 		> {outputDirectory}/{outputName}.prog.tsv
 	
-	mv {outputDirectory}/{outputName}.prog.tsv {outputDirectory}/{outputName}.tsv
+	mv {outputDirectory}/{outputName}.prog.tsv {outputs['concatTsv']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -161,7 +161,7 @@ def concat_depth_fractions_plots(plotFiles: list, outputDirectory: str, outputNa
 		{nColumns} \\
 		{' '.join(plotFiles)}
 	
-	mv {outputDirectory}/{outputName}.prog.png {outputDirectory}/{outputName}.png
+	mv {outputDirectory}/{outputName}.prog.png {outputs['concatPlots']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
