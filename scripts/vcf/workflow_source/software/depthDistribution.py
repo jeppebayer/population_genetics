@@ -2,37 +2,48 @@
 import sys, os.path, matplotlib.pyplot as plt, pandas as pd, numpy as np
 from statsmodels.stats.weightstats import DescrStatsW
 
-# First positional argument is used as a static lower coverage threshold
-minThres = int(sys.argv[1])
-# Second positional argument indicates which of two threshold modes to use.
+# Takes in positional arguments
+# For mode:
 # '0' uses static lower threshold and dynamic upper threshold = 2 * coverage > min. coverage threshold.
 # '1' uses dynamic lower and upper threshold = mode +- 2 * std which is lower bound.
-mode = int(sys.argv[2])
+if sys.argv[1] == '-':
+	depthFile = sys.stdin
+	minThres = int(sys.argv[2])
+	mode = int(sys.argv[3])
+	entryName = sys.argv[4]
+	outputDirectory = os.path.abspath(sys.argv[5])
+	outputName = sys.argv[6]
+else:
+	depthFile = os.path.abspath(sys.argv[1])
+	minThres = int(sys.argv[2])
+	mode = int(sys.argv[3])
+	entryName = sys.argv[4]
+	outputDirectory = os.path.abspath(sys.argv[5])
+	outputName = sys.argv[6]
 
-fullPath = os.path.abspath(sys.argv[3])
-plotDir = os.path.abspath(sys.argv[4])
-plotName = os.path.basename(fullPath)
+# Get number of columns in depth file
+nColumns = pd.read_table(depthFile, header=None, nrows=1).shape[1]
 
-# Transform samtools multi-column depth file into single-column dataframe of depth values.
-nColumns = pd.read_table(fullPath, header=None, nrows=1).shape[1]
-depthFileIterator = pd.read_table(fullPath, header=None, iterator=True, chunksize=10000, usecols=range(2, nColumns))
+# Sets up to read depth file in chunks
+depthFileIterator = pd.read_table(depthFile, header=None, iterator=True, chunksize=10000, usecols=range(2, nColumns))
 depthDistribution = pd.DataFrame()
 
+# Reads depth file in chunks turning multi-column observations into single-column, summing observations
 for chunk in depthFileIterator:
 	depthDistribution = pd.concat([depthDistribution, chunk.stack().value_counts()], axis=1, join='outer').sum(axis=1)
 
-# Create observation column from index
+# Creates column of depth values, sets type of columns to int, names columns, sorts observations by count and resets index
 depthDistribution = depthDistribution.reset_index().convert_dtypes()
 depthDistribution.columns = ['Depth', 'Count']
 depthDistribution = depthDistribution.sort_values(by='Count', ascending=False).reset_index(drop=True)
 
-# Remove depth 0 observations
+# Remove row of 0 depth observations
 depthDistribution = depthDistribution[depthDistribution['Depth'] > 0]
 
-# Calculate summary statistics
-depthDistributionweightedStatsBessel = DescrStatsW(depthDistribution['Depth'], weights=depthDistribution['Count'], ddof=1)
-mean = depthDistributionweightedStatsBessel.mean
-stdDev = depthDistributionweightedStatsBessel.std
+# Calculate weighted unbiased summary statistics
+depthDistributionWeightedStatsBessel = DescrStatsW(depthDistribution['Depth'], weights=depthDistribution['Count'], ddof=1)
+mean = depthDistributionWeightedStatsBessel.mean
+stdDev = depthDistributionWeightedStatsBessel.std
 
 # Find highest observed coverage value
 maxCov = depthDistribution.max(axis=0)['Depth']
@@ -56,28 +67,27 @@ if mode == 1:
 			rank = row.Index
 			break
 
-# Create dataframe with no values above the maximum threshold for more meaningful summary statistics
+# Set upper threshold for depth plot
 depthDistributionMaxThres = depthDistribution[depthDistribution['Depth'] <= maxThres]
 
 # Create tsv file of summary values
-with open(f'{plotDir}/{plotName}.tsv', 'w') as outfile:
-	outfile.write(f'file\tmean\tstd\tpeak\tpeak_rank\tmin_coverage_threshold\tmax_coverage_threshold\tmax_coverage_value\n{plotName}\t{mean}\t{stdDev}\t{peakCoverage}\t{rank}\t{minThres}\t{maxThres}\t{maxCov}')
+with open(f'{outputDirectory}/{outputName}.tsv', 'w') as outfile:
+	outfile.write(f'name\tmean\tstd\tpeak\tpeak_rank\tmin_coverage_threshold\tmax_coverage_threshold\tmax_coverage_value\n')
+	outfile.write(f'{entryName}\t{mean}\t{stdDev}\t{peakCoverage}\t{rank}\t{minThres}\t{maxThres}\t{maxCov}\n')
 
-# Create plot
+# Create depth plot
 plt.figure(figsize = (12, 6))
-
 plt.bar(x=depthDistributionMaxThres['Depth'], height=depthDistributionMaxThres['Count'], color='r', width=1)
 plt.ylabel("Count", fontweight = 'bold')
 plt.xlabel("Coverage", fontweight = 'bold')
-plt.xticks(np.arange(0, maxThres, 100.0), rotation='vertical')
+plt.xticks(np.arange(0, maxThres, 50.0), rotation='vertical')
 plt.axvline(mean, color = 'black', linestyle = 'dashed', label = 'Mean')
 plt.axvline(peakCoverage, color = 'blue', linestyle = 'dashed', label = 'Peak')
 plt.axvline(minThres, color = 'lightgreen', linestyle = 'solid', label='Lower threshold')
 plt.axvline(maxThres, color = 'green', linestyle = 'solid', label='Upper threshold')
-plt.text(round(peakCoverage + stdDev), plt.ylim()[1]/2, f'Mean: {round(mean, ndigits=2)}x\nStd: {round(stdDev, ndigits=2)}\nPeak: {peakCoverage}x\nUpper threshold: {maxThres}x\nLower threshold: {minThres}x\nMax value: {maxCov}x', va = 'center', color = 'black', bbox=dict(facecolor='white'))
+plt.text(round(peakCoverage + stdDev), plt.ylim()[1]/2, f'Mean: {round(mean, ndigits=2)}x\nStd: {round(stdDev, ndigits=2)}\nPeak: {peakCoverage}x\nUpper threshold: {round(maxThres, ndigits=2)}x\nLower threshold: {round(minThres, ndigits=2)}x\nMax value: {maxCov}x', va = 'center', color = 'black', bbox=dict(facecolor='white'))
 plt.legend()
 plt.grid(True)
-plt.title('Coverage distribution within maximum threshold', fontweight = 'bold')
-
+plt.title(f'{entryName} - Coverage distribution within upper threshold', fontweight = 'bold')
 plt.tight_layout()
-plt.savefig(f'{plotDir}/{plotName}.png')
+plt.savefig(f'{outputDirectory}/{outputName}.png')

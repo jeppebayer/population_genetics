@@ -291,7 +291,7 @@ def index_reference_genome(referenceGenomeFile: str, outputDirectory: str):
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def depth_distribution(bamFiles: list, outputDirectory: str, outputName: str):
+def depth_distribution(bamFiles: list, minCoverageThreshold: int, mode: int, entryName: str, outputDirectory: str, outputName: str, depthDistribution: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/depthDistribution.py'):
 	"""
 	Template: Calculate the per site depth distribution across all populations using :script:`samtools depth`.
 	
@@ -303,11 +303,13 @@ def depth_distribution(bamFiles: list, outputDirectory: str, outputName: str):
 	:param
 	"""
 	inputs = {'bam': bamFiles}
-	outputs = {'depth': f'{outputDirectory}/depth_distribution/{outputName}.depth.gz'}
+	outputs = {'tsv': f'{outputDirectory}/depth_distribution/{outputName}.tsv',
+			   'plot': f'{outputDirectory}/depth_distribution/{outputName}.png'}
+	protect = [outputs['tsv'], outputs['plot']]
 	options = {
 		'cores': 30,
-		'memory': '20g',
-		'walltime': '12:00:00'
+		'memory': '50g',
+		'walltime': '18:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -324,61 +326,23 @@ def depth_distribution(bamFiles: list, outputDirectory: str, outputName: str):
 	samtools depth \\
 		--threads {options['cores'] - 1} \\
 		{' '.join(bamFiles)} \\
-	| gzip \\
-		-c \\
-		> {outputDirectory}/depth_distribution/{outputName}.prog.depth.gz
-	
-	mv {outputDirectory}/depth_distribution/{outputName}.prog.depth.gz {outputs['depth']}
-	
-	echo "END: $(date)"
-	echo "$(jobinfo "$SLURM_JOBID")"
-	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
-
-def depth_distribution_plot(depthDistributionFile: str, minCoverageThreshold: int, outputDirectory: str, mode: int = 0, plotDepthDistribution: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/depthDistribution.py'):
-	"""
-	Template: template_description
-	
-	Template I/O::
-	
-		inputs = {}
-		outputs = {}
-	
-	:param
-	"""
-	inputs = {'depth': depthDistributionFile}
-	outputs = {'plot': f'{outputDirectory}/depth_distribution/{os.path.basename(depthDistributionFile)}.png',
-			   'tsv': f'{outputDirectory}/depth_distribution/{os.path.basename(depthDistributionFile)}.tsv'}
-	options = {
-		'cores': 1,
-		'memory': '10g',
-		'walltime': '04:00:00'
-	}
-	protect = [outputs['plot'], outputs['tsv']]
-	spec = f"""
-	# Sources environment
-	if [ "$USER" == "jepe" ]; then
-		source /home/"$USER"/.bashrc
-		source activate popgen
-	fi
-	
-	echo "START: $(date)"
-	echo "JobID: $SLURM_JOBID"
-	
-	[ -d {outputDirectory}/depth_distribution ] || mkdir -p {outputDirectory}/depth_distribution
-
-	python {plotDepthDistribution} \\
+	| python {depthDistribution} \\
+		- \\
 		{minCoverageThreshold} \\
 		{mode} \\
-		{depthDistributionFile} \\
-		{outputDirectory}/depth_distribution
+		{entryName} \\
+		{outputDirectory} \\
+		{outputName}.prog \\
+
+	mv {outputDirectory}/depth_distribution/{outputName}.prog.tsv {outputs['tsv']}
+	mv mv {outputDirectory}/depth_distribution/{outputName}.prog.png {outputs['plot']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def shared_sites_within_threshold_bed(depthDistributionFile: str, depthDistributionTsv: str, outputDirectory: str, outputName: str):
+def shared_sites_within_threshold_bed(bamFiles: list, depthDistributionTsv: str, outputDirectory: str, outputName: str):
 	"""
 	Template: template_description
 	
@@ -389,13 +353,13 @@ def shared_sites_within_threshold_bed(depthDistributionFile: str, depthDistribut
 	
 	:param
 	"""
-	inputs = {'depth_file': depthDistributionFile,
-		   	  'depth_tsv': depthDistributionTsv}
+	inputs = {'bamFiles': bamFiles,
+		   	  'depthTsv': depthDistributionTsv}
 	outputs = {'bed': f'{outputDirectory}/depth_distribution/{outputName}.depththreshold.bed'}
 	options = {
-		'cores': 1,
-		'memory': '10g',
-		'walltime': '02:00:00'
+		'cores': 20,
+		'memory': '30g',
+		'walltime': '10:00:00'
 	}
 	protect = [outputs['bed']]
 	spec = f"""
@@ -408,31 +372,56 @@ def shared_sites_within_threshold_bed(depthDistributionFile: str, depthDistribut
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {outputDirectory}/depth_distribution ] || mkdir -p {outputDirectory}/depth_distribution
+	[ -d {outputDirectory}/depth ] || mkdir -p {outputDirectory}/depth
 	
 	bedtools merge \\
-		-i <(awk \\
-		-v maxthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $8; exit}}}}' {depthDistributionTsv}) \\
-		-v minthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depthDistributionTsv}) \\
-		'BEGIN{{
-			FS = OFS = "\\t"
-		}}
-		{{
-			checksum = 0
-			for (i = 3; i <= NF; i++)
+		-i <(samtools depth \\
+			--threads {options['cores'] - 1} \\
+			{' '.join(bamFiles)} \\
+		| awk \\
+			-v maxthreshold=$(awk \\
+				'BEGIN{{
+					FS = OFS = "\\t"
+				}}
+				{{
+					if (NR == 2) 
+					{{
+						print $7
+						exit
+					}}
+				}}' \\
+				{depthDistributionTsv}) \\
+			-v minthreshold=$(awk \\
+				'BEGIN{{
+					FS = OFS = "\\t"
+				}}
+				{{
+					if (NR == 2)
+					{{
+						print $6
+						exit
+					}}
+				}}' \\
+				{depthDistributionTsv}) \\
+			'BEGIN{{
+				FS = OFS = "\\t"
+			}}
+			{{
+				checksum = 0
+				for (i = 3; i <= NF; i++)
 				{{
 					if ($i >= minthreshold && $i <= maxthreshold)
 						{{checksum += 1}}
 				}}
-			if (checksum == NF - 2)
+				f (checksum == NF - 2)
 				{{
 					print $1, $2 - 1, $2
 				}}
-		}}' \\
-		{f'<(zcat {depthDistributionFile})' if depthDistributionFile.endswith('.gz') else depthDistributionFile}) \\
-		> {outputDirectory}/depth_distribution/{outputName}.depththreshold.prog.bed
+			}}' \\
+		) \\
+		> {outputDirectory}/depth/{outputName}.depththreshold.prog.bed
 	
-	mv {outputDirectory}/depth_distribution/{outputName}.depththreshold.prog.bed {outputs['bed']}
+	mv {outputDirectory}/depth/{outputName}.depththreshold.prog.bed {outputs['bed']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -856,6 +845,100 @@ def merge_vcf(vcfFiles: list, outputName: str, outputDirectory: str):
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
+def merge_vcf_no_duplicates(vcfFiles: list, outputName: str, outputDirectory: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'vcfs': vcfFiles}
+	outputs = {'vcf': f'{outputDirectory}/{outputName}.merged.vcf.gz',
+			   'index': f'{outputDirectory}/{outputName}.merged.vcf.gz.csi'}
+	options = {
+		'cores': 30,
+		'memory': '40g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+	bcftools merge \\
+		--threads {options['cores']} \\
+		--output-type v \\
+		--missing-to-ref \\
+		{' '.join(vcfFiles)} \\
+	| awk \\
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			if ($0 ~ /^##/)
+			{{
+				print $0
+				next
+			}}
+			if ($0 ~ /^#/)
+			{{
+				print "##awk_script=BEGIN{{FS = OFS = \"t\"}} {{if ($0 ~ /^##/) {{print $0; next}}; if ($0 ~ /^#/) {{print $0; next}}; if (previousPosition == -1) {{previousLine = $0; previousPosition = $2; next}}; if (previousPosition == $2) {{previousPosition = -1; next}}; if (previousPosition && previousPosition != $2 && previousPosition != -1) {{print previousLine}}; previousLine = $0; previousPosition = $2}} END{{if (previousPosition != -1) {{print $0}}}} " FILENAME
+				print $0
+				next
+			}}
+			if (previousPosition == -1)
+			{{
+				previousLine = $0
+				previousPosition = $2
+				next
+			}}
+			if (previousPosition == $2)
+			{{
+				previousPosition = -1
+				duplicateCount += 1
+				next
+			}}
+			if (previousPosition && previousPosition != $2 && previousPosition != -1)
+			{{
+				print previousLine
+			}}
+			previousLine = $0
+			previousPosition = $2
+		}}
+		END{{
+			if (previousPosition != -1)
+			{{
+				print $0
+			}}
+			print "Duplicate position pairs: ", duplicateCount | "cat"
+		}}' \\
+		- \\
+	| bcftools view \\
+		--threads {options['cores'] - 1} \\
+		--output-type z \\
+		--output {outputDirectory}/{outputName}.merged.prog.vcf.gz \\
+		--write-index \\
+		- \\
+	
+	mv {outputDirectory}/{outputName}.merged.prog.vcf.gz {outputs['vcf']}
+	mv {outputDirectory}/{outputName}.merged.prog.vcf.gz.csi {outputs['index']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
 def norm_vcf(vcfFile: str, referenceGenomeFile: str, outputName: str, outputDirectory: str):
 	"""
 	Template: template_description
@@ -927,7 +1010,6 @@ def site_count_region(bamFiles: list, depthDistributionTsv: str, siteType: str, 
 		'memory': '40g',
 		'walltime': '06:00:00'
 	}
-	protect = [outputs['sitetable']]
 	populations = '\034'.join([os.path.basename(i).split(sep=".")[0] for i in bamFiles])
 	spec = f"""
 	# Sources environment
@@ -942,8 +1024,30 @@ def site_count_region(bamFiles: list, depthDistributionTsv: str, siteType: str, 
 	[ -d {outputDirectory}/sitetable ] || mkdir -p {outputDirectory}/sitetable
 	
 	awk \\
-		-v maxthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $8; exit}}}}' {depthDistributionTsv}) \\
-		-v minthreshold=$(awk 'BEGIN{{FS = OFS = "\\t"}} {{if (NR == 2) {{print $7; exit}}}}' {depthDistributionTsv}) \\
+		-v maxthreshold=$(awk \\
+			'BEGIN{{
+				FS = OFS = "\\t"
+			}}
+			{{
+				if (NR == 2)
+				{{
+					print $7
+					exit
+				}}
+			}}' \\
+			{depthDistributionTsv}) \\
+		-v minthreshold=$(awk \\
+			'BEGIN{{
+				FS = OFS = "\\t"
+			}}
+			{{
+				if (NR == 2)
+				{{
+					print $6
+					exit
+				}}
+			}}' \\
+			{depthDistributionTsv}) \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -955,19 +1059,19 @@ def site_count_region(bamFiles: list, depthDistributionTsv: str, siteType: str, 
 			}}
 			checksum = 0
 			for (i = 3; i <= NF; i++)
+			{{
+				if ($i >= minthreshold && $i <= maxthreshold)
 				{{
-					if ($i >= minthreshold && $i <= maxthreshold)
-						{{
-							checksum += 1
-							thressites[populations[i - 2], "whole_genome"] += 1
-							thressites[populations[i - 2], $1] += 1
-					}}
+					checksum += 1
+					thressites[populations[i - 2], "whole_genome"] += 1
+					thressites[populations[i - 2], $1] += 1
 				}}
+			}}
 			if (checksum == NF - 2)
-				{{
-					thressites["all", "whole_genome"] += 1
-					thressites["all", $1] += 1
-				}}
+			{{
+				thressites["all", "whole_genome"] += 1
+				thressites["all", $1] += 1
+			}}
 			allsites["all", "whole_genome"] += 1
 			allsites["all", $1] += 1
 		}}
@@ -984,7 +1088,9 @@ def site_count_region(bamFiles: list, depthDistributionTsv: str, siteType: str, 
 				print "1", "within_threshold", thressitesarray[1], thressitesarray[2], "{siteType}", thressites[i]
 			}}
 		}}' \\
-		<(echo -e "{populations}") \\
+		<(echo \\
+			-e \\
+			"{populations}") \\
 		<(samtools depth \\
 			--threads {options['cores']} \\
 			{f'-b {bedFile}' if bedFile else ''} \\
@@ -1005,7 +1111,7 @@ def site_count_region(bamFiles: list, depthDistributionTsv: str, siteType: str, 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
 def extract_softmasked_intervals(referenceGenomeFile: str, outputDirectory: str):
 	"""
