@@ -1,8 +1,23 @@
-# The name of the relevant project account.
+# (str). The name of the relevant project account.
 account: 
-# Name of species being analyzed
+# (str).Name of species being analyzed
 speciesName: 
-# Directory for intermediary files.
+# (str). Directory for intermediary files.
 workingDirectoryPath: 
-# Directory for final output files.
+# (str). Directory for final output files.
 outputDirectoryPath: 
+# (str).
+outgroupVcfFile:
+# (list).
+vcfGroupList:
+  -
+    # (str).
+    groupName:
+    # (str). 
+    vcfFile:
+    # (int). 
+    minimunCoverage:
+    # (int).
+    maximumCoverage:
+    # (str).
+    withinThresholdBedFile:

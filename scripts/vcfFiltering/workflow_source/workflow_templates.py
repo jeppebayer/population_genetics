@@ -16,7 +16,7 @@ def speciesAbbreviation(speciesName: str) -> str:
 
 ########################## Templates ##########################
 
-def filter_vcf(vcfFile: str, depthThresholdBed: str, minQuality: float, outputDirectory: str, groupStatus: str):
+def filter_vcf(vcfFile: str, depthThresholdBed: str, minDepth: int, maxDepth: int, outputDirectory: str):
 	"""
 	Template: template_description
 	
@@ -27,13 +27,14 @@ def filter_vcf(vcfFile: str, depthThresholdBed: str, minQuality: float, outputDi
 	
 	:param
 	"""
+	filename = f'{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typeSnps_biallelic_DP{minDepth}-{maxDepth}_AO1'
 	inputs = {'vcf': vcfFile,
 		   	  'bed': depthThresholdBed}
-	outputs = {'vcf': f'{outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DPdynamic_AO1.{'ingroup' if groupStatus == 'i' else 'outgroup'}.vcf.gz',
-			   'index': f'{outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DPdynamic_AO1.{'ingroup' if groupStatus == 'i' else 'outgroup'}.vcf.gz.csi',
-			   'sitetable': f'{outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.tsv'}
+	outputs = {'vcf': f'{outputDirectory}/{filename}.vcf.gz',
+			   'index': f'{outputDirectory}/{filename}.vcf.gz.csi',
+			   'sitetable': f'{outputDirectory}/sitetable/{filename}.sitetable.variable.tsv'}
 	options = {
-		'cores': 18,
+		'cores': 30,
 		'memory': '30g',
 		'walltime': '24:00:00'
 	}
@@ -109,7 +110,7 @@ def filter_vcf(vcfFile: str, depthThresholdBed: str, minQuality: float, outputDi
 			1 \\
 			0 \\
 			"total" \\
-			> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
+			> {outputDirectory}/sitetable/{filename}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--include 'INFO/AF > 0' \\
@@ -132,7 +133,7 @@ def filter_vcf(vcfFile: str, depthThresholdBed: str, minQuality: float, outputDi
 		- \\
 	| bcftools view \\
 		--threads {options['cores']} \\
-		--include "FMT/DP>=$mindepth & FMT/DP<=$maxdepth" \\
+		--regions-file {depthThresholdBed} \\
 		--output-type u \\
 		- \\
 	| bcftools view \\
@@ -144,12 +145,12 @@ def filter_vcf(vcfFile: str, depthThresholdBed: str, minQuality: float, outputDi
 		>(variablesitecount \\
 			0 \\
 			1 \\
-			"AO>1" \\
-			>> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv) \\
+			"INFO/AO>1" \\
+			>> {outputDirectory}/sitetable/{filename}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--output-type z \\
-		--output {outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DPdynamic_AO1.{'ingroup' if groupStatus == 'i' else 'outgroup'}.prog.vcf.gz \\
+		--output {outputDirectory}/{filename}.prog.vcf.gz \\
 		--write-index \\
 		-
 	
@@ -165,15 +166,58 @@ def filter_vcf(vcfFile: str, depthThresholdBed: str, minQuality: float, outputDi
 			}}
 			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
 		}}' \\
-		{outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv \\
-		> {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.prog.tsv
+		{outputDirectory}/sitetable/{filename}.sitetable.variable.unsorted.tsv \\
+		> {outputDirectory}/sitetable/{filename}.sitetable.variable.prog.tsv
 		
-	mv {outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DPdynamic_AO1.{'ingroup' if groupStatus == 'i' else 'outgroup'}.prog.vcf.gz {outputs['vcf']}
-	mv {outputDirectory}/{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.bcftoolsfilter_AF0_SnpGap5_typesnps_biallelic_DPdynamic_AO1.{'ingroup' if groupStatus == 'i' else 'outgroup'}.prog.vcf.gz.csi {outputs['index']}
-	mv {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.prog.tsv {outputs['sitetable']}
-	rm {outputDirectory}/sitetable/{os.path.basename(vcfFile).split('.')[0]}.{'ingroup' if groupStatus == 'i' else 'outgroup'}.sitetable.variable.unsorted.tsv
+	mv {outputDirectory}/{filename}.prog.vcf.gz {outputs['vcf']}
+	mv {outputDirectory}/{filename}.prog.vcf.gz.csi {outputs['index']}
+	mv {outputDirectory}/sitetable/{filename}.sitetable.variable.prog.tsv {outputs['sitetable']}
+	rm {outputDirectory}/sitetable/{filename}.sitetable.variable.unsorted.tsv
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
+
+def snpeff_build_database(referenceGenome: str, outputDirectory: str, speciesName: str, snpeffConfig: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/snpEff.config'):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {}
+	outputs = {}
+	options = {
+		'cores': 1,
+		'memory': '80g',
+		'walltime': '06:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+	echo "# {speciesName} genome, {os.path.basename(referenceGenome)}" >> {snpeffConfig}
+	echo "{os.path.basename(os.path.splitext(referenceGenome)[0])}.genome : {speciesName}" >> {snpeffConfig}
+	echo "{os.path.basename(os.path.splitext(referenceGenome)[0])}.file_location : {referenceGenome}" >> {snpeffConfig}
+	echo "{os.path.basename(os.path.splitext(referenceGenome)[0])}.addition_date : $(date +%d'/'%m'/'%Y)" >> {snpeffConfig}
+	echo -e "{os.path.basename(os.path.splitext(referenceGenome)[0])}.data_directory : {outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])}\\n" >> {snpeffConfig}
+	
+	mv
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
