@@ -21,16 +21,13 @@ else:
 	outputDirectory = os.path.abspath(sys.argv[5])
 	outputName = sys.argv[6]
 
-# Get number of columns in depth file
-nColumns = pd.read_table(depthFile, header=None, nrows=1).shape[1]
-
 # Sets up to read depth file in chunks
-depthFileIterator = pd.read_table(depthFile, header=None, iterator=True, chunksize=10000, usecols=range(2, nColumns))
+depthFileIterator = pd.read_table(depthFile, sep='\t', header=None, iterator=True, chunksize=10000)
 depthDistribution = pd.DataFrame()
 
-# Reads depth file in chunks turning multi-column observations into single-column, summing observations
+# Reads depth file in chunks turning multi-column observations into single-column, skipping the first two columns, and summing observations
 for chunk in depthFileIterator:
-	depthDistribution = pd.concat([depthDistribution, chunk.stack().value_counts()], axis=1, join='outer').sum(axis=1)
+	depthDistribution = pd.concat([depthDistribution, chunk[range(2, chunk.shape[1])].stack().value_counts()], axis=1, join='outer').sum(axis=1)
 
 # Creates column of depth values, sets type of columns to int, names columns, sorts observations by count and resets index
 depthDistribution = depthDistribution.reset_index().convert_dtypes()

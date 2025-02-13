@@ -303,8 +303,8 @@ def depth_distribution(bamFiles: list, minCoverageThreshold: int, mode: int, ent
 	:param
 	"""
 	inputs = {'bam': bamFiles}
-	outputs = {'tsv': f'{outputDirectory}/depth_distribution/{outputName}.tsv',
-			   'plot': f'{outputDirectory}/depth_distribution/{outputName}.png'}
+	outputs = {'tsv': f'{outputDirectory}/depth/{outputName}.tsv',
+			   'plot': f'{outputDirectory}/depth/{outputName}.png'}
 	protect = [outputs['tsv'], outputs['plot']]
 	options = {
 		'cores': 30,
@@ -321,7 +321,7 @@ def depth_distribution(bamFiles: list, minCoverageThreshold: int, mode: int, ent
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {outputDirectory}/depth_distribution ] || mkdir -p {outputDirectory}/depth_distribution
+	[ -d {outputDirectory}/depth ] || mkdir -p {outputDirectory}/depth
 	
 	samtools depth \\
 		--threads {options['cores'] - 1} \\
@@ -331,11 +331,11 @@ def depth_distribution(bamFiles: list, minCoverageThreshold: int, mode: int, ent
 		{minCoverageThreshold} \\
 		{mode} \\
 		{entryName} \\
-		{outputDirectory} \\
-		{outputName}.prog \\
+		{outputDirectory}/depth \\
+		{outputName}.prog
 
-	mv {outputDirectory}/depth_distribution/{outputName}.prog.tsv {outputs['tsv']}
-	mv mv {outputDirectory}/depth_distribution/{outputName}.prog.png {outputs['plot']}
+	mv {outputDirectory}/depth/{outputName}.prog.tsv {outputs['tsv']}
+	mv {outputDirectory}/depth/{outputName}.prog.png {outputs['plot']}
 
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -858,7 +858,9 @@ def merge_vcf_no_duplicates(vcfFiles: list, outputName: str, outputDirectory: st
 	"""
 	inputs = {'vcfs': vcfFiles}
 	outputs = {'vcf': f'{outputDirectory}/{outputName}.merged.vcf.gz',
-			   'index': f'{outputDirectory}/{outputName}.merged.vcf.gz.csi'}
+			   'index': f'{outputDirectory}/{outputName}.merged.vcf.gz.csi',
+			   'tsv': f'{outputDirectory}/{outputName}.merged.tsv'}
+	protect=[outputs['vcf'], outputs['index']]
 	options = {
 		'cores': 30,
 		'memory': '40g',
@@ -921,7 +923,7 @@ def merge_vcf_no_duplicates(vcfFiles: list, outputName: str, outputDirectory: st
 			{{
 				print $0
 			}}
-			print "Duplicate position pairs: ", duplicateCount | "cat"
+			print "{outputName}.merged.vcf.gz", duplicateCount > "{outputDirectory}/{outputName}.merged.prog.tsv"
 		}}' \\
 		- \\
 	| bcftools view \\
@@ -933,11 +935,12 @@ def merge_vcf_no_duplicates(vcfFiles: list, outputName: str, outputDirectory: st
 	
 	mv {outputDirectory}/{outputName}.merged.prog.vcf.gz {outputs['vcf']}
 	mv {outputDirectory}/{outputName}.merged.prog.vcf.gz.csi {outputs['index']}
+	mv {outputDirectory}/{outputName}.merged.prog.tsv {outputs['tsv']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
 def norm_vcf(vcfFile: str, referenceGenomeFile: str, outputName: str, outputDirectory: str):
 	"""
