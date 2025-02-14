@@ -355,7 +355,7 @@ def shared_sites_within_threshold_bed(bamFiles: list, depthDistributionTsv: str,
 	"""
 	inputs = {'bamFiles': bamFiles,
 		   	  'depthTsv': depthDistributionTsv}
-	outputs = {'bed': f'{outputDirectory}/depth_distribution/{outputName}.depththreshold.bed'}
+	outputs = {'bed': f'{outputDirectory}/depth/{outputName}.depththreshold.bed'}
 	options = {
 		'cores': 20,
 		'memory': '30g',

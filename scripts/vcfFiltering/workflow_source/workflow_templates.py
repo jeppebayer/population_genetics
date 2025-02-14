@@ -145,7 +145,7 @@ def filter_vcf(vcfFile: str, depthThresholdBed: str, minDepth: int, maxDepth: in
 		>(variablesitecount \\
 			0 \\
 			1 \\
-			"INFO/AO>1" \\
+			"filterPass0" \\
 			>> {outputDirectory}/sitetable/{filename}.sitetable.variable.unsorted.tsv) \\
 	| bcftools view \\
 		--threads {options['cores']} \\
@@ -179,7 +179,7 @@ def filter_vcf(vcfFile: str, depthThresholdBed: str, minDepth: int, maxDepth: in
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def snpeff_build_database(referenceGenome: str, outputDirectory: str, speciesName: str, snpeffConfig: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/snpEff.config'):
+def snpeff_build_database(referenceGenome: str, gtfAnnotation: str, outputDirectory: str, speciesName: str, snpeffConfig: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/snpEff.config'):
 	"""
 	Template: template_description
 	
@@ -190,10 +190,15 @@ def snpeff_build_database(referenceGenome: str, outputDirectory: str, speciesNam
 	
 	:param
 	"""
-	inputs = {}
-	outputs = {}
+	inputs = {'reference': referenceGenome,
+		   	  'gtf': gtfAnnotation}
+	outputs = {'cds': f'{outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])}/cds.fa',
+			   'protein': f'{outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])}/protein.fa',
+			   'sequences': f'{outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])}/sequences.fa',
+			   'genes': f'{outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])}/genes.gtf',
+			   'predictor': f'{outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])}/snpEffectPredictor.bin'}
 	options = {
-		'cores': 1,
+		'cores': 10,
 		'memory': '80g',
 		'walltime': '06:00:00'
 	}
@@ -207,15 +212,41 @@ def snpeff_build_database(referenceGenome: str, outputDirectory: str, speciesNam
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	[ -d {outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])} ] || mkdir -p {outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])}
 	
 	echo "# {speciesName} genome, {os.path.basename(referenceGenome)}" >> {snpeffConfig}
 	echo "{os.path.basename(os.path.splitext(referenceGenome)[0])}.genome : {speciesName}" >> {snpeffConfig}
 	echo "{os.path.basename(os.path.splitext(referenceGenome)[0])}.file_location : {referenceGenome}" >> {snpeffConfig}
 	echo "{os.path.basename(os.path.splitext(referenceGenome)[0])}.addition_date : $(date +%d'/'%m'/'%Y)" >> {snpeffConfig}
 	echo -e "{os.path.basename(os.path.splitext(referenceGenome)[0])}.data_directory : {outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])}\\n" >> {snpeffConfig}
+
+	cp {referenceGenome} {outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])}/sequences.fa
+	cp {gtfAnnotation} {outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])}/genes.gtf
+
+	cd {outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])}
+
+	agat_sp_extract_sequences.pl \\
+		--gff {gtfAnnotation} \\
+		--fasta {referenceGenome} \\
+		--type cds \\
+		--output {outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])}/cds.fa
 	
-	mv
+	agat_sp_extract_sequences.pl \\
+		--gff {gtfAnnotation} \\
+		--fasta {referenceGenome} \\
+		--type cds \\
+		--protein \\
+		--output {outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])}/protein.fa
+
+	export _JAVA_OPTIONS="-Xmx{options['memory']}"
+
+	snpEff build \\
+		-gtf22 \\
+		-config {snpeffConfig} \\
+		-dataDir {outputDirectory}/snpeff/data \\
+		-nodownload \\
+		-verbose \\
+		{os.path.basename(os.path.splitext(referenceGenome)[0])}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
