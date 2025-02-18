@@ -21,7 +21,6 @@ def depthFractions_workflow(configFile: str = glob.glob('*config.y*ml')[0]):
 	SPECIES_NAME: str = CONFIG['speciesName']
 	WORK_DIR: str =  CONFIG['workingDirectoryPath'][:len(CONFIG['workingDirectoryPath']) - 1] if CONFIG['workingDirectoryPath'].endswith('/') else CONFIG['workingDirectoryPath']
 	OUTPUT_DIR: str | None = (CONFIG['outputDirectoryPath'][:len(CONFIG['outputDirectoryPath']) - 1] if CONFIG['outputDirectoryPath'].endswith('/') else CONFIG['outputDirectoryPath']) if CONFIG['outputDirectoryPath'] else None
-	LOWER_THRESHOLD: int = CONFIG['lowerCoverageThreshold']
 	SAMPLE_LIST: list = CONFIG['sampleList']
 
 	# --------------------------------------------------
@@ -47,7 +46,7 @@ def depthFractions_workflow(configFile: str = glob.glob('*config.y*ml')[0]):
 			template_func=depth_fractions,
 			inputs=mapListOfDict,
 			extra={
-				'lowerThreshold': LOWER_THRESHOLD,
+				'lowerThreshold': GROUP['lowerCoverageThreshold'],
 				'outputDirectory': f'{topDir}/{GROUP_NAME}/depth'
 				}
 		)

@@ -388,7 +388,7 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 						name=f'merge_vcf_single_high_quality_{setupDict[group]['name']}',
 						template=merge_vcf_no_duplicates(
 							vcfFiles=vcfSingleListHighQuality,
-							outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.highQuality.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall.norm',
+							outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.highQuality.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall.norm',
 							outputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/raw_vcf/{setupDict[group]['name']}'
 						)
 					)
@@ -398,7 +398,7 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 					name=f'merge_vcf_single_all_quality_{setupDict[group]['name']}',
 					template=merge_vcf_no_duplicates(
 						vcfFiles=vcfSingleListAllQuality,
-						outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.allQuality.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall.norm',
+						outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.allQuality.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall.norm',
 						outputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/raw_vcf/{setupDict[group]['name']}'
 					)
 				)

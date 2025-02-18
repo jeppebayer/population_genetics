@@ -927,7 +927,7 @@ def merge_vcf_no_duplicates(vcfFiles: list, outputName: str, outputDirectory: st
 		}}' \\
 		- \\
 	| bcftools view \\
-		--threads {options['cores'] - 1} \\
+		--threads {options['cores']} \\
 		--output-type z \\
 		--output {outputDirectory}/{outputName}.merged.prog.vcf.gz \\
 		--write-index \\

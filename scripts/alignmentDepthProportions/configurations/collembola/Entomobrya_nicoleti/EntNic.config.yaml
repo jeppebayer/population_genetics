@@ -10,13 +10,13 @@ speciesName: Entomobrya nicoleti
 workingDirectoryPath: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps
 # (str). Directory for final output files. (If left empty, output file will be placed within 'workingDirectoryPath').
 outputDirectoryPath: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics
-# (int). A lower coverage threshold for the identification of a coverage distribution peak.
-lowerCoverageThreshold: 200
 # (list). Sample setup. List of dictionaries listing the configuration for each sample.
 sampleList:
   - 
     # (str). Name of sample group.
     groupName: Grassland
+    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
+    lowerCoverageThreshold: 200
     # (list). List of paths to BAM files.
     bamFileList:
       - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/grassland/EntNic_aaRJ-C225/EntNic_aaRJ-C225.filtered.bam
@@ -65,12 +65,16 @@ sampleList:
   - 
     # (str). Name of sample group.
     groupName: Conventional agriculture
+    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
+    lowerCoverageThreshold: 200
     # (list). List of paths to BAM files.
     bamFileList:
       - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/conventional_agriculture/EntNic_K-JES-C323/EntNic_K-JES-C323.filtered.bam
   - 
     # (str). Name of sample group.
     groupName: Conservation agriculture
+    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
+    lowerCoverageThreshold: 200
     # (list). List of paths to BAM files.
     bamFileList:
       - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/conservation_agriculture/EntNic_CA-MOJ-C55/EntNic_CA-MOJ-C55.filtered.bam
@@ -79,6 +83,8 @@ sampleList:
   - 
     # (str). Name of sample group.
     groupName: Outgroup Entomobrya nivalis
+    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
+    lowerCoverageThreshold: 10
     # (list). List of paths to BAM files.
     bamFileList:
       - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/outgroup_entomobrya_nivalis/EntNiv_MSJ-C93/EntNiv_MSJ-C93.filtered.bam

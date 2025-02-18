@@ -1,7 +1,11 @@
+# Tag identifying file association.
+TAG: jeppebayer:EcoGenetics,population_genetics,filter,aa,snpeff:workflowconfiguration
 # (str). The name of the relevant project account.
 account: 
 # (str).Name of species being analyzed
 speciesName: 
+# (str). Taxonomic group. Can be left empty.
+taxonomicGroup: 
 # (str). Directory for intermediary files.
 workingDirectoryPath: 
 # (str). Directory for final output files.
@@ -16,7 +20,7 @@ vcfGroupList:
     # (str). 
     vcfFile:
     # (int). 
-    minimunCoverage:
+    minimumCoverage:
     # (int).
     maximumCoverage:
     # (str).
