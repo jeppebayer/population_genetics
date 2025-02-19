@@ -11,7 +11,15 @@ workingDirectoryPath:
 # (str). Directory for final output files.
 outputDirectoryPath: 
 # (str).
-outgroupVcfFile:
+referenceGenome: 
+# (str).
+gtfAnnotation:
+# (dict).
+outgroupSettings:
+  # (str).
+  vcfFile:
+  # (int).
+  minimumCoverage: 
 # (list).
 vcfGroupList:
   -

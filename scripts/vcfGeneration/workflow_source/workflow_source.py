@@ -20,7 +20,7 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 	TAXONOMY: str | None = CONFIG['taxonomicGroup'].lower() if CONFIG['taxonomicGroup'] else None
 	SPECIES_NAME: str = CONFIG['speciesName']
 	REFERENCE_GENOME: str = CONFIG['referenceGenomePath']
-	INTERGENIC_BED: str = CONFIG['intergenicBedFile']
+	INTERGENIC_BED: str | None = CONFIG['intergenicBedFile']
 	REPEATS_BED: str | None = CONFIG['repeatsBedFile']
 	WORK_DIR: str = CONFIG['workingDirectoryPath'][:len(CONFIG['workingDirectoryPath']) - 1] if CONFIG['workingDirectoryPath'].endswith('/') else CONFIG['workingDirectoryPath']
 	OUTPUT_DIR: str | None = (CONFIG['outputDirectoryPath'][:len(CONFIG['outputDirectoryPath']) - 1] if CONFIG['outputDirectoryPath'].endswith('/') else CONFIG['outputDirectoryPath']) if CONFIG['outputDirectoryPath'] else None
@@ -128,7 +128,7 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 	# -------------------------------------- #
 	else:
 		# Create bed file of intergenic regions without repetitive regions
-		if REPEATS_BED:
+		if INTERGENIC_BED and REPEATS_BED:
 			bedExcludeOverlapRepeats = gwf.target_from_template(
 				name=f'intergenic_exluding_repeats_bed',
 				template=bed_exclude_overlap(
@@ -139,7 +139,7 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 				)
 			)
 
-		else:
+		elif INTERGENIC_BED and not REPEATS_BED:
 			extractSoftmaskedIntervals = gwf.target_from_template(
 				name=f'extract_repetitive_intervals',
 				template=extract_softmasked_intervals(
@@ -183,52 +183,53 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 					)
 				)
 
-				siteCountAllHighQuality = gwf.target_from_template(
-					name=f'site_count_all_high_quality_{setupDict[group]['name']}',
-					template=site_count_region(
-						bamFiles=setupDict[group]['highQuality'],
-						depthDistributionTsv=depthDistributionHighQuality.outputs['tsv'],
-						bedFile=None,
-						siteType='all',
-						outputDirectory=topDir,
-						outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.highQuality'
+				if INTERGENIC_BED:
+					siteCountAllHighQuality = gwf.target_from_template(
+						name=f'site_count_all_high_quality_{setupDict[group]['name']}',
+						template=site_count_region(
+							bamFiles=setupDict[group]['highQuality'],
+							depthDistributionTsv=depthDistributionHighQuality.outputs['tsv'],
+							bedFile=None,
+							siteType='all',
+							outputDirectory=topDir,
+							outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.highQuality'
+						)
 					)
-				)
 
-				siteCountIntergenicHighQuality = gwf.target_from_template(
-					name=f'site_count_intergenic_high_quality_{setupDict[group]['name']}',
-					template=site_count_region(
-						bamFiles=setupDict[group]['highQuality'],
-						depthDistributionTsv=depthDistributionHighQuality.outputs['tsv'],
-						siteType='intergenic',
-						outputDirectory=topDir,
-						outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.highQuality',
-						bedFile=INTERGENIC_BED
+					siteCountIntergenicHighQuality = gwf.target_from_template(
+						name=f'site_count_intergenic_high_quality_{setupDict[group]['name']}',
+						template=site_count_region(
+							bamFiles=setupDict[group]['highQuality'],
+							depthDistributionTsv=depthDistributionHighQuality.outputs['tsv'],
+							siteType='intergenic',
+							outputDirectory=topDir,
+							outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.highQuality',
+							bedFile=INTERGENIC_BED
+						)
 					)
-				)
 
-				siteCountRegionIntergenicExclRepeatsHighQuality = gwf.target_from_template(
-					name=f'site_count_intergenic_excl_repeats_high_quality_{setupDict[group]['name']}',
-					template=site_count_region(
-						bamFiles=setupDict[group]['highQuality'],
-						depthDistributionTsv=depthDistributionHighQuality.outputs['tsv'],
-						siteType='intergenic_excl_repeats',
-						outputDirectory=topDir,
-						outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.highQuality',
-						bedFile=bedExcludeOverlapRepeats.outputs['bed']
+					siteCountRegionIntergenicExclRepeatsHighQuality = gwf.target_from_template(
+						name=f'site_count_intergenic_excl_repeats_high_quality_{setupDict[group]['name']}',
+						template=site_count_region(
+							bamFiles=setupDict[group]['highQuality'],
+							depthDistributionTsv=depthDistributionHighQuality.outputs['tsv'],
+							siteType='intergenic_excl_repeats',
+							outputDirectory=topDir,
+							outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.highQuality',
+							bedFile=bedExcludeOverlapRepeats.outputs['bed']
+						)
 					)
-				)
 
-				mergeSiteTablesHighQuality = gwf.target_from_template(
-					name=f'merge_site_tables_high_quality_{setupDict[group]['name']}',
-					template=merge_site_tables(
-						siteTables=[siteCountAllHighQuality.outputs['sitetable'],
-									siteCountIntergenicHighQuality.outputs['sitetable'],
-									siteCountRegionIntergenicExclRepeatsHighQuality.outputs['sitetable']],
-						outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.highQuality',
-						outputDirectory=topOut if OUTPUT_DIR else topDir
+					mergeSiteTablesHighQuality = gwf.target_from_template(
+						name=f'merge_site_tables_high_quality_{setupDict[group]['name']}',
+						template=merge_site_tables(
+							siteTables=[siteCountAllHighQuality.outputs['sitetable'],
+										siteCountIntergenicHighQuality.outputs['sitetable'],
+										siteCountRegionIntergenicExclRepeatsHighQuality.outputs['sitetable']],
+							outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.highQuality',
+							outputDirectory=topOut if OUTPUT_DIR else topDir
+						)
 					)
-				)
 
 			depthDistributionAllQuality = gwf.target_from_template(
 				name=f'depth_distribution_all_quality_{setupDict[group]['name']}',
@@ -252,52 +253,53 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 				)
 			)
 
-			siteCountAllAllQuality = gwf.target_from_template(
-				name=f'site_count_all_all_quality_{setupDict[group]['name']}',
-				template=site_count_region(
-					bamFiles=setupDict[group]['allQuality'],
-					depthDistributionTsv=depthDistributionAllQuality.outputs['tsv'],
-					bedFile=None,
-					siteType='all',
-					outputDirectory=topDir,
-					outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.allQuality'
+			if INTERGENIC_BED:
+				siteCountAllAllQuality = gwf.target_from_template(
+					name=f'site_count_all_all_quality_{setupDict[group]['name']}',
+					template=site_count_region(
+						bamFiles=setupDict[group]['allQuality'],
+						depthDistributionTsv=depthDistributionAllQuality.outputs['tsv'],
+						bedFile=None,
+						siteType='all',
+						outputDirectory=topDir,
+						outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.allQuality'
+					)
 				)
-			)
 
-			siteCountIntergenicAllQuality = gwf.target_from_template(
-				name=f'site_count_intergenic_all_quality_{setupDict[group]['name']}',
-				template=site_count_region(
-					bamFiles=setupDict[group]['allQuality'],
-					depthDistributionTsv=depthDistributionAllQuality.outputs['tsv'],
-					siteType='intergenic',
-					outputDirectory=topDir,
-					outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.allQuality',
-					bedFile=INTERGENIC_BED
+				siteCountIntergenicAllQuality = gwf.target_from_template(
+					name=f'site_count_intergenic_all_quality_{setupDict[group]['name']}',
+					template=site_count_region(
+						bamFiles=setupDict[group]['allQuality'],
+						depthDistributionTsv=depthDistributionAllQuality.outputs['tsv'],
+						siteType='intergenic',
+						outputDirectory=topDir,
+						outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.allQuality',
+						bedFile=INTERGENIC_BED
+					)
 				)
-			)
 
-			siteCountRegionIntergenicExclRepeatsAllQuality = gwf.target_from_template(
-				name=f'site_count_intergenic_excl_repeats_all_quality_{setupDict[group]['name']}',
-				template=site_count_region(
-					bamFiles=setupDict[group]['allQuality'],
-					depthDistributionTsv=depthDistributionAllQuality.outputs['tsv'],
-					siteType='intergenic_excl_repeats',
-					outputDirectory=topDir,
-					outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.allQuality',
-					bedFile=bedExcludeOverlapRepeats.outputs['bed']
+				siteCountRegionIntergenicExclRepeatsAllQuality = gwf.target_from_template(
+					name=f'site_count_intergenic_excl_repeats_all_quality_{setupDict[group]['name']}',
+					template=site_count_region(
+						bamFiles=setupDict[group]['allQuality'],
+						depthDistributionTsv=depthDistributionAllQuality.outputs['tsv'],
+						siteType='intergenic_excl_repeats',
+						outputDirectory=topDir,
+						outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.allQuality',
+						bedFile=bedExcludeOverlapRepeats.outputs['bed']
+					)
 				)
-			)
 
-			mergeSiteTablesAllQuality = gwf.target_from_template(
-				name=f'merge_site_tables_all_quality_{setupDict[group]['name']}',
-				template=merge_site_tables(
-					siteTables=[siteCountAllAllQuality.outputs['sitetable'],
-								siteCountIntergenicAllQuality.outputs['sitetable'],
-								siteCountRegionIntergenicExclRepeatsAllQuality.outputs['sitetable']],
-					outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.allQuality',
-					outputDirectory=topOut if OUTPUT_DIR else topDir
+				mergeSiteTablesAllQuality = gwf.target_from_template(
+					name=f'merge_site_tables_all_quality_{setupDict[group]['name']}',
+					template=merge_site_tables(
+						siteTables=[siteCountAllAllQuality.outputs['sitetable'],
+									siteCountIntergenicAllQuality.outputs['sitetable'],
+									siteCountRegionIntergenicExclRepeatsAllQuality.outputs['sitetable']],
+						outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.allQuality',
+						outputDirectory=topOut if OUTPUT_DIR else topDir
+					)
 				)
-			)
 
 			# Create vcf parts, concatenate parts into whole vcfs, normalize vcfs, and merge vcfs
 			vcfSingleListHighQuality = []

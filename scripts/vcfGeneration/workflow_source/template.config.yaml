@@ -8,7 +8,7 @@ taxonomicGroup:
 speciesName: 
 # (str). Path to reference genome.
 referenceGenomePath: 
-# (str). BED file indicating intergenic regions of the reference genome.
+# (str). BED file indicating intergenic regions of the reference genome. If left empty all site counts will be disabled.
 intergenicBedFile: 
 # (str). BED file indicating repetitive regions of the reference genome. If left empty workflow will try to extract repetitive regions from reference genome.
 repeatsBedFile: 

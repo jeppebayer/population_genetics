@@ -88,14 +88,13 @@ def filter_vcf(vcfFile: str, depthThresholdBed: str, minDepth: int, maxDepth: in
 	inputs = {'vcf': vcfFile,
 		   	  'bed': depthThresholdBed}
 	outputs = {'vcf': f'{outputDirectory}/{filename}.vcf.gz',
-			   'index': f'{outputDirectory}/{filename}.vcf.gz.csi',
-			   'sitetable': f'{outputDirectory}/sitetable/{filename}.sitetable.variable.tsv'}
+			   'index': f'{outputDirectory}/{filename}.vcf.gz.csi'}
 	options = {
 		'cores': 30,
 		'memory': '30g',
 		'walltime': '24:00:00'
 	}
-	protect = [outputs['vcf'], outputs['index'], outputs['sitetable']]
+	protect = [outputs['vcf'], outputs['index']]
 	spec = f"""
 	# Sources environment
 	if [ "$USER" == "jepe" ]; then
@@ -142,28 +141,11 @@ def filter_vcf(vcfFile: str, depthThresholdBed: str, minDepth: int, maxDepth: in
 		--output {outputDirectory}/{filename}.prog1.vcf.gz \\
 		--write-index \\
 		{outputDirectory}/{filename}.prog2.vcf.gz
-
-	awk \\
-		'BEGIN{{
-			FS = OFS = "\\t"
-		}}
-		{{
-			if (NR == 1)
-			{{
-				print $0
-				next
-			}}
-			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
-		}}' \\
-		{outputDirectory}/sitetable/{filename}.sitetable.variable.unsorted.tsv \\
-		> {outputDirectory}/sitetable/{filename}.sitetable.variable.prog.tsv
-
+	
 	rm {outputDirectory}/{filename}.prog1.vcf.gz
 	rm {outputDirectory}/{filename}.prog1.vcf.gz.csi
 	mv {outputDirectory}/{filename}.prog2.vcf.gz {outputs['vcf']}
 	mv {outputDirectory}/{filename}.prog2.vcf.gz.csi {outputs['index']}
-	mv {outputDirectory}/sitetable/{filename}.sitetable.variable.prog.tsv {outputs['sitetable']}
-	rm {outputDirectory}/sitetable/{filename}.sitetable.variable.unsorted.tsv
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -286,7 +268,7 @@ def variable_site_count(vcfFileBefore: str, vcfFileAfter: str, outputDirectory: 
 		{outputDirectory}/sitetable/{outputName}.unsorted.tsv \\
 		> {outputDirectory}/sitetable/{outputName}.prog.tsv
 
-	mv {outputDirectory}/sitetable/{outputName}.prog.tsv
+	mv {outputDirectory}/sitetable/{outputName}.prog.tsv {outputs['sitetable']}
 	rm {outputDirectory}/sitetable/{outputName}.unsorted.tsv
 	
 	echo "END: $(date)"
@@ -368,7 +350,7 @@ def snpeff_build_database(referenceGenome: str, gtfAnnotation: str, outputDirect
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def snpeff_annotation(vcfFile: str, snpeffPredictorFile: str, outputDirectory: str, speciesName: str, snpeffConfigFile: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/snpEff.config'):
+def snpeff_annotation(vcfFile: str, snpeffPredictorFile: str, outputDirectory: str, snpeffConfigFile: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/snpEff.config'):
 	"""
 	Template: template_description
 	
@@ -434,76 +416,76 @@ def snpeff_annotation(vcfFile: str, snpeffPredictorFile: str, outputDirectory: s
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def ancestral_allele_inferrence(outgroupVcf: str, depthThresholdBed: str, outputDirectory: str, speciesName: str):
-	"""
-	Template: template_description
+# def ancestral_allele_inferrence(outgroupVcf: str, depthThresholdBed: str, outputDirectory: str, speciesName: str):
+# 	"""
+# 	Template: template_description
 	
-	Template I/O::
+# 	Template I/O::
 	
-		inputs = {}
-		outputs = {}
+# 		inputs = {}
+# 		outputs = {}
 	
-	:param
-	"""
-	inputs = {}
-	outputs = {}
-	options = {
-		'cores': 20,
-		'memory': '30g',
-		'walltime': '08:00:00'
-	}
-	spec = f"""
-	# Sources environment
-	if [ "$USER" == "jepe" ]; then
-		source /home/"$USER"/.bashrc
-		source activate popgen
-	fi
+# 	:param
+# 	"""
+# 	inputs = {}
+# 	outputs = {}
+# 	options = {
+# 		'cores': 20,
+# 		'memory': '30g',
+# 		'walltime': '08:00:00'
+# 	}
+# 	spec = f"""
+# 	# Sources environment
+# 	if [ "$USER" == "jepe" ]; then
+# 		source /home/"$USER"/.bashrc
+# 		source activate popgen
+# 	fi
 	
-	echo "START: $(date)"
-	echo "JobID: $SLURM_JOBID"
+# 	echo "START: $(date)"
+# 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+# 	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
 	
-	bcftools view \\
-		--threads {options['cores']} \\
-		--include 'INFO/AF > 0' \\
-		--output-type u \\
-		{vcfFile} \\
-	| bcftools filter \\
-		--threads {options['cores']} \\
-		--SnpGap 5:indel \\
-		--output-type u \\
-		- \\
-	| bcftools view \\
-		--threads {options['cores']} \\
-		--types snps \\
-		--output-type u \\
-		- \\
-	| bcftools view \\
-		--threads {options['cores']} \\
-		--max-alleles 2 \\
-		--output-type u \\
-		- \\
-	| bcftools view \\
-		--threads {options['cores']} \\
-		--include 'INFO/AO > 1' \\
-		--output-type z \\
-		--output {outputDirectory}/{filename}.prog1.vcf.gz \\
-		--write-index
+# 	bcftools view \\
+# 		--threads {options['cores']} \\
+# 		--include 'INFO/AF > 0' \\
+# 		--output-type u \\
+# 		{vcfFile} \\
+# 	| bcftools filter \\
+# 		--threads {options['cores']} \\
+# 		--SnpGap 5:indel \\
+# 		--output-type u \\
+# 		- \\
+# 	| bcftools view \\
+# 		--threads {options['cores']} \\
+# 		--types snps \\
+# 		--output-type u \\
+# 		- \\
+# 	| bcftools view \\
+# 		--threads {options['cores']} \\
+# 		--max-alleles 2 \\
+# 		--output-type u \\
+# 		- \\
+# 	| bcftools view \\
+# 		--threads {options['cores']} \\
+# 		--include 'INFO/AO > 1' \\
+# 		--output-type z \\
+# 		--output {outputDirectory}/{filename}.prog1.vcf.gz \\
+# 		--write-index
 	
-	| bcftools view \\
-		--threads {options['cores']} \\
-		--regions-file {depthThresholdBed} \\
-		--output-type z \\
-		--output {outputDirectory}/{filename}.prog1.vcf.gz \\
-		--write-index \\
-		{outputDirectory}/{filename}.prog2.vcf.gz
+# 	| bcftools view \\
+# 		--threads {options['cores']} \\
+# 		--regions-file {depthThresholdBed} \\
+# 		--output-type z \\
+# 		--output {outputDirectory}/{filename}.prog1.vcf.gz \\
+# 		--write-index \\
+# 		{outputDirectory}/{filename}.prog2.vcf.gz
 	
-	bcftools query --format '%CHROM\t%POS0\t%END\n'
+# 	bcftools query --format '%CHROM\t%POS0\t%END\n'
 
-	mv
+# 	mv
 	
-	echo "END: $(date)"
-	echo "$(jobinfo "$SLURM_JOBID")"
-	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+# 	echo "END: $(date)"
+# 	echo "$(jobinfo "$SLURM_JOBID")"
+# 	"""
+# 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
