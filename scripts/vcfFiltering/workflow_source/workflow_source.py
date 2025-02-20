@@ -39,12 +39,12 @@ def vcfFilterAndAnnotation_workflow(configFile: str = glob.glob('*config.y*ml')[
 	topDir = f'{WORK_DIR}/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}/vcf' if TAXONOMY else f'{WORK_DIR}/{SPECIES_NAME.replace(" ", "_")}/vcf'
 	topOut = f'{OUTPUT_DIR}/vcf/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}' if TAXONOMY else f'{OUTPUT_DIR}/vcf/{SPECIES_NAME.replace(" ", "_")}'
 	
-	setupDict = {group['groupName'].lower().replace(' ', '_'): {'name': group['groupName'].lower().replace(' ', '_'),
+	setupDict = {index: {'name': group['groupName'].lower().replace(' ', '_'),
 				  												'vcfFile': os.path.abspath(group['vcfFile']),
 																'minDP': group['minimumCoverage'],
 																'maxDP': group['maximumCoverage'],
 																'bedFile': os.path.abspath(group['withinThresholdBedFile'])}
-				for group in VCF_GROUP_LIST if group['vcfFile']}
+				for index, group in enumerate(VCF_GROUP_LIST) if group['vcfFile']}
 
 	indexReferenceGenome = gwf.target_from_template(
 		name=f'index_reference_genome_{SPECIES_NAME.replace(" ", "_")}',
@@ -67,7 +67,7 @@ def vcfFilterAndAnnotation_workflow(configFile: str = glob.glob('*config.y*ml')[
 
 	for group in setupDict:
 		filterVcf = gwf.target_from_template(
-			name=f'filter_vcf_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
+			name=f'filter_vcf_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
 			template=filter_vcf(
 				vcfFile=setupDict[group]['vcfFile'],
 				depthThresholdBed=setupDict[group]['bedFile'],
@@ -78,18 +78,17 @@ def vcfFilterAndAnnotation_workflow(configFile: str = glob.glob('*config.y*ml')[
 		)
 
 		variableSiteCount = gwf.target_from_template(
-			name=f'variable_site_count_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
+			name=f'variable_site_count_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
 			template=variable_site_count(
 				vcfFileBefore=setupDict[group]['vcfFile'],
 				vcfFileAfter=filterVcf.outputs['vcf'],
-				outputDirectory=topOut if OUTPUT_DIR else topDir,
-				outputName=f'{speciesAbbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.variable.sitetable'
+				outputDirectory=topOut if OUTPUT_DIR else topDir
 			)
 		)
 
 		if GENOME_ANNOTATION:
 			snpeffAnnotation = gwf.target_from_template(
-				name=f'snpeff_annotation_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
+				name=f'snpeff_annotation_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
 				template=snpeff_annotation(
 					vcfFile=filterVcf.outputs['vcf'],
 					snpeffPredictorFile=snpeffBuildDatabase.outputs['predictor'],

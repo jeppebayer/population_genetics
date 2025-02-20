@@ -105,7 +105,7 @@ def filter_vcf(vcfFile: str, depthThresholdBed: str, minDepth: int, maxDepth: in
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {outputDirectory}/sitetable ] || mkdir -p {outputDirectory}/sitetable
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
 	
 	bcftools view \\
 		--threads {options['cores']} \\
@@ -132,15 +132,16 @@ def filter_vcf(vcfFile: str, depthThresholdBed: str, minDepth: int, maxDepth: in
 		--include 'INFO/AO > 1' \\
 		--output-type z \\
 		--output {outputDirectory}/{filename}.prog1.vcf.gz \\
-		--write-index
+		--write-index \\
+		-
 	
-	| bcftools view \\
+	bcftools view \\
 		--threads {options['cores']} \\
 		--regions-file {depthThresholdBed} \\
 		--output-type z \\
-		--output {outputDirectory}/{filename}.prog1.vcf.gz \\
+		--output {outputDirectory}/{filename}.prog2.vcf.gz \\
 		--write-index \\
-		{outputDirectory}/{filename}.prog2.vcf.gz
+		{outputDirectory}/{filename}.prog1.vcf.gz
 	
 	rm {outputDirectory}/{filename}.prog1.vcf.gz
 	rm {outputDirectory}/{filename}.prog1.vcf.gz.csi
@@ -152,7 +153,7 @@ def filter_vcf(vcfFile: str, depthThresholdBed: str, minDepth: int, maxDepth: in
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
-def variable_site_count(vcfFileBefore: str, vcfFileAfter: str, outputDirectory: str, outputName: str):
+def variable_site_count(vcfFileBefore: str, vcfFileAfter: str, outputDirectory: str):
 	"""
 	Template: template_description
 	
@@ -163,9 +164,10 @@ def variable_site_count(vcfFileBefore: str, vcfFileAfter: str, outputDirectory: 
 	
 	:param
 	"""
+	filename = os.path.basename(os.path.splitext(os.path.splitext(vcfFileAfter)[0])[0]) if vcfFileAfter.endswith('.gz') else os.path.basename(os.path.splitext(vcfFileAfter)[0])
 	inputs = {'before': vcfFileBefore,
 			  'after': vcfFileAfter}
-	outputs = {'sitetable': f'{outputDirectory}/sitetable/{outputName}.prog.tsv'}
+	outputs = {'sitetable': f'{outputDirectory}/sitetable/{filename}.variable.sitetable.tsv'}
 	options = {
 		'cores': 1,
 		'memory': '50g',
@@ -241,7 +243,7 @@ def variable_site_count(vcfFileBefore: str, vcfFileAfter: str, outputDirectory: 
 		1 \\
 		0 \\
 		"total" \\
-		> {outputDirectory}/sitetable/{outputName}.unsorted.tsv
+		> {outputDirectory}/sitetable/{filename}.variable.sitetable.unsorted.tsv
 
 	bcftools view \\
 		--threads {options['cores']} \\
@@ -251,7 +253,7 @@ def variable_site_count(vcfFileBefore: str, vcfFileAfter: str, outputDirectory: 
 		0 \\
 		1 \\
 		"filter" \\
-		>> {outputDirectory}/sitetable/{outputName}.unsorted.tsv
+		>> {outputDirectory}/sitetable/{filename}.variable.sitetable.unsorted.tsv
 
 	awk \\
 		'BEGIN{{
@@ -265,11 +267,11 @@ def variable_site_count(vcfFileBefore: str, vcfFileAfter: str, outputDirectory: 
 			}}
 			print $0 | "sort -k 1,1 -k 3,3 -k 4,4"
 		}}' \\
-		{outputDirectory}/sitetable/{outputName}.unsorted.tsv \\
-		> {outputDirectory}/sitetable/{outputName}.prog.tsv
+		{outputDirectory}/sitetable/{filename}.variable.sitetable.unsorted.tsv \\
+		> {outputDirectory}/sitetable/{filename}.variable.sitetable.prog.tsv
 
-	mv {outputDirectory}/sitetable/{outputName}.prog.tsv {outputs['sitetable']}
-	rm {outputDirectory}/sitetable/{outputName}.unsorted.tsv
+	mv {outputDirectory}/sitetable/{filename}.variable.sitetable.prog.tsv {outputs['sitetable']}
+	rm {outputDirectory}/sitetable/{filename}.variable.sitetable.unsorted.tsv
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"

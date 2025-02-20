@@ -379,7 +379,7 @@ def shared_sites_within_threshold_bed(bamFiles: list, depthDistributionTsv: str,
 			--threads {options['cores'] - 1} \\
 			{' '.join(bamFiles)} \\
 		| awk \\
-			-v maxthreshold=$(awk \\
+			-v maxThreshold=$(awk \\
 				'BEGIN{{
 					FS = OFS = "\\t"
 				}}
@@ -391,7 +391,7 @@ def shared_sites_within_threshold_bed(bamFiles: list, depthDistributionTsv: str,
 					}}
 				}}' \\
 				{depthDistributionTsv}) \\
-			-v minthreshold=$(awk \\
+			-v minThreshold=$(awk \\
 				'BEGIN{{
 					FS = OFS = "\\t"
 				}}
@@ -407,13 +407,13 @@ def shared_sites_within_threshold_bed(bamFiles: list, depthDistributionTsv: str,
 				FS = OFS = "\\t"
 			}}
 			{{
-				checksum = 0
+				checkSum = 0
 				for (i = 3; i <= NF; i++)
 				{{
-					if ($i >= minthreshold && $i <= maxthreshold)
-						{{checksum += 1}}
+					if ($i >= minThreshold && $i <= maxThreshold)
+						{{checkSum += 1}}
 				}}
-				f (checksum == NF - 2)
+				if (checkSum == NF - 2)
 				{{
 					print $1, $2 - 1, $2
 				}}
