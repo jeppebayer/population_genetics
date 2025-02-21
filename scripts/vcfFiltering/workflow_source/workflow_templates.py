@@ -130,23 +130,18 @@ def filter_vcf(vcfFile: str, depthThresholdBed: str, minDepth: int, maxDepth: in
 	| bcftools view \\
 		--threads {options['cores']} \\
 		--include 'INFO/AO > 1' \\
-		--output-type z \\
-		--output {outputDirectory}/{filename}.prog1.vcf.gz \\
-		--write-index \\
-		-
-	
-	bcftools view \\
+		--output-type u \\
+		- \\
+	| bcftools view \\
 		--threads {options['cores']} \\
-		--regions-file {depthThresholdBed} \\
+		--targets-file {depthThresholdBed} \\
 		--output-type z \\
-		--output {outputDirectory}/{filename}.prog2.vcf.gz \\
+		--output {outputDirectory}/{filename}.prog.vcf.gz \\
 		--write-index \\
-		{outputDirectory}/{filename}.prog1.vcf.gz
+		{outputDirectory}/{filename}.prog.vcf.gz
 	
-	rm {outputDirectory}/{filename}.prog1.vcf.gz
-	rm {outputDirectory}/{filename}.prog1.vcf.gz.csi
-	mv {outputDirectory}/{filename}.prog2.vcf.gz {outputs['vcf']}
-	mv {outputDirectory}/{filename}.prog2.vcf.gz.csi {outputs['index']}
+	mv {outputDirectory}/{filename}.prog.vcf.gz {outputs['vcf']}
+	mv {outputDirectory}/{filename}.prog.vcf.gz.csi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -171,7 +166,7 @@ def variable_site_count(vcfFileBefore: str, vcfFileAfter: str, outputDirectory: 
 	options = {
 		'cores': 1,
 		'memory': '50g',
-		'walltime': '08:00:00'
+		'walltime': '15:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -418,76 +413,138 @@ def snpeff_annotation(vcfFile: str, snpeffPredictorFile: str, outputDirectory: s
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-# def ancestral_allele_inferrence(outgroupVcf: str, depthThresholdBed: str, outputDirectory: str, speciesName: str):
-# 	"""
-# 	Template: template_description
+def ancestral_allele_inferrence(sitesWithinCoverageBed: str, outgroupVcf: str, depthThresholdBed: str, outputDirectory: str, speciesName: str):
+	"""
+	Template: template_description
 	
-# 	Template I/O::
+	Template I/O::
 	
-# 		inputs = {}
-# 		outputs = {}
+		inputs = {}
+		outputs = {}
 	
-# 	:param
-# 	"""
-# 	inputs = {}
-# 	outputs = {}
-# 	options = {
-# 		'cores': 20,
-# 		'memory': '30g',
-# 		'walltime': '08:00:00'
-# 	}
-# 	spec = f"""
-# 	# Sources environment
-# 	if [ "$USER" == "jepe" ]; then
-# 		source /home/"$USER"/.bashrc
-# 		source activate popgen
-# 	fi
+	:param
+	"""
+	inputs = {}
+	outputs = {}
+	options = {
+		'cores': 20,
+		'memory': '30g',
+		'walltime': '08:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
 	
-# 	echo "START: $(date)"
-# 	echo "JobID: $SLURM_JOBID"
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
 	
-# 	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
 	
-# 	bcftools view \\
-# 		--threads {options['cores']} \\
-# 		--include 'INFO/AF > 0' \\
-# 		--output-type u \\
-# 		{vcfFile} \\
-# 	| bcftools filter \\
-# 		--threads {options['cores']} \\
-# 		--SnpGap 5:indel \\
-# 		--output-type u \\
-# 		- \\
-# 	| bcftools view \\
-# 		--threads {options['cores']} \\
-# 		--types snps \\
-# 		--output-type u \\
-# 		- \\
-# 	| bcftools view \\
-# 		--threads {options['cores']} \\
-# 		--max-alleles 2 \\
-# 		--output-type u \\
-# 		- \\
-# 	| bcftools view \\
-# 		--threads {options['cores']} \\
-# 		--include 'INFO/AO > 1' \\
-# 		--output-type z \\
-# 		--output {outputDirectory}/{filename}.prog1.vcf.gz \\
-# 		--write-index
 	
-# 	| bcftools view \\
-# 		--threads {options['cores']} \\
-# 		--regions-file {depthThresholdBed} \\
-# 		--output-type z \\
-# 		--output {outputDirectory}/{filename}.prog1.vcf.gz \\
-# 		--write-index \\
-# 		{outputDirectory}/{filename}.prog2.vcf.gz
 	
-# 	bcftools query --format '%CHROM\t%POS0\t%END\n'
+	bcftools query --format '%CHROM\t%POS0\t%END\n'
 
-# 	mv
+	mv
 	
-# 	echo "END: $(date)"
-# 	echo "$(jobinfo "$SLURM_JOBID")"
-# 	"""
-# 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def vcf_to_bed(vcfFile: str, outputDirectory: str, speciesName: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	filename = os.path.basename(os.path.splitext(os.path.splitext(vcfFile)[0])[0]) if vcfFile.endswith('.gz') else os.path.basename(os.path.splitext(vcfFile)[0])
+	inputs = {'vcf': {vcfFile}}
+	outputs = {'bed': f'{outputDirectory}/bed/{filename}.bed'}
+	options = {
+		'cores': 1,
+		'memory': '10g',
+		'walltime': '10:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory}/bed ] || mkdir -p {outputDirectory}/bed
+	
+	bedtools merge \\
+		-i <(bcftools query \\
+			--format '%CHROM\t%POS0\t%END\n' \\
+			{vcfFile}) \\
+		> {outputDirectory}/bed/{filename}.prog.bed
+	
+	mv {outputDirectory}/bed/{filename}.prog.bed {outputs['bed']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def update_ancetral_allele_information(vcfFile: str, ancestralAnnotationFile: str, outputDirectory: str, speciesName: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	filename = os.path.basename(os.path.splitext(os.path.splitext(vcfFile)[0])[0]) if vcfFile.endswith('.gz') else os.path.basename(os.path.splitext(vcfFile)[0])
+	inputs = {'vcf': vcfFile,
+		   	  'annotation': ancestralAnnotationFile}
+	outputs = {'vcf': f'{outputDirectory}/{filename}.aa.vcf.gz',
+			   'index': f'{outputDirectory}/{filename}.aa.vcf.gz.csi'}
+	options = {
+		'cores': 30,
+		'memory': '20g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+	bcftools annotate \\
+		--threads {options['cores']} \\
+		--header-line '##INFO=<ID=AA,Number=1,Type=String,Description="Inferred ancetral allele">' \\
+		--annotations {ancestralAnnotationFile} \\
+		--columns CHROM,POS,INFO/AA \\
+		--output-type z \\
+		--output {outputDirectory}/{filename}.aa.prog.vcf.gz \\
+		--write-index \\
+		{vcfFile}
+	
+	mv {outputDirectory}/{filename}.aa.prog.vcf.gz {outputs['vcf']}
+	mv {outputDirectory}/{filename}.aa.prog.vcf.gz.csi {outputs['index']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
