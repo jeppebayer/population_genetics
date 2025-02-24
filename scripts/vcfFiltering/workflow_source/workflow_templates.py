@@ -137,8 +137,7 @@ def filter_vcf(vcfFile: str, depthThresholdBed: str, minDepth: int, maxDepth: in
 		--targets-file {depthThresholdBed} \\
 		--output-type z \\
 		--output {outputDirectory}/{filename}.prog.vcf.gz \\
-		--write-index \\
-		{outputDirectory}/{filename}.prog.vcf.gz
+		--write-index
 	
 	mv {outputDirectory}/{filename}.prog.vcf.gz {outputs['vcf']}
 	mv {outputDirectory}/{filename}.prog.vcf.gz.csi {outputs['index']}
@@ -413,7 +412,7 @@ def snpeff_annotation(vcfFile: str, snpeffPredictorFile: str, outputDirectory: s
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def ancestral_allele_inferrence(sitesWithinCoverageBed: str, outgroupVcf: str, depthThresholdBed: str, outputDirectory: str, speciesName: str):
+def ancestral_allele_inferrence_reference(referenceGenome: str, outgroupSitesWithinCoverageBed: str, outputDirectory: str, outputName: str):
 	"""
 	Template: template_description
 	
@@ -424,8 +423,10 @@ def ancestral_allele_inferrence(sitesWithinCoverageBed: str, outgroupVcf: str, d
 	
 	:param
 	"""
-	inputs = {}
-	outputs = {}
+	inputs = {'reference': referenceGenome,
+		   	  'bed': outgroupSitesWithinCoverageBed}
+	outputs = {'annotation': f'{outputDirectory}/ancestral_allele/{outputName}.annotation.reference.tsv.gz',
+			   'index': f'{outputDirectory}/ancestral_allele/{outputName}.annotation.reference.tsv.gz.tbi'}
 	options = {
 		'cores': 20,
 		'memory': '30g',
@@ -441,12 +442,215 @@ def ancestral_allele_inferrence(sitesWithinCoverageBed: str, outgroupVcf: str, d
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
-	
-	
-	
-	bcftools query --format '%CHROM\t%POS0\t%END\n'
+	[ -d {outputDirectory}/ancestral_allele ] || mkdir -p {outputDirectory}/ancestral_allele
 
+	bedtools getfasta \\
+		-fi {referenceGenome} \\
+		-bed <(awk \\
+			'BEGIN{{
+				FS = OFS = "\\t"
+			}}
+			{{
+				for (pos = $2; pos < $3; pos++)
+				{{
+					print $1, pos, pos + 1
+				}}
+			}}' \\
+			{outgroupSitesWithinCoverageBed}) \\
+		-bedOut \\
+	| awk \\
+		'BEGIN{{
+			FS = OFS ="\\t"
+		}}
+		{{
+			print $1, $3, $4
+		}}' \\
+		- \\
+	| bgzip \\
+		--threads {options['cores']} \\
+		--output {outputDirectory}/ancestral_allele/{outputName}.annotation.reference.prog.tsv.gz \\
+		-
+
+	tabix \\
+		--threads {options['cores']} \\
+		--sequence 1 \\
+		--begin 2 \\
+		--end 2 \\
+		{outputDirectory}/ancestral_allele/{outputName}.annotation.reference.prog.tsv.gz
+
+	mv {outputDirectory}/ancestral_allele/{outputName}.annotation.reference.prog.tsv.gz {outputs['annotation']}
+	mv {outputDirectory}/ancestral_allele/{outputName}.annotation.reference.prog.tsv.gz.tbi {outputs['index']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def ancestral_allele_inferrence_variant(outgroupVcf: str, outgroupSitesWithinCoverageBed: str, outputDirectory: str, outputName: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'vcf': outgroupVcf,
+		   	  'bed': outgroupSitesWithinCoverageBed}
+	outputs = {'annotation': f'{outputDirectory}/ancestral_allele/{outputName}.annotation.variant.tsv.gz',
+			   'index': f'{outputDirectory}/ancestral_allele/{outputName}.annotation.variant.tsv.gz.tbi'}
+	options = {
+		'cores': 20,
+		'memory': '30g',
+		'walltime': '08:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory}/ancestral_allele ] || mkdir -p {outputDirectory}/ancestral_allele
+	
+	cat \\
+		<(bcftools filter \\
+			--threads {options['cores']} \\
+			--SnpGap 5:indel \\
+			--output-type u \\
+			{outgroupVcf} \\
+		| bcftools view \\
+			--threads {options['cores']} \\
+			--types snps \\
+			--output-type u \\
+			- \\
+		| bcftools view \\
+			--threads {options['cores']} \\
+			--max-alleles 2 \\
+			--output-type u \\
+			- \\
+		| bcftools view \\
+			--threads {options['cores']} \\
+			--include 'INFO/AO > 1' \\
+			--output-type u \\
+			- \\
+		| bcftools view \\
+			--threads {options['cores']} \\
+			--min-af 1 \\
+			--max-af 1 \\
+			--output-type u \\
+			- \\
+		| bcftools view \\
+			--threads {options['cores']} \\
+			--targets-file {outgroupSitesWithinCoverageBed} \\
+			--output-type u \\
+			- \\
+		| bcftools query \\
+			--format '%CHROM\\t%POS\\t%ALT\\n' \\
+			-) \\
+		<(bcftools view \\
+			--threads {options['cores']} \\
+			--min-af 0.00000001 \\
+			--max-af 0.99999999 \\
+			--output-type u \\
+			{outgroupVcf} \\
+		| bcftools view \\
+			--threads {options['cores']} \\
+			--targets-file {outgroupSitesWithinCoverageBed} \\
+			--output-type u \\
+			- \\
+		| bcftools query \\
+			--format '%CHROM\\t%POS\t.\\n' \\
+			-) \\
+	| sort \\
+		--field-separator=$'\\t' \\
+		--key=1,1 \\
+		--key=2,2g \\
+		- \\
+	| bgzip \\
+		--threads {options['cores']} \\
+		--output {outputDirectory}/ancestral_allele/{outputName}.annotation.variant.prog.tsv.gz \\
+		-
+	
+	tabix \\
+		--threads {options['cores']} \\
+		--sequence 1 \\
+		--begin 2 \\
+		--end 2 \\
+		{outputDirectory}/ancestral_allele/{outputName}.annotation.variant.prog.tsv.gz
+
+	mv {outputDirectory}/ancestral_allele/{outputName}.annotation.variant.prog.tsv.gz {outputs['annotation']}
+	mv {outputDirectory}/ancestral_allele/{outputName}.annotation.variant.prog.tsv.gz.tbi {outputs['index']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def ancestral_allele_inferrence_merge(outputDirectory: str, outputName: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {}
+	outputs = {}
+	options = {
+		'cores': 1,
+		'memory': '100g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory}/ancestral_allele ] || mkdir -p {outputDirectory}/ancestral_allele
+	
+	awk \\
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			if (FNR == NR)
+			{{
+				originalArray[$1, $2] = $3
+				next
+			}}
+			if (($1, $2) in originalArray)
+			{{
+				print $1, $2, orginalArray[$1, $2]
+				next
+			}}
+			print $1, $2, $3
+		}} \\
+	| bgzip \\
+		--threads {options['cores']} \\
+		--output {outputDirectory}/ancestral_allele/{outputName}.annotation.prog.tsv.gz \\
+		-
+
+	tabix \\
+		--threads {options['cores']} \\
+		--sequence 1 \\
+		--begin 2 \\
+		--end 2 \\
+		{outputDirectory}/ancestral_allele/{outputName}.annotation.prog.tsv.gz
+	
 	mv
 	
 	echo "END: $(date)"
@@ -454,7 +658,7 @@ def ancestral_allele_inferrence(sitesWithinCoverageBed: str, outgroupVcf: str, d
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def vcf_to_bed(vcfFile: str, outputDirectory: str, speciesName: str):
+def vcf_to_bed(vcfFile: str, outputDirectory: str):
 	"""
 	Template: template_description
 	
@@ -536,6 +740,7 @@ def update_ancetral_allele_information(vcfFile: str, ancestralAnnotationFile: st
 		--header-line '##INFO=<ID=AA,Number=1,Type=String,Description="Inferred ancetral allele">' \\
 		--annotations {ancestralAnnotationFile} \\
 		--columns CHROM,POS,INFO/AA \\
+		--mark-sites -AA=.
 		--output-type z \\
 		--output {outputDirectory}/{filename}.aa.prog.vcf.gz \\
 		--write-index \\
