@@ -25,7 +25,7 @@ def vcfFilterAndAnnotation_workflow(configFile: str = glob.glob('*config.y*ml')[
 	GENOME_ANNOTATION: str = CONFIG['gtfAnnotation']
 	OUTGROUP_SETTINGS: dict = CONFIG['outgroupSettings']
 	OUTGROUP_VCF: str | None = OUTGROUP_SETTINGS['vcfFile']
-	OUTGROUP_MINDP: int | None = OUTGROUP_SETTINGS['minimumCoverage']
+	OUTGROUP_BEDFILE: int | None = OUTGROUP_SETTINGS['withinThresholdBedFile']
 	VCF_GROUP_LIST: list = CONFIG['vcfGroupList']
 	
 	# --------------------------------------------------
@@ -65,6 +65,37 @@ def vcfFilterAndAnnotation_workflow(configFile: str = glob.glob('*config.y*ml')[
 			)
 		)
 
+	if OUTGROUP_VCF and OUTGROUP_BEDFILE:
+		ancestralAlleleInferenceReference = gwf.target_from_template(
+			name=f'ancestral_allele_inference_reference_{os.path.basename(OUTGROUP_VCF)}',
+			template=ancestral_allele_inference_reference(
+				referenceGenome=REFERENCE_GENOME,
+				outgroupSitesWithinCoverageBed=OUTGROUP_BEDFILE,
+				outputDirectory=topDir,
+				outputName=f'{speciesAbbreviation(SPECIES_NAME)}'
+			)
+		)
+
+		ancestralAlleleInferenceVariant = gwf.target_from_template(
+			name=f'ancestral_allele_inference_variant_{os.path.basename(OUTGROUP_VCF)}',
+			template=ancestral_allele_inference_variant(
+				outgroupVcf=OUTGROUP_VCF,
+				outgroupSitesWithinCoverageBed=OUTGROUP_BEDFILE,
+				outputDirectory=topDir,
+				outputName=f'{speciesAbbreviation(SPECIES_NAME)}'
+			)
+		)
+
+		ancestralAlleleInferenceMerge = gwf.target_from_template(
+			name=f'ancestral_allele_inference_merge_{os.path.basename(OUTGROUP_VCF)}',
+			template=ancestral_allele_inference_merge(
+				variantAnnotation=ancestralAlleleInferenceVariant.outputs['annotation'],
+				referenceAnnotation=ancestralAlleleInferenceReference.outputs['annotation'],
+				outputDirectory=topDir,
+				outputName=f'{speciesAbbreviation(SPECIES_NAME)}'
+			)
+		)
+
 	for group in setupDict:
 		filterVcf = gwf.target_from_template(
 			name=f'filter_vcf_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
@@ -92,11 +123,19 @@ def vcfFilterAndAnnotation_workflow(configFile: str = glob.glob('*config.y*ml')[
 				template=snpeff_annotation(
 					vcfFile=filterVcf.outputs['vcf'],
 					snpeffPredictorFile=snpeffBuildDatabase.outputs['predictor'],
-					outputDirectory=topOut
+					outputDirectory=topOut if OUTPUT_DIR else topDir
 				)
 			)
 
-
+		if OUTGROUP_VCF and OUTGROUP_BEDFILE:
+			updateAncetralAlleleInformation = gwf.target_from_template(
+				name=f'update_ancestral_allele_information_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
+				template=update_ancetral_allele_information(
+					vcfFile=snpeffAnnotation.outputs['vcf'],
+					ancestralAnnotationFile=ancestralAlleleInferenceMerge.outputs['annotation'],
+					outputDirectory=topOut if OUTPUT_DIR else topDir
+				)
+			)
 
 	print(f'Intermediary files will be place at: {topDir}/')
 	print(f'Output files will be placed at: {topOut if OUTPUT_DIR else topDir}/')

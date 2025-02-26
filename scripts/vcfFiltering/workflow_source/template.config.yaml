@@ -19,7 +19,7 @@ outgroupSettings:
   # (str).
   vcfFile:
   # (int).
-  minimumCoverage: 
+  withinThresholdBedFile: 
 # (list).
 vcfGroupList:
   -

@@ -412,7 +412,7 @@ def snpeff_annotation(vcfFile: str, snpeffPredictorFile: str, outputDirectory: s
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def ancestral_allele_inferrence_reference(referenceGenome: str, outgroupSitesWithinCoverageBed: str, outputDirectory: str, outputName: str):
+def ancestral_allele_inference_reference(referenceGenome: str, outgroupSitesWithinCoverageBed: str, outputDirectory: str, outputName: str):
 	"""
 	Template: template_description
 	
@@ -425,8 +425,7 @@ def ancestral_allele_inferrence_reference(referenceGenome: str, outgroupSitesWit
 	"""
 	inputs = {'reference': referenceGenome,
 		   	  'bed': outgroupSitesWithinCoverageBed}
-	outputs = {'annotation': f'{outputDirectory}/ancestral_allele/{outputName}.annotation.reference.tsv.gz',
-			   'index': f'{outputDirectory}/ancestral_allele/{outputName}.annotation.reference.tsv.gz.tbi'}
+	outputs = {'annotation': f'{outputDirectory}/ancestral_allele/{outputName}.annotation.reference.tsv.gz'}
 	options = {
 		'cores': 20,
 		'memory': '30g',
@@ -471,22 +470,14 @@ def ancestral_allele_inferrence_reference(referenceGenome: str, outgroupSitesWit
 		--output {outputDirectory}/ancestral_allele/{outputName}.annotation.reference.prog.tsv.gz \\
 		-
 
-	tabix \\
-		--threads {options['cores']} \\
-		--sequence 1 \\
-		--begin 2 \\
-		--end 2 \\
-		{outputDirectory}/ancestral_allele/{outputName}.annotation.reference.prog.tsv.gz
-
 	mv {outputDirectory}/ancestral_allele/{outputName}.annotation.reference.prog.tsv.gz {outputs['annotation']}
-	mv {outputDirectory}/ancestral_allele/{outputName}.annotation.reference.prog.tsv.gz.tbi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def ancestral_allele_inferrence_variant(outgroupVcf: str, outgroupSitesWithinCoverageBed: str, outputDirectory: str, outputName: str):
+def ancestral_allele_inference_variant(outgroupVcf: str, outgroupSitesWithinCoverageBed: str, outputDirectory: str, outputName: str):
 	"""
 	Template: template_description
 	
@@ -499,8 +490,7 @@ def ancestral_allele_inferrence_variant(outgroupVcf: str, outgroupSitesWithinCov
 	"""
 	inputs = {'vcf': outgroupVcf,
 		   	  'bed': outgroupSitesWithinCoverageBed}
-	outputs = {'annotation': f'{outputDirectory}/ancestral_allele/{outputName}.annotation.variant.tsv.gz',
-			   'index': f'{outputDirectory}/ancestral_allele/{outputName}.annotation.variant.tsv.gz.tbi'}
+	outputs = {'annotation': f'{outputDirectory}/ancestral_allele/{outputName}.annotation.variant.tsv.gz'}
 	options = {
 		'cores': 20,
 		'memory': '30g',
@@ -576,23 +566,15 @@ def ancestral_allele_inferrence_variant(outgroupVcf: str, outgroupSitesWithinCov
 		--threads {options['cores']} \\
 		--output {outputDirectory}/ancestral_allele/{outputName}.annotation.variant.prog.tsv.gz \\
 		-
-	
-	tabix \\
-		--threads {options['cores']} \\
-		--sequence 1 \\
-		--begin 2 \\
-		--end 2 \\
-		{outputDirectory}/ancestral_allele/{outputName}.annotation.variant.prog.tsv.gz
 
 	mv {outputDirectory}/ancestral_allele/{outputName}.annotation.variant.prog.tsv.gz {outputs['annotation']}
-	mv {outputDirectory}/ancestral_allele/{outputName}.annotation.variant.prog.tsv.gz.tbi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def ancestral_allele_inferrence_merge(outputDirectory: str, outputName: str):
+def ancestral_allele_inference_merge(variantAnnotation: str, referenceAnnotation: str, outputDirectory: str, outputName: str):
 	"""
 	Template: template_description
 	
@@ -603,11 +585,13 @@ def ancestral_allele_inferrence_merge(outputDirectory: str, outputName: str):
 	
 	:param
 	"""
-	inputs = {}
-	outputs = {}
+	inputs = {'variant': variantAnnotation,
+		   	  'reference': referenceAnnotation}
+	outputs = {'annotation': f'{outputDirectory}/ancestral_allele/{outputName}.annotation.tsv.gz',
+			   'index': f'{outputDirectory}/ancestral_allele/{outputName}.annotation.tsv.gz.tbi'}
 	options = {
 		'cores': 1,
-		'memory': '100g',
+		'memory': '50g',
 		'walltime': '12:00:00'
 	}
 	spec = f"""
@@ -639,6 +623,8 @@ def ancestral_allele_inferrence_merge(outputDirectory: str, outputName: str):
 			}}
 			print $1, $2, $3
 		}} \\
+		{'<(zcat ' + variantAnnotation + ')' if variantAnnotation.endswith('.gz') else variantAnnotation} \\
+		{'<(zcat ' + referenceAnnotation + ')' if referenceAnnotation.endswith('.gz') else referenceAnnotation} \\
 	| bgzip \\
 		--threads {options['cores']} \\
 		--output {outputDirectory}/ancestral_allele/{outputName}.annotation.prog.tsv.gz \\
@@ -651,7 +637,8 @@ def ancestral_allele_inferrence_merge(outputDirectory: str, outputName: str):
 		--end 2 \\
 		{outputDirectory}/ancestral_allele/{outputName}.annotation.prog.tsv.gz
 	
-	mv
+	mv {outputDirectory}/ancestral_allele/{outputName}.annotation.prog.tsv.gz {outputs['annotation']}
+	mv {outputDirectory}/ancestral_allele/{outputName}.annotation.prog.tsv.gz.tbi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -702,7 +689,7 @@ def vcf_to_bed(vcfFile: str, outputDirectory: str):
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def update_ancetral_allele_information(vcfFile: str, ancestralAnnotationFile: str, outputDirectory: str, speciesName: str):
+def update_ancetral_allele_information(vcfFile: str, ancestralAnnotationFile: str, outputDirectory: str):
 	"""
 	Template: template_description
 	
