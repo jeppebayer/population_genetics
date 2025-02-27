@@ -429,7 +429,7 @@ def ancestral_allele_inference_reference(referenceGenome: str, outgroupSitesWith
 	options = {
 		'cores': 20,
 		'memory': '30g',
-		'walltime': '08:00:00'
+		'walltime': '20:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -494,7 +494,7 @@ def ancestral_allele_inference_variant(outgroupVcf: str, outgroupSitesWithinCove
 	options = {
 		'cores': 20,
 		'memory': '30g',
-		'walltime': '08:00:00'
+		'walltime': '15:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -591,7 +591,7 @@ def ancestral_allele_inference_merge(variantAnnotation: str, referenceAnnotation
 			   'index': f'{outputDirectory}/ancestral_allele/{outputName}.annotation.tsv.gz.tbi'}
 	options = {
 		'cores': 1,
-		'memory': '50g',
+		'memory': '60g',
 		'walltime': '12:00:00'
 	}
 	spec = f"""
@@ -724,14 +724,30 @@ def update_ancetral_allele_information(vcfFile: str, ancestralAnnotationFile: st
 	
 	bcftools annotate \\
 		--threads {options['cores']} \\
-		--header-line '##INFO=<ID=AA,Number=1,Type=String,Description="Inferred ancetral allele">' \\
+		--header-line '##INFO=<ID=AA,Number=1,Type=String,Description="Inferred ancestral allele">' \\
 		--annotations {ancestralAnnotationFile} \\
 		--columns CHROM,POS,INFO/AA \\
-		--mark-sites -AA=.
+		--mark-sites -AA=. \\
+		--output-type v \\
+		{vcfFile} \\
+	| awk \\
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			if ($0 == "##INFO=<ID=AA=.,Number=0,Type=Flag,Description=\"Sites not listed in AA=.\">")
+			{{
+				next
+			}}
+			print $0
+		}}' \\
+		- \\
+	| bcftools view \\
+		--threads {options['cores']} \\
 		--output-type z \\
 		--output {outputDirectory}/{filename}.aa.prog.vcf.gz \\
 		--write-index \\
-		{vcfFile}
+		-
 	
 	mv {outputDirectory}/{filename}.aa.prog.vcf.gz {outputs['vcf']}
 	mv {outputDirectory}/{filename}.aa.prog.vcf.gz.csi {outputs['index']}

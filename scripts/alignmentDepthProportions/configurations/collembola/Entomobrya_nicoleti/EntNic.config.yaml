@@ -3,7 +3,7 @@ TAG: jeppebayer:EcoGenetics,population_genetics,alignment,depth:workflowconfigur
 # (str). The name of the relevant project account.
 account: EcoGenetics
 # (str). Taxonomic group. Can be left empty.
-taxonomicGroup: collembola
+taxonomicGroup: Collembola
 # (str). Name of species being analyzed.
 speciesName: Entomobrya nicoleti
 # (str). Directory for intermediary files.

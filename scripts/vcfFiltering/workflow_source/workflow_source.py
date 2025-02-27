@@ -127,15 +127,15 @@ def vcfFilterAndAnnotation_workflow(configFile: str = glob.glob('*config.y*ml')[
 				)
 			)
 
-		if OUTGROUP_VCF and OUTGROUP_BEDFILE:
-			updateAncetralAlleleInformation = gwf.target_from_template(
-				name=f'update_ancestral_allele_information_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
-				template=update_ancetral_allele_information(
-					vcfFile=snpeffAnnotation.outputs['vcf'],
-					ancestralAnnotationFile=ancestralAlleleInferenceMerge.outputs['annotation'],
-					outputDirectory=topOut if OUTPUT_DIR else topDir
+			if OUTGROUP_VCF and OUTGROUP_BEDFILE:
+				updateAncetralAlleleInformation = gwf.target_from_template(
+					name=f'update_ancestral_allele_information_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
+					template=update_ancetral_allele_information(
+						vcfFile=snpeffAnnotation.outputs['vcf'],
+						ancestralAnnotationFile=ancestralAlleleInferenceMerge.outputs['annotation'],
+						outputDirectory=topOut if OUTPUT_DIR else topDir
+					)
 				)
-			)
 
 	print(f'Intermediary files will be place at: {topDir}/')
 	print(f'Output files will be placed at: {topOut if OUTPUT_DIR else topDir}/')

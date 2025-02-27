@@ -1,0 +1,45 @@
+# Tag identifying file association.
+TAG: jeppebayer:EcoGenetics,population_genetics,alignment,depth:workflowconfiguration
+# (str). The name of the relevant project account.
+account: EcoGenetics
+# (str). Taxonomic group. Can be left empty.
+taxonomicGroup: Collembola
+# (str). Name of species being analyzed.
+speciesName: Orchesella cincta
+# (str). Directory for intermediary files.
+workingDirectoryPath: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps
+# (str). Directory for final output files. (If left empty, output file will be placed within 'workingDirectoryPath').
+outputDirectoryPath: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics
+# (list). Sample setup. List of dictionaries listing the configuration for each sample.
+sampleList:
+  - 
+    # (str). Name of sample group.
+    groupName: Grassland
+    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
+    lowerCoverageThreshold: 200
+    # (list). List of paths to BAM files.
+    bamFileList:
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Orchesella_cincta/grassland/OrcCin_aeRoe-C182/OrcCin_aeRoe-C182.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Orchesella_cincta/grassland/OrcCin_DSJ-C233/OrcCin_DSJ-C233.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Orchesella_cincta/grassland/OrcCin_FaaJ-C6/OrcCin_FaaJ-C6.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Orchesella_cincta/grassland/OrcCin_JHJ-C222/OrcCin_JHJ-C222.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Orchesella_cincta/grassland/OrcCin_KLJ-C49/OrcCin_KLJ-C49.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Orchesella_cincta/grassland/OrcCin_KOS-C178/OrcCin_KOS-C178.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Orchesella_cincta/grassland/OrcCin_LEJ-C63/OrcCin_LEJ-C63.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Orchesella_cincta/grassland/OrcCin_MSJ-C87/OrcCin_MSJ-C87.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Orchesella_cincta/grassland/OrcCin_MSS-C198/OrcCin_MSS-C198.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Orchesella_cincta/grassland/OrcCin_NYS-F-C25-1/OrcCin_NYS-F-C25-1.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Orchesella_cincta/grassland/OrcCin_NYS-F-C25-2/OrcCin_NYS-F-C25-2.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Orchesella_cincta/grassland/OrcCin_ORoe-C31/OrcCin_ORoe-C31.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Orchesella_cincta/grassland/OrcCin_RYJ/OrcCin_RYJ.filtered.bam
+  - 
+    # (str). Name of sample group.
+    groupName: Outgroup Orchesella villosa
+    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
+    lowerCoverageThreshold: 20
+    # (list). List of paths to BAM files.
+    bamFileList:
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Orchesella_cincta/outgroup_orchesella_villosa/OrcVil_BRS-C95/OrcVil_BRS-C95.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Orchesella_cincta/outgroup_orchesella_villosa/OrcVil_CA-KNJ-C208/OrcVil_CA-KNJ-C208.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Orchesella_cincta/outgroup_orchesella_villosa/OrcVil_FaaJ-C5/OrcVil_FaaJ-C5.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Orchesella_cincta/outgroup_orchesella_villosa/OrcVil_K-KNJ-C219/OrcVil_K-KNJ-C219.filtered.bam

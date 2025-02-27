@@ -1,0 +1,33 @@
+# Tag identifying file association.
+TAG: jeppebayer:EcoGenetics,population_genetics,alignment,depth:workflowconfiguration
+# (str). The name of the relevant project account.
+account: EcoGenetics
+# (str). Taxonomic group. Can be left empty.
+taxonomicGroup: Collembola
+# (str). Name of species being analyzed.
+speciesName: Pogonognathellus flavescens
+# (str). Directory for intermediary files.
+workingDirectoryPath: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps
+# (str). Directory for final output files. (If left empty, output file will be placed within 'workingDirectoryPath').
+outputDirectoryPath: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics
+# (list). Sample setup. List of dictionaries listing the configuration for each sample.
+sampleList:
+  - 
+    # (str). Name of sample group.
+    groupName: Grassland
+    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
+    lowerCoverageThreshold: 200
+    # (list). List of paths to BAM files.
+    bamFileList:
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Pogonognathellus_flavescens/grassland/PogFla_aaRJ-C228/PogFla_aaRJ-C228.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Pogonognathellus_flavescens/grassland/PogFla_DSJ-C249/PogFla_DSJ-C249.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Pogonognathellus_flavescens/grassland/PogFla_FaaJ-C7/PogFla_FaaJ-C7.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Pogonognathellus_flavescens/grassland/PogFla_KLJ-C125/PogFla_KLJ-C125.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Pogonognathellus_flavescens/grassland/PogFla_MYS-C279/PogFla_MYS-C279.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Pogonognathellus_flavescens/grassland/PogFla_NOJ-C113/PogFla_NOJ-C113.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Pogonognathellus_flavescens/grassland/PogFla_NYS-F-C115/PogFla_NYS-F-C115.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Pogonognathellus_flavescens/grassland/PogFla_RYJ-C44-1/PogFla_RYJ-C44-1.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Pogonognathellus_flavescens/grassland/PogFla_RYJ-C44-2/PogFla_RYJ-C44-2.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Pogonognathellus_flavescens/grassland/PogFla_SHJ-C21/PogFla_SHJ-C21.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Pogonognathellus_flavescens/grassland/PogFla_SSJ-C261/PogFla_SSJ-C261.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Pogonognathellus_flavescens/grassland/PogFla_ULJ-C315/PogFla_ULJ-C315.filtered.bam

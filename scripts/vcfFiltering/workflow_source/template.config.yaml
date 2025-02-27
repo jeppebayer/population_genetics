@@ -2,7 +2,7 @@
 TAG: jeppebayer:EcoGenetics,population_genetics,filter,aa,snpeff:workflowconfiguration
 # (str). The name of the relevant project account.
 account: 
-# (str).Name of species being analyzed
+# (str). Name of species being analyzed
 speciesName: 
 # (str). Taxonomic group. Can be left empty.
 taxonomicGroup: 
@@ -10,26 +10,26 @@ taxonomicGroup:
 workingDirectoryPath: 
 # (str). Directory for final output files.
 outputDirectoryPath: 
-# (str).
+# (str). Path to reference genome file.
 referenceGenome: 
-# (str).
+# (str). Path to reference genome annotation file in GTF format. Can be left empty. If left empty VCF file will not be SnpEff or AA annotated.
 gtfAnnotation:
-# (dict).
+# (dict). Settings for outgroup data. Can be left empty. If left empty VCF file will not be AA annotated.
 outgroupSettings:
-  # (str).
+  # (str). Path to outgroup VCF file. This file should NOT be filtered.
   vcfFile:
-  # (int).
+  # (str). Path to BED file containing intervals for which the outgroup has coverage ranging within threshold values. 
   withinThresholdBedFile: 
-# (list).
+# (list). Setup for VCF files to be filtered and annotated.
 vcfGroupList:
   -
-    # (str).
+    # (str). Name of sample group.
     groupName:
-    # (str). 
+    # (str). Path to VCF file.
     vcfFile:
-    # (int). 
+    # (int). Minimum coverage value for filtering.
     minimumCoverage:
-    # (int).
+    # (int). Maximum coverage value for filtering.
     maximumCoverage:
-    # (str).
+    # (str). Path to BED file containing intervals for which the sample group has coverage ranging within threshold values. 
     withinThresholdBedFile:

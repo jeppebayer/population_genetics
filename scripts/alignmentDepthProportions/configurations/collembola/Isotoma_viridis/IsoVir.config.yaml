@@ -1,0 +1,91 @@
+# Tag identifying file association.
+TAG: jeppebayer:EcoGenetics,population_genetics,alignment,depth:workflowconfiguration
+# (str). The name of the relevant project account.
+account: EcoGenetics
+# (str). Taxonomic group. Can be left empty.
+taxonomicGroup: Collembola
+# (str). Name of species being analyzed.
+speciesName: Isotoma viridis
+# (str). Directory for intermediary files.
+workingDirectoryPath: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps
+# (str). Directory for final output files. (If left empty, output file will be placed within 'workingDirectoryPath').
+outputDirectoryPath: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics
+# (list). Sample setup. List of dictionaries listing the configuration for each sample.
+sampleList:
+  - 
+    # (str). Name of sample group.
+    groupName: Grassland
+    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
+    lowerCoverageThreshold: 200
+    # (list). List of paths to BAM files.
+    bamFileList:
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_aeRoe-C310/IsoVir_aeRoe-C310.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_BJJ-C98/IsoVir_BJJ-C98.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_DSJ-C236/IsoVir_DSJ-C236.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_FUR-C232/IsoVir_FUR-C232.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_GoeJ-C135/IsoVir_GoeJ-C135.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_GSJ-C275/IsoVir_GSJ-C275.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_HaeJ-C283/IsoVir_HaeJ-C283.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_HYF-C156/IsoVir_HYF-C156.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_JEJ-C290/IsoVir_JEJ-C290.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_JHJ-C224/IsoVir_JHJ-C224.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_JoeJ-C251/IsoVir_JoeJ-C251.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_JYS-C175/IsoVir_JYS-C175.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_KoeJ-C213/IsoVir_KoeJ-C213.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_KOS-C179/IsoVir_KOS-C179.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_KRS-C186/IsoVir_KRS-C186.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_LEJ-C67/IsoVir_LEJ-C67.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_MSJ-C319/IsoVir_MSJ-C319.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_MSS-C296/IsoVir_MSS-C296.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_MYS-C153/IsoVir_MYS-C153.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_RES-C168/IsoVir_RES-C168.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_RMJ-C306/IsoVir_RMJ-C306.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_RYJ-C17/IsoVir_RYJ-C17.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_SBJ-C73/IsoVir_SBJ-C73.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_SHJ-C321/IsoVir_SHJ-C321.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_SKS-C56/IsoVir_SKS-C56.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/grassland/IsoVir_TOJ-C72/IsoVir_TOJ-C72.filtered.bam
+  - 
+    # (str). Name of sample group.
+    groupName: Conventional agriculture
+    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
+    lowerCoverageThreshold: 200
+    # (list). List of paths to BAM files.
+    bamFileList:
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conventional_agriculture/IsoVir_K-DAS-C330/IsoVir_K-DAS-C330.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conventional_agriculture/IsoVir_K-FLJ-C332/IsoVir_K-FLJ-C332.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conventional_agriculture/IsoVir_K-FSJ-C210/IsoVir_K-FSJ-C210.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conventional_agriculture/IsoVir_K-HVJ-C246/IsoVir_K-HVJ-C246.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conventional_agriculture/IsoVir_K-HYS-C337/IsoVir_K-HYS-C337.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conventional_agriculture/IsoVir_K-JES-C325/IsoVir_K-JES-C325.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conventional_agriculture/IsoVir_K-KNJ-C217/IsoVir_K-KNJ-C217.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conventional_agriculture/IsoVir_K-LES-C385/IsoVir_K-LES-C385.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conventional_agriculture/IsoVir_K-MoeJ-C365/IsoVir_K-MoeJ-C365.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conventional_agriculture/IsoVir_K-ToeJ-C301/IsoVir_K-ToeJ-C301.filtered.bam
+  - 
+    # (str). Name of sample group.
+    groupName: Conservation agriculture
+    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
+    lowerCoverageThreshold: 200
+    # (list). List of paths to BAM files.
+    bamFileList:
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conservation_agriculture/IsoVir_CA-BMJ-C121/IsoVir_CA-BMJ-C121.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conservation_agriculture/IsoVir_CA-FSJ-C221/IsoVir_CA-FSJ-C221.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conservation_agriculture/IsoVir_CA-FSJ-C91/IsoVir_CA-FSJ-C91.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conservation_agriculture/IsoVir_CA-HVJ-C302/IsoVir_CA-HVJ-C302.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conservation_agriculture/IsoVir_CA-HYS-C379/IsoVir_CA-HYS-C379.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conservation_agriculture/IsoVir_CA-JES-C303/IsoVir_CA-JES-C303.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conservation_agriculture/IsoVir_CA-KNJ-C209/IsoVir_CA-KNJ-C209.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conservation_agriculture/IsoVir_CA-LES-C351/IsoVir_CA-LES-C351.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conservation_agriculture/IsoVir_CA-MoeJ-C354/IsoVir_CA-MoeJ-C354.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/conservation_agriculture/IsoVir_CA-YDJ-C120/IsoVir_CA-YDJ-C120.filtered.bam
+  - 
+    # (str). Name of sample group.
+    groupName: Outgroup Isotomurus maculatus
+    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
+    lowerCoverageThreshold: 20
+    # (list). List of paths to BAM files.
+    bamFileList:
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/outgroup_isotomurus_maculatus/IsoMac_CA-BMJ-C403/IsoMac_CA-BMJ-C403.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/outgroup_isotomurus_maculatus/IsoMac_CA-LES-C387/IsoMac_CA-LES-C387.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Isotoma_viridis/outgroup_isotomurus_maculatus/IsoMac_K-FLJ-C370/IsoMac_K-FLJ-C370.filtered.bam
