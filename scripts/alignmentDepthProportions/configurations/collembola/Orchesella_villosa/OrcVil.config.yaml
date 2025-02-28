@@ -52,7 +52,7 @@ sampleList:
       - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Orchesella_villosa/conservation_agriculture/OrcVil_CA-MoeJ-C353/OrcVil_CA-MoeJ-C353.filtered.bam
   - 
     # (str). Name of sample group.
-    groupName: Outgroup Entomobrya nivalis
+    groupName: Outgroup Orchesella cincta
     # (int). A lower coverage threshold for the identification of a coverage distribution peak.
     lowerCoverageThreshold: 20
     # (list). List of paths to BAM files.
