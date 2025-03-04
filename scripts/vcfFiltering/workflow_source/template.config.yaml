@@ -24,12 +24,12 @@ outgroupSettings:
 vcfGroupList:
   -
     # (str). Name of sample group.
-    groupName:
+    groupName: 
     # (str). Path to VCF file.
-    vcfFile:
+    vcfFile: 
     # (int). Minimum coverage value for filtering.
-    minimumCoverage:
+    minimumCoverage: 
     # (int). Maximum coverage value for filtering.
-    maximumCoverage:
+    maximumCoverage: 
     # (str). Path to BED file containing intervals for which the sample group has coverage ranging within threshold values. 
-    withinThresholdBedFile:
+    withinThresholdBedFile: 

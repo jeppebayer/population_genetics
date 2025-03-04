@@ -359,8 +359,7 @@ def snpeff_annotation(vcfFile: str, snpeffPredictorFile: str, outputDirectory: s
 	"""
 	filename = os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith('.gz') else os.path.splitext(os.path.basename(vcfFile))[0]
 	inputs = {'vcf': vcfFile,
-		   	  'predictor': snpeffPredictorFile,
-			  'config': snpeffConfigFile}
+		   	  'predictor': snpeffPredictorFile}
 	outputs = {'vcf': f'{outputDirectory}/snpEff/{filename}.ann.vcf.gz',
 			   'index': f'{outputDirectory}/snpEff/{filename}.ann.vcf.gz.csi',
 			   'csv': f'{outputDirectory}/snpEff/{filename}.ann.vcf.gz.snpEffSummary.csv',
@@ -368,7 +367,7 @@ def snpeff_annotation(vcfFile: str, snpeffPredictorFile: str, outputDirectory: s
 	protect = [outputs['csv'], outputs['html']]
 	options = {
 		'cores': 30,
-		'memory': '80gg',
+		'memory': '80g',
 		'walltime': '16:00:00'
 	}
 	spec = f"""
@@ -622,7 +621,7 @@ def ancestral_allele_inference_merge(variantAnnotation: str, referenceAnnotation
 				next
 			}}
 			print $1, $2, $3
-		}} \\
+		}}' \\
 		{'<(zcat ' + variantAnnotation + ')' if variantAnnotation.endswith('.gz') else variantAnnotation} \\
 		{'<(zcat ' + referenceAnnotation + ')' if referenceAnnotation.endswith('.gz') else referenceAnnotation} \\
 	| bgzip \\
@@ -735,7 +734,7 @@ def update_ancetral_allele_information(vcfFile: str, ancestralAnnotationFile: st
 			FS = OFS = "\\t"
 		}}
 		{{
-			if ($0 == "##INFO=<ID=AA=.,Number=0,Type=Flag,Description=\"Sites not listed in AA=.\">")
+			if ($0 == "##INFO=<ID=AA=.,Number=0,Type=Flag,Description=\\"Sites not listed in AA=.\\">")
 			{{
 				next
 			}}
