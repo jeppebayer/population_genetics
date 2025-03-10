@@ -895,7 +895,7 @@ def merge_vcf_no_duplicates(vcfFiles: list, outputName: str, outputDirectory: st
 			}}
 			if ($0 ~ /^#/)
 			{{
-				print "##awk_script=BEGIN{{FS = OFS = \"t\"}} {{if ($0 ~ /^##/) {{print $0; next}}; if ($0 ~ /^#/) {{print $0; next}}; if (previousPosition == -1) {{previousLine = $0; previousPosition = $2; next}}; if (previousPosition == $2) {{previousPosition = -1; next}}; if (previousPosition && previousPosition != $2 && previousPosition != -1) {{print previousLine}}; previousLine = $0; previousPosition = $2}} END{{if (previousPosition != -1) {{print $0}}}} " FILENAME
+				print "##awk_script=BEGIN{{FS = OFS = \"\\t\"}} {{if ($0 ~ /^##/) {{print $0; next}}; if ($0 ~ /^#/) {{print $0; next}}; if (previousPosition == -1) {{previousLine = $0; previousPosition = $2; next}}; if (previousPosition == $2) {{previousPosition = -1; next}}; if (previousPosition && previousPosition != $2 && previousPosition != -1) {{print previousLine}}; previousLine = $0; previousPosition = $2}} END{{if (previousPosition != -1) {{print $0}}}} " FILENAME
 				print $0
 				next
 			}}

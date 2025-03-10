@@ -123,7 +123,8 @@ def vcfFilterAndAnnotation_workflow(configFile: str = glob.glob('*config.y*ml')[
 				template=snpeff_annotation(
 					vcfFile=filterVcf.outputs['vcf'],
 					snpeffPredictorFile=snpeffBuildDatabase.outputs['predictor'],
-					outputDirectory=topOut if OUTPUT_DIR else topDir
+					vcfOutputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/filtered/{setupDict[group]['name']}',
+					snpeffOutputDirectory=topDir
 				)
 			)
 
@@ -133,7 +134,7 @@ def vcfFilterAndAnnotation_workflow(configFile: str = glob.glob('*config.y*ml')[
 					template=update_ancetral_allele_information(
 						vcfFile=snpeffAnnotation.outputs['vcf'],
 						ancestralAnnotationFile=ancestralAlleleInferenceMerge.outputs['annotation'],
-						outputDirectory=topOut if OUTPUT_DIR else topDir
+						outputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/filtered/{setupDict[group]['name']}'
 					)
 				)
 

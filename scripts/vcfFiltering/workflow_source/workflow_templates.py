@@ -165,7 +165,7 @@ def variable_site_count(vcfFileBefore: str, vcfFileAfter: str, outputDirectory: 
 	options = {
 		'cores': 1,
 		'memory': '50g',
-		'walltime': '15:00:00'
+		'walltime': '24:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -272,7 +272,7 @@ def variable_site_count(vcfFileBefore: str, vcfFileAfter: str, outputDirectory: 
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def snpeff_build_database(referenceGenome: str, gtfAnnotation: str, outputDirectory: str, speciesName: str, snpeffConfig: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/snpEff.config'):
+def snpeff_build_database(referenceGenome: str, gtfAnnotation: str, outputDirectory: str, speciesName: str, snpeffConfig: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/snpeff/snpEff.config'):
 	"""
 	Template: template_description
 	
@@ -290,6 +290,7 @@ def snpeff_build_database(referenceGenome: str, gtfAnnotation: str, outputDirect
 			   'sequences': f'{outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])}/sequences.fa',
 			   'genes': f'{outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])}/genes.gtf',
 			   'predictor': f'{outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])}/snpEffectPredictor.bin'}
+	protect = [file for file in outputs]
 	options = {
 		'cores': 10,
 		'memory': '80g',
@@ -344,9 +345,9 @@ def snpeff_build_database(referenceGenome: str, gtfAnnotation: str, outputDirect
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def snpeff_annotation(vcfFile: str, snpeffPredictorFile: str, outputDirectory: str, snpeffConfigFile: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/snpEff.config'):
+def snpeff_annotation(vcfFile: str, snpeffPredictorFile: str, vcfOutputDirectory: str, snpeffOutputDirectory: str, snpeffConfigFile: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/snpeff/snpEff.config'):
 	"""
 	Template: template_description
 	
@@ -360,10 +361,11 @@ def snpeff_annotation(vcfFile: str, snpeffPredictorFile: str, outputDirectory: s
 	filename = os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith('.gz') else os.path.splitext(os.path.basename(vcfFile))[0]
 	inputs = {'vcf': vcfFile,
 		   	  'predictor': snpeffPredictorFile}
-	outputs = {'vcf': f'{outputDirectory}/snpEff/{filename}.ann.vcf.gz',
-			   'index': f'{outputDirectory}/snpEff/{filename}.ann.vcf.gz.csi',
-			   'csv': f'{outputDirectory}/snpEff/{filename}.ann.vcf.gz.snpEffSummary.csv',
-			   'html': f'{outputDirectory}/snpEff/{filename}.ann.vcf.gz.snpEffSummary.html'}
+	outputs = {'vcf': f'{vcfOutputDirectory}/{filename}.ann.vcf.gz',
+			   'index': f'{vcfOutputDirectory}/{filename}.ann.vcf.gz.csi',
+			   'csv': f'{snpeffOutputDirectory}/snpEff/{filename}.ann.vcf.gz.snpEffSummary.csv',
+			   'html': f'{snpeffOutputDirectory}/snpEff/{filename}.ann.vcf.gz.snpEffSummary.html',
+			   'genes': f'{snpeffOutputDirectory}/snpEff/{filename}.ann.vcf.gz.snpEffSummary.genes.txt'}
 	protect = [outputs['csv'], outputs['html']]
 	options = {
 		'cores': 30,
@@ -380,13 +382,14 @@ def snpeff_annotation(vcfFile: str, snpeffPredictorFile: str, outputDirectory: s
 	echo "START: $(date)"
 	echo "JobID: $SLURM_JOBID"
 	
-	[ -d {outputDirectory}/snpEff ] || mkdir -p {outputDirectory}/snpEff
+	[ -d {snpeffOutputDirectory}/snpEff ] || mkdir -p {snpeffOutputDirectory}/snpEff
+	[ -d {vcfOutputDirectory} ] || mkdri -p {vcfOutputDirectory}
 	
 	export _JAVA_OPTIONS="-Xmx{options['memory']}"
 
 	snpEff ann \\
-		-csvStats {outputDirectory}/snpEff/{filename}.ann.vcf.gz.snpEffSummary.prog.csv \\
-		-htmlStats {outputDirectory}/snpEff/{filename}.ann.vcf.gz.snpEffSummary.prog.html \\
+		-csvStats {snpeffOutputDirectory}/snpEff/{filename}.ann.vcf.gz.snpEffSummary.prog.csv \\
+		-htmlStats {snpeffOutputDirectory}/snpEff/{filename}.ann.vcf.gz.snpEffSummary.prog.html \\
 		-nodownload \\
 		-config {snpeffConfigFile} \\
 		-dataDir {os.path.dirname(os.path.dirname(snpeffPredictorFile))} \\
@@ -397,14 +400,15 @@ def snpeff_annotation(vcfFile: str, snpeffPredictorFile: str, outputDirectory: s
 		{vcfFile} \\
 	| bcftools view \\
 		--output-type z \\
-		--output {outputDirectory}/snpEff/{filename}.ann.prog.vcf.gz \\
+		--output {vcfOutputDirectory}/{filename}.ann.prog.vcf.gz \\
 		--write-index \\
 		-
 	
-	mv {outputDirectory}/snpEff/{filename}.ann.vcf.gz.snpEffSummary.prog.csv {outputs['csv']}
-	mv {outputDirectory}/snpEff/{filename}.ann.vcf.gz.snpEffSummary.prog.html {outputs['html']}
-	mv {outputDirectory}/snpEff/{filename}.ann.prog.vcf.gz {outputs['vcf']}
-	mv {outputDirectory}/snpEff/{filename}.ann.prog.vcf.gz.csi {outputs['index']}
+	mv {snpeffOutputDirectory}/snpEff/{filename}.ann.vcf.gz.snpEffSummary.prog.csv {outputs['csv']}
+	mv {snpeffOutputDirectory}/snpEff/{filename}.ann.vcf.gz.snpEffSummary.prog.html {outputs['html']}
+	mv {snpeffOutputDirectory}/snpEff/{filename}.ann.vcf.gz.snpEffSummary.prog.genes.txt {outputs['genes']}
+	mv {vcfOutputDirectory}/{filename}.ann.prog.vcf.gz {outputs['vcf']}
+	mv {vcfOutputDirectory}/{filename}.ann.prog.vcf.gz.csi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -617,7 +621,7 @@ def ancestral_allele_inference_merge(variantAnnotation: str, referenceAnnotation
 			}}
 			if (($1, $2) in originalArray)
 			{{
-				print $1, $2, orginalArray[$1, $2]
+				print $1, $2, originalArray[$1, $2]
 				next
 			}}
 			print $1, $2, $3
@@ -725,7 +729,7 @@ def update_ancetral_allele_information(vcfFile: str, ancestralAnnotationFile: st
 		--threads {options['cores']} \\
 		--header-line '##INFO=<ID=AA,Number=1,Type=String,Description="Inferred ancestral allele">' \\
 		--annotations {ancestralAnnotationFile} \\
-		--columns CHROM,POS,INFO/AA \\
+		--columns CHROM,POS,.INFO/AA \\
 		--mark-sites -AA=. \\
 		--output-type v \\
 		{vcfFile} \\

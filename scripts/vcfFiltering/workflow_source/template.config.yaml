@@ -13,11 +13,11 @@ outputDirectoryPath:
 # (str). Path to reference genome file.
 referenceGenome: 
 # (str). Path to reference genome annotation file in GTF format. Can be left empty. If left empty VCF file will not be SnpEff or AA annotated.
-gtfAnnotation:
+gtfAnnotation: 
 # (dict). Settings for outgroup data. Can be left empty. If left empty VCF file will not be AA annotated.
 outgroupSettings:
   # (str). Path to outgroup VCF file. This file should NOT be filtered.
-  vcfFile:
+  vcfFile: 
   # (str). Path to BED file containing intervals for which the outgroup has coverage ranging within threshold values. 
   withinThresholdBedFile: 
 # (list). Setup for VCF files to be filtered and annotated.

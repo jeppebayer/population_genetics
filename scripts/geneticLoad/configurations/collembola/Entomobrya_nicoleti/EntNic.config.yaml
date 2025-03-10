@@ -1,0 +1,8 @@
+# The name of the relevant project account.
+account: EcoGenetics
+# Name of species being analyzed
+speciesName: Entomobrya nicoleti
+# Directory for intermediary files.
+workingDirectoryPath: 
+# Directory for final output files.
+outputDirectoryPath: 
