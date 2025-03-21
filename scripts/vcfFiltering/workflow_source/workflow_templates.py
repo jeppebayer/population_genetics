@@ -465,7 +465,7 @@ def ancestral_allele_inference_reference(referenceGenome: str, outgroupSitesWith
 			FS = OFS ="\\t"
 		}}
 		{{
-			print $1, $3, $4
+			print $1, $3, toupper($4)
 		}}' \\
 		- \\
 	| bgzip \\
@@ -624,7 +624,7 @@ def ancestral_allele_inference_merge(variantAnnotation: str, referenceAnnotation
 				print $1, $2, originalArray[$1, $2]
 				next
 			}}
-			print $1, $2, $3
+			print $1, $2, toupper($3)
 		}}' \\
 		{'<(zcat ' + variantAnnotation + ')' if variantAnnotation.endswith('.gz') else variantAnnotation} \\
 		{'<(zcat ' + referenceAnnotation + ')' if referenceAnnotation.endswith('.gz') else referenceAnnotation} \\
