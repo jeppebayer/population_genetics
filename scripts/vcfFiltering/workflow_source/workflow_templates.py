@@ -621,7 +621,7 @@ def ancestral_allele_inference_merge(variantAnnotation: str, referenceAnnotation
 			}}
 			if (($1, $2) in originalArray)
 			{{
-				print $1, $2, originalArray[$1, $2]
+				print $1, $2, toupper(originalArray[$1, $2])
 				next
 			}}
 			print $1, $2, toupper($3)
