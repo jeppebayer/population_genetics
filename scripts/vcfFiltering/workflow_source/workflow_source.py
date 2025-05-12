@@ -46,6 +46,8 @@ def vcfFilterAndAnnotation_workflow(configFile: str = glob.glob('*config.y*ml')[
 																'bedFile': os.path.abspath(group['withinThresholdBedFile'])}
 				for index, group in enumerate(VCF_GROUP_LIST) if group['vcfFile']}
 
+	bedFileList = []
+
 	indexReferenceGenome = gwf.target_from_template(
 		name=f'index_reference_genome_{SPECIES_NAME.replace(" ", "_")}',
 		template=index_reference_genome(
@@ -65,42 +67,43 @@ def vcfFilterAndAnnotation_workflow(configFile: str = glob.glob('*config.y*ml')[
 			)
 		)
 
-	if OUTGROUP_VCF and OUTGROUP_BEDFILE:
-		ancestralAlleleInferenceReference = gwf.target_from_template(
-			name=f'ancestral_allele_inference_reference_{os.path.basename(OUTGROUP_VCF)}',
-			template=ancestral_allele_inference_reference(
-				referenceGenome=indexReferenceGenome.outputs['symlink'],
-				outgroupSitesWithinCoverageBed=OUTGROUP_BEDFILE,
-				outputDirectory=topDir,
-				outputName=f'{speciesAbbreviation(SPECIES_NAME)}'
-			)
-		)
+	# if OUTGROUP_VCF and OUTGROUP_BEDFILE:
+	# 	ancestralAlleleInferenceReference = gwf.target_from_template(
+	# 		name=f'ancestral_allele_inference_reference_{os.path.basename(OUTGROUP_VCF)}',
+	# 		template=ancestral_allele_inference_reference(
+	# 			referenceGenome=indexReferenceGenome.outputs['symlink'],
+	# 			outgroupSitesWithinCoverageBed=OUTGROUP_BEDFILE,
+	# 			outputDirectory=topDir,
+	# 			outputName=f'{speciesAbbreviation(SPECIES_NAME)}'
+	# 		)
+	# 	)
 
-		ancestralAlleleInferenceVariant = gwf.target_from_template(
-			name=f'ancestral_allele_inference_variant_{os.path.basename(OUTGROUP_VCF)}',
-			template=ancestral_allele_inference_variant(
-				outgroupVcf=OUTGROUP_VCF,
-				outgroupSitesWithinCoverageBed=OUTGROUP_BEDFILE,
-				outputDirectory=topDir,
-				outputName=f'{speciesAbbreviation(SPECIES_NAME)}'
-			)
-		)
+	# 	ancestralAlleleInferenceVariant = gwf.target_from_template(
+	# 		name=f'ancestral_allele_inference_variant_{os.path.basename(OUTGROUP_VCF)}',
+	# 		template=ancestral_allele_inference_variant(
+	# 			outgroupVcf=OUTGROUP_VCF,
+	# 			outgroupSitesWithinCoverageBed=OUTGROUP_BEDFILE,
+	# 			outputDirectory=topDir,
+	# 			outputName=f'{speciesAbbreviation(SPECIES_NAME)}'
+	# 		)
+	# 	)
 
-		ancestralAlleleInferenceMerge = gwf.target_from_template(
-			name=f'ancestral_allele_inference_merge_{os.path.basename(OUTGROUP_VCF)}',
-			template=ancestral_allele_inference_merge(
-				variantAnnotation=ancestralAlleleInferenceVariant.outputs['annotation'],
-				referenceAnnotation=ancestralAlleleInferenceReference.outputs['annotation'],
-				outputDirectory=topDir,
-				outputName=f'{speciesAbbreviation(SPECIES_NAME)}'
-			)
-		)
+	# 	ancestralAlleleInferenceMerge = gwf.target_from_template(
+	# 		name=f'ancestral_allele_inference_merge_{os.path.basename(OUTGROUP_VCF)}',
+	# 		template=ancestral_allele_inference_merge(
+	# 			variantAnnotation=ancestralAlleleInferenceVariant.outputs['annotation'],
+	# 			referenceAnnotation=ancestralAlleleInferenceReference.outputs['annotation'],
+	# 			outputDirectory=topDir,
+	# 			outputName=f'{speciesAbbreviation(SPECIES_NAME)}'
+	# 		)
+	# 	)
 
 	for group in setupDict:
 		filterVcf = gwf.target_from_template(
 			name=f'filter_vcf_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
 			template=filter_vcf(
 				vcfFile=setupDict[group]['vcfFile'],
+				referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
 				depthThresholdBed=setupDict[group]['bedFile'],
 				minDepth=setupDict[group]['minDP'],
 				maxDepth=setupDict[group]['maxDP'],
@@ -108,14 +111,24 @@ def vcfFilterAndAnnotation_workflow(configFile: str = glob.glob('*config.y*ml')[
 			)
 		)
 
-		variableSiteCount = gwf.target_from_template(
-			name=f'variable_site_count_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
-			template=variable_site_count(
-				vcfFileBefore=setupDict[group]['vcfFile'],
-				vcfFileAfter=filterVcf.outputs['vcf'],
-				outputDirectory=topOut if OUTPUT_DIR else topDir
+		# variableSiteCount = gwf.target_from_template(
+		# 	name=f'variable_site_count_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
+		# 	template=variable_site_count(
+		# 		vcfFileBefore=setupDict[group]['vcfFile'],
+		# 		vcfFileAfter=filterVcf.outputs['vcf'],
+		# 		outputDirectory=topOut if OUTPUT_DIR else topDir
+		# 	)
+		# )
+
+		vcfToBed = gwf.target_from_template(
+			name=f'vcf_to_bed_{filterVcf.outputs['vcf'].replace("-", "_")}',
+			template=vcf_to_bed(
+				vcfFile=filterVcf.outputs['vcf'],
+				outputDirectory=f'{topDir}/outgroups'
 			)
 		)
+
+		bedFileList.append(vcfToBed.outputs['bed'])
 
 		if GENOME_ANNOTATION:
 			snpeffAnnotation = gwf.target_from_template(
@@ -128,15 +141,24 @@ def vcfFilterAndAnnotation_workflow(configFile: str = glob.glob('*config.y*ml')[
 				)
 			)
 
-			if OUTGROUP_VCF and OUTGROUP_BEDFILE:
-				updateAncetralAlleleInformation = gwf.target_from_template(
-					name=f'update_ancestral_allele_information_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
-					template=update_ancetral_allele_information(
-						vcfFile=snpeffAnnotation.outputs['vcf'],
-						ancestralAnnotationFile=ancestralAlleleInferenceMerge.outputs['annotation'],
-						outputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/filtered/{setupDict[group]['name']}'
-					)
-				)
+		# 	if OUTGROUP_VCF and OUTGROUP_BEDFILE:
+		# 		updateAncetralAlleleInformation = gwf.target_from_template(
+		# 			name=f'update_ancestral_allele_information_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
+		# 			template=update_ancetral_allele_information(
+		# 				vcfFile=snpeffAnnotation.outputs['vcf'],
+		# 				ancestralAnnotationFile=ancestralAlleleInferenceMerge.outputs['annotation'],
+		# 				outputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/filtered/{setupDict[group]['name']}'
+		# 			)
+		# 		)
+
+	mergeBedFiles = gwf.target_from_template(
+		name=f'merge_bed_files',
+		template=merge_bed_files(
+			bedFiles=bedFileList,
+			outputName=f'{speciesAbbreviation(SPECIES_NAME)}.merge',
+			outputDirectory=os.path.dirname(bedFileList[0])
+		)
+	)
 
 	print(f'Intermediary files will be place at: {topDir}/')
 	print(f'Output files will be placed at: {topOut if OUTPUT_DIR else topDir}/')

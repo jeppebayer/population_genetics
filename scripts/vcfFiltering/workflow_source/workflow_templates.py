@@ -73,7 +73,7 @@ def index_reference_genome(referenceGenomeFile: str, outputDirectory: str):
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def filter_vcf(vcfFile: str, depthThresholdBed: str, minDepth: int, maxDepth: int, outputDirectory: str):
+def normalize_vcf(vcfFile: str, referenceGenomeFile: str, outputDirectory: str, speciesName: str):
 	"""
 	Template: template_description
 	
@@ -84,8 +84,82 @@ def filter_vcf(vcfFile: str, depthThresholdBed: str, minDepth: int, maxDepth: in
 	
 	:param
 	"""
-	filename = f'{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.filter_AF0_SnpGap5_typeSnps_biallelic_AO1_DP{minDepth}-{maxDepth}'
+	filename = f'{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.normalized'
 	inputs = {'vcf': vcfFile,
+		   	  'reference': referenceGenomeFile}
+	outputs = {'vcf': f'{outputDirectory}/{filename}.vcf.gz',
+			   'index': f'{outputDirectory}/{filename}.vcf.gz.csi'}
+	options = {
+		'cores': 30,
+		'memory': '30g',
+		'walltime': '24:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+	bcftools norm \\
+		--threads {options['cores']} \\
+		--output-type u \\
+		--fasta-ref {referenceGenomeFile} \\
+		--multiallelics -any \\
+		--atomize \\
+		{vcfFile} \\
+	| bcftools norm \\
+		--threads {options['cores']} \\
+		--output-type u \\
+		--fasta-ref {referenceGenomeFile} \\
+		--rm-dup none \\
+		- \\
+	| bcftools norm \\
+		--threads {options['cores']} \\
+		--output-type u \\
+		--fasta-ref {referenceGenomeFile} \\
+		--multiallelics +any \\
+		- \\
+	| bcftools view \\
+		--threads {options['cores']} \\
+		--output-type u \\
+		--trim-alt-alleles \\
+		- \\
+	| bcftools view \\
+		--threads {options['cores']} \\
+		--output-type z \\
+		--output {outputDirectory}/{filename}.prog.vcf.gz \\
+		--write-index \\
+		--exclude 'ALT="."' \\
+		-
+	
+	mv {outputDirectory}/{filename}.prog.vcf.gz {outputs['vcf']}
+	mv {outputDirectory}/{filename}.prog.vcf.gz.csi {outputs['index']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def filter_vcf(vcfFile: str, referenceGenomeFile: str, depthThresholdBed: str, minDepth: int, maxDepth: int, outputDirectory: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	filename = f'{os.path.splitext(os.path.splitext(os.path.basename(vcfFile))[0])[0] if vcfFile.endswith(".gz") else os.path.splitext(os.path.basename(vcfFile))[0]}.filtered_DP{minDepth}-{maxDepth}'
+	inputs = {'vcf': vcfFile,
+		   	  'reference': referenceGenomeFile,
 		   	  'bed': depthThresholdBed}
 	outputs = {'vcf': f'{outputDirectory}/{filename}.vcf.gz',
 			   'index': f'{outputDirectory}/{filename}.vcf.gz.csi'}
@@ -107,19 +181,14 @@ def filter_vcf(vcfFile: str, depthThresholdBed: str, minDepth: int, maxDepth: in
 	
 	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
 	
-	bcftools view \\
-		--threads {options['cores']} \\
-		--include 'INFO/AF > 0' \\
-		--output-type u \\
-		{vcfFile} \\
-	| bcftools filter \\
+	bcftools filter \\
 		--threads {options['cores']} \\
 		--SnpGap 5:indel \\
 		--output-type u \\
-		- \\
+		{vcfFile} \\
 	| bcftools view \\
 		--threads {options['cores']} \\
-		--types snps \\
+		--exclude-types indels \\
 		--output-type u \\
 		- \\
 	| bcftools view \\
@@ -129,8 +198,8 @@ def filter_vcf(vcfFile: str, depthThresholdBed: str, minDepth: int, maxDepth: in
 		- \\
 	| bcftools view \\
 		--threads {options['cores']} \\
-		--include 'INFO/AO > 1' \\
 		--output-type u \\
+		--max-alleles 2 \\
 		- \\
 	| bcftools view \\
 		--threads {options['cores']} \\
@@ -146,6 +215,55 @@ def filter_vcf(vcfFile: str, depthThresholdBed: str, minDepth: int, maxDepth: in
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
+
+def vcf_stats(vcfFile: str, referenceGenomeFile: str, outputDirectory: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'vcf': vcfFile,
+		   	  'reference': referenceGenomeFile}
+	outputs = {'stats': f'{outputDirectory}/vcfStats/{os.path.basename(vcfFile)}.stats'}
+	protect = [outputs['stats']]
+	options = {
+		'cores': 30,
+		'memory': '20g',
+		'walltime': '06:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory}/vcfStats ] || mkdir -p {outputDirectory}/vcfStats
+	
+	maxDepth="$(bcftools query -f '%INFO/DP' {vcfFile} | awk '{{if (max < $1) {{max = $1}}}} END{{print max}}' -)"
+
+	bcftools stats \\
+		--threads {options['cores']} \\
+		--fasta-ref {referenceGenomeFile} \\
+		--depth 0,"$maxDepth",1 \\
+		--verbose \\
+		{vcfFile} \\
+		> {outputDirectory}/vcfStats/{os.path.basename(vcfFile)}.prog.stats
+	
+	mv {outputDirectory}/vcfStats/{os.path.basename(vcfFile)}.prog.stats {outputs['stats']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
 def variable_site_count(vcfFileBefore: str, vcfFileAfter: str, outputDirectory: str):
 	"""
@@ -308,6 +426,12 @@ def snpeff_build_database(referenceGenome: str, gtfAnnotation: str, outputDirect
 	
 	[ -d {outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])} ] || mkdir -p {outputDirectory}/snpeff/data/{os.path.basename(os.path.splitext(referenceGenome)[0])}
 	
+	if [ ! -z "$(grep --line-regexp "# {speciesName} genome, {os.path.basename(referenceGenome)}" {snpeffConfig})" ]; then
+		echo "'# {speciesName} genome, {os.path.basename(referenceGenome)}' is present in {snpeffConfig}"
+		echo "Database already exists. If the database entry is not correct please delete it manually and rerun."
+		exit 0
+	fi
+
 	echo "# {speciesName} genome, {os.path.basename(referenceGenome)}" >> {snpeffConfig}
 	echo "{os.path.basename(os.path.splitext(referenceGenome)[0])}.genome : {speciesName}" >> {snpeffConfig}
 	echo "{os.path.basename(os.path.splitext(referenceGenome)[0])}.file_location : {referenceGenome}" >> {snpeffConfig}
@@ -679,13 +803,84 @@ def vcf_to_bed(vcfFile: str, outputDirectory: str):
 	
 	[ -d {outputDirectory}/bed ] || mkdir -p {outputDirectory}/bed
 	
-	bedtools merge \\
-		-i <(bcftools query \\
-			--format '%CHROM\t%POS0\t%END\n' \\
-			{vcfFile}) \\
+	bcftools query \\
+		--format '%CHROM\t%POS0\t%END' \\
+		{vcfFile} \\
+	| bedtools merge \\
+		-i - \\
 		> {outputDirectory}/bed/{filename}.prog.bed
 	
 	mv {outputDirectory}/bed/{filename}.prog.bed {outputs['bed']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def merge_bed_files(bedFiles: list, outputName: str, outputDirectory: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'beds': bedFiles}
+	outputs = {'bed': f'{outputDirectory}/{outputName}.bed'}
+	options = {
+		'cores': 1,
+		'memory': '20g',
+		'walltime': '06:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+
+	awk \\
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			if (FNR == 1)
+			{{
+				n = 0
+			}}
+			if (currentChrom != $1)
+			{{
+				n += 1
+				currentChrom = $1
+			}}
+			print $1, $2, $3, n
+		}}' \\
+		{' '.join(bedFiles)} \\
+	| sort \\
+		-k4,4n \\
+		-k2,2n \\
+		- \\
+	awk \\
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			print $1, $2, $3
+		}}' \\
+		- \\
+	| bedtools merge \\
+		- \\
+		> {outputDirectory}/{outputName}.prog.bed
+
+	mv {outputDirectory}/{outputName}.prog.bed {outputs['bed']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"

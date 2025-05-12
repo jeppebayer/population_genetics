@@ -745,6 +745,184 @@ def concat_vcf(files: list, outputName: str, outputDirectory: str| None = None, 
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
+def merge_norm_no_duplicates_vcf(vcfFiles: list, referenceGenomeFile: str, outputName: str, outputDirectory: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'vcfs': vcfFiles,
+		   	  'reference': referenceGenomeFile}
+	outputs = {'vcf': f'{outputDirectory}/{outputName}.merge.norm.vcf.gz',
+			   'index': f'{outputDirectory}/{outputName}.merge.norm.vcf.gz.csi'}
+	protect = [outputs['vcf'], outputs['index']]
+	options = {
+		'cores': 30,
+		'memory': '40g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+	bcftools merge \\
+		--threads {options['cores']} \\
+		--missing-to-ref \\
+		--output-type u \\
+		{' '.join(vcfFiles)} \\
+	| bcftools norm \\
+		--threads {options['cores']} \\
+		--output-type u \\
+		--multiallelics -any \\
+		--atomize \\
+		--fasta-ref {referenceGenomeFile} \\
+		- \\
+	| bcftools norm \\
+		--threads {options['cores']} \\
+		--output-type u \\
+		--rm-dup none \\
+		--fasta-ref {referenceGenomeFile} \\
+		- \\
+	| bcftools view \\
+		--threads {options['cores']} \\
+		--output-type z \\
+		--output {outputDirectory}/{outputName}.merge.norm.prog.vcf.gz \\
+		--trim-unseen-allele \\
+		--write-index \\
+		-
+	
+	mv {outputDirectory}/{outputName}.merge.norm.prog.vcf.gz {outputs['vcf']}
+	mv {outputDirectory}/{outputName}.merge.norm.prog.vcf.gz.csi {outputs['index']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+
+def norm_no_duplicates_vcf(vcfFile: str, referenceGenomeFile: str, outputName: str, outputDirectory: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'vcfs': vcfFile,
+		   	  'reference': referenceGenomeFile}
+	outputs = {'vcf': f'{outputDirectory}/{outputName}.norm.vcf.gz',
+			   'index': f'{outputDirectory}/{outputName}.norm.vcf.gz.csi'}
+	protect = [outputs['vcf'], outputs['index']]
+	options = {
+		'cores': 30,
+		'memory': '40g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+	bcftools norm \\
+		--threads {options['cores']} \\
+		--output-type u \\
+		--multiallelics -any \\
+		--atomize \\
+		--fasta-ref {referenceGenomeFile} \\
+		{vcfFile} \\
+	| bcftools norm \\
+		--threads {options['cores']} \\
+		--output-type u \\
+		--rm-dup none \\
+		--fasta-ref {referenceGenomeFile} \\
+		- \\
+	| bcftools view \\
+		--threads {options['cores']} \\
+		--output-type z \\
+		--output {outputDirectory}/{outputName}.norm.prog.vcf.gz \\
+		--trim-unseen-allele \\
+		--write-index \\
+		-
+	
+	mv {outputDirectory}/{outputName}.norm.prog.vcf.gz {outputs['vcf']}
+	mv {outputDirectory}/{outputName}.norm.prog.vcf.gz.csi {outputs['index']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+
+def vcf_stats(vcfFile: str, referenceGenomeFile: str, outputDirectory: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'vcf': vcfFile,
+		   	  'reference': referenceGenomeFile}
+	outputs = {'stats': f'{outputDirectory}/vcfStats/{os.path.basename(vcfFile)}.stats'}
+	protect = [outputs['stats']]
+	options = {
+		'cores': 30,
+		'memory': '20g',
+		'walltime': '06:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory}/vcfStats ] || mkdir -p {outputDirectory}/vcfStats
+	
+	maxDepth="$(bcftools query -f '%INFO/DP' {vcfFile} | awk '{{if (max < $1) {{max = $1}}}} END{{print max}}' -)"
+
+	bcftools stats \\
+		--threads {options['cores']} \\
+		--fasta-ref {referenceGenomeFile} \\
+		--depth 0,"$maxDepth",1 \\
+		--verbose \\
+		{vcfFile} \\
+		> {outputDirectory}/vcfStats/{os.path.basename(vcfFile)}.prog.stats
+	
+	mv {outputDirectory}/vcfStats/{os.path.basename(vcfFile)}.prog.stats {outputs['stats']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+
 def merge_and_norm_vcf(vcfFiles: list, referenceGenomeFile: str, outputName: str, outputDirectory: str):
 	"""
 	Template: template_description
@@ -810,12 +988,13 @@ def merge_vcf(vcfFiles: list, outputName: str, outputDirectory: str):
 	:param
 	"""
 	inputs = {'vcfs': vcfFiles}
-	outputs = {'vcf': f'{outputDirectory}/{outputName}.merged.vcf.gz',
-			   'index': f'{outputDirectory}/{outputName}.merged.vcf.gz.csi'}
+	outputs = {'vcf': f'{outputDirectory}/{outputName}.merge.vcf.gz',
+			   'index': f'{outputDirectory}/{outputName}.merge.vcf.gz.csi'}
+	protect = [outputs['vcf'], outputs['index']]
 	options = {
 		'cores': 30,
 		'memory': '40g',
-		'walltime': '12:00:00'
+		'walltime': '24:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -832,18 +1011,67 @@ def merge_vcf(vcfFiles: list, outputName: str, outputDirectory: str):
 	bcftools merge \\
 		--threads {options['cores']} \\
 		--output-type z \\
-		--output {outputDirectory}/{outputName}.merged.prog.vcf.gz \\
+		--output {outputDirectory}/{outputName}.merge.prog.vcf.gz \\
 		--missing-to-ref \\
 		--write-index \\
 		{' '.join(vcfFiles)}
 	
-	mv {outputDirectory}/{outputName}.merged.prog.vcf.gz {outputs['vcf']}
-	mv {outputDirectory}/{outputName}.merged.prog.vcf.gz.csi {outputs['index']}
+	mv {outputDirectory}/{outputName}.merge.prog.vcf.gz {outputs['vcf']}
+	mv {outputDirectory}/{outputName}.merge.prog.vcf.gz.csi {outputs['index']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+
+def cp_rename_vcf(vcfFile: str, outputName: str, outputDirectory: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'vcf': vcfFile}
+	outputs = {'vcf': f'{outputDirectory}/{outputName}.vcf.gz',
+			   'index': f'{outputDirectory}/{outputName}.vcf.gz.csi'}
+	protect = [outputs['vcf'], outputs['index']]
+	options = {
+		'cores': 30,
+		'memory': '20g',
+		'walltime': '06:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+	cp \\
+		{vcfFile} \\
+		{outputDirectory}/{outputName}.prog.vcf.gz
+
+	bcftools index \\
+		--threads {options['cores']} \\
+		--csi \\
+		{outputDirectory}/{outputName}.prog.vcf.gz
+	
+	mv {outputDirectory}/{outputName}.prog.vcf.gz {outputs['vcf']}
+	mv {outputDirectory}/{outputName}.prog.vcf.gz.csi {outputs['index']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
 def merge_vcf_no_duplicates(vcfFiles: list, outputName: str, outputDirectory: str):
 	"""

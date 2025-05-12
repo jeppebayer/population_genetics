@@ -369,41 +369,105 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 						)
 					)
 
-				normVcfSingle = gwf.target_from_template(
-					name=f'normalize_vcf_{setupDict[group]['name']}_{sampleName.replace("-", "_")}',
-					template=norm_vcf(
-						vcfFile=concatenateFreebayesSingle.outputs['concat_file'],
-						referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
-						outputName=f'{sampleName}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
-						outputDirectory=f'{topDir}/raw_vcf/{setupDict[group]['name']}/{sampleName}'
-					)
-				)
+				# normVcfSingle = gwf.target_from_template(
+				# 	name=f'normalize_vcf_{setupDict[group]['name']}_{sampleName.replace("-", "_")}',
+				# 	template=norm_vcf(
+				# 		vcfFile=concatenateFreebayesSingle.outputs['concat_file'],
+				# 		referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
+				# 		outputName=f'{sampleName}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
+				# 		outputDirectory=f'{topDir}/raw_vcf/{setupDict[group]['name']}/{sampleName}'
+				# 	)
+				# )
 					
+				# # Collect concatenated single population VCF files
+				# if sample in setupDict[group]['highQuality']:
+				# 	vcfSingleListHighQuality.append(normVcfSingle.outputs['vcf'])
+				# vcfSingleListAllQuality.append(normVcfSingle.outputs['vcf'])
+
 				# Collect concatenated single population VCF files
 				if sample in setupDict[group]['highQuality']:
-					vcfSingleListHighQuality.append(normVcfSingle.outputs['vcf'])
-				vcfSingleListAllQuality.append(normVcfSingle.outputs['vcf'])
+					vcfSingleListHighQuality.append(concatenateFreebayesSingle.outputs['concat_file'])
+				vcfSingleListAllQuality.append(concatenateFreebayesSingle.outputs['concat_file'])
 
+			# if not setupDict[group]['highQuality'] == setupDict[group]['allQuality'] and setupDict[group]['highQuality']:				
+			# 	if len(vcfSingleListHighQuality) > 1:
+			# 		mergeVcfSingleHighQuality = gwf.target_from_template(
+			# 			name=f'merge_vcf_single_high_quality_{setupDict[group]['name']}',
+			# 			template=merge_vcf_no_duplicates(
+			# 				vcfFiles=vcfSingleListHighQuality,
+			# 				outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.highQuality.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall.norm',
+			# 				outputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/raw_vcf/{setupDict[group]['name']}'
+			# 			)
+			# 		)
+
+			# if len(vcfSingleListAllQuality) > 1:
+			# 	mergeVcfSingleAllQuality = gwf.target_from_template(
+			# 		name=f'merge_vcf_single_all_quality_{setupDict[group]['name']}',
+			# 		template=merge_vcf_no_duplicates(
+			# 			vcfFiles=vcfSingleListAllQuality,
+			# 			outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.allQuality.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall.norm',
+			# 			outputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/raw_vcf/{setupDict[group]['name']}'
+			# 		)
+			# 	)
+			
 			if not setupDict[group]['highQuality'] == setupDict[group]['allQuality'] and setupDict[group]['highQuality']:				
 				if len(vcfSingleListHighQuality) > 1:
 					mergeVcfSingleHighQuality = gwf.target_from_template(
 						name=f'merge_vcf_single_high_quality_{setupDict[group]['name']}',
-						template=merge_vcf_no_duplicates(
+						template=merge_vcf(
 							vcfFiles=vcfSingleListHighQuality,
-							outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.highQuality.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall.norm',
+							outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.highQuality.freebayes',
 							outputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/raw_vcf/{setupDict[group]['name']}'
 						)
 					)
 
+				else:
+					cpRenameVcfSingleHighQuality = gwf.target_from_template(
+						name=f'cp_rename_vcf_single_high_quality_{setupDict[group]['name']}',
+						template=cp_rename_vcf(
+							vcfFile=vcfSingleListHighQuality[0],
+							outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.highQuality.freebayes',
+							outputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/raw_vcf/{setupDict[group]['name']}'
+						)
+					)
+
+				# vcfStatsHighQuality = gwf.target_from_template(
+				# 	name=f'vcf_stats_single_high_quality_{setupDict[group]['name']}',
+				# 	template=vcf_stats(
+				# 		vcfFile=mergeNormRmdupVcfSingleHighQuality.outputs['vcf'] if len(vcfSingleListHighQuality) > 1 else normRmdupVcfSingleHighQuality.outputs['vcf'],
+				# 		referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
+				# 		outputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/raw_vcf/{setupDict[group]['name']}'
+				# 	)
+				# )
+
 			if len(vcfSingleListAllQuality) > 1:
 				mergeVcfSingleAllQuality = gwf.target_from_template(
 					name=f'merge_vcf_single_all_quality_{setupDict[group]['name']}',
-					template=merge_vcf_no_duplicates(
+					template=merge_vcf(
 						vcfFiles=vcfSingleListAllQuality,
-						outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.allQuality.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall.norm',
+						outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.allQuality.freebayes',
 						outputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/raw_vcf/{setupDict[group]['name']}'
 					)
 				)
+			
+			else:
+				cpRenameVcfSingleAllQuality = gwf.target_from_template(
+					name=f'cp_rename_vcf_single_all_quality_{setupDict[group]['name']}',
+					template=cp_rename_vcf(
+						vcfFile=vcfSingleListAllQuality[0],
+						outputName=f'{species_abbreviation(SPECIES_NAME)}.{setupDict[group]['name']}.{'ingroup' if setupDict[group]['status'] == 'i' else 'outgroup'}.allQuality.freebayes',
+						outputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/raw_vcf/{setupDict[group]['name']}'
+					)
+				)
+
+			# vcfStatsAllQuality = gwf.target_from_template(
+			# 	name=f'vcf_stats_single_all_quality_{setupDict[group]['name']}',
+			# 	template=vcf_stats(
+			# 		vcfFile=mergeNormRmdupVcfSingleAllQuality.outputs['vcf'] if len(vcfSingleListAllQuality) > 1 else normRmdupVcfSingleAllQuality.outputs['vcf'],
+			# 		referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
+			# 		outputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/raw_vcf/{setupDict[group]['name']}'
+			# 	)
+			# )
 
 	print(f'Intermediary files will be place at: {topDir}/')
 	print(f'Output files will be placed at: {topOut if OUTPUT_DIR else topDir}/')
