@@ -73,7 +73,7 @@ def index_reference_genome(referenceGenomeFile: str, outputDirectory: str):
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def normalize_vcf(vcfFile: str, referenceGenomeFile: str, outputDirectory: str, speciesName: str):
+def normalize_vcf(vcfFile: str, referenceGenomeFile: str, outputDirectory: str):
 	"""
 	Template: template_description
 	
@@ -106,13 +106,18 @@ def normalize_vcf(vcfFile: str, referenceGenomeFile: str, outputDirectory: str, 
 	
 	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
 	
-	bcftools norm \\
+	bcftools annotate \\
+		--threads {options['cores']} \\
+		--output-type u \\
+		--remove INFO/NS,INFO/DP,INFO/DPB,INFO/AC,INFO/AN,INFO/AF,INFO/RO,INFO/AO,INFO/PRO,INFO/PAO,INFO/QR,INFO/QA,INFO/PQR,INFO/PQA,INFO/SRF,INFO/SRR,INFO/SAF,INFO/SAR,INFO/SRP,INFO/SAP,INFO/AB,INFO/ABP,INFO/RUN,INFO/RPP,INFO/RPPR,INFO/RPL,INFO/RPR,INFO/EPP,INFO/EPPR,INFO/DPRA,INFO/ODDS,INFO/GTI,INFO/TYPE,INFO/CIGAR,INFO/NUMALT,INFO/MEANALT,INFO/LEN,INFO/MQM,INFO/MQMR,INFO/PAIRED,INFO/PAIREDR,INFO/MIN_DP,INFO/END \\
+		{vcfFile} \\
+	| bcftools norm \\
 		--threads {options['cores']} \\
 		--output-type u \\
 		--fasta-ref {referenceGenomeFile} \\
 		--multiallelics -any \\
 		--atomize \\
-		{vcfFile} \\
+		- \\
 	| bcftools norm \\
 		--threads {options['cores']} \\
 		--output-type u \\
@@ -216,6 +221,55 @@ def filter_vcf(vcfFile: str, referenceGenomeFile: str, depthThresholdBed: str, m
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, protect=protect, spec=spec)
 
+# def vcf_stats(vcfFile: str, referenceGenomeFile: str, outputDirectory: str):
+# 	"""
+# 	Template: template_description
+	
+# 	Template I/O::
+	
+# 		inputs = {}
+# 		outputs = {}
+	
+# 	:param
+# 	"""
+# 	inputs = {'vcf': vcfFile,
+# 		   	  'reference': referenceGenomeFile}
+# 	outputs = {'stats': f'{outputDirectory}/vcfStats/{os.path.basename(vcfFile)}.stats'}
+# 	protect = [outputs['stats']]
+# 	options = {
+# 		'cores': 30,
+# 		'memory': '20g',
+# 		'walltime': '06:00:00'
+# 	}
+# 	spec = f"""
+# 	# Sources environment
+# 	if [ "$USER" == "jepe" ]; then
+# 		source /home/"$USER"/.bashrc
+# 		source activate popgen
+# 	fi
+	
+# 	echo "START: $(date)"
+# 	echo "JobID: $SLURM_JOBID"
+	
+# 	[ -d {outputDirectory}/vcfStats ] || mkdir -p {outputDirectory}/vcfStats
+	
+# 	maxDepth="$(bcftools query -f '%INFO/DP' {vcfFile} | awk '{{if (max < $1) {{max = $1}}}} END{{print max}}' -)"
+
+# 	bcftools stats \\
+# 		--threads {options['cores']} \\
+# 		--fasta-ref {referenceGenomeFile} \\
+# 		--depth 0,"$maxDepth",1 \\
+# 		--verbose \\
+# 		{vcfFile} \\
+# 		> {outputDirectory}/vcfStats/{os.path.basename(vcfFile)}.prog.stats
+	
+# 	mv {outputDirectory}/vcfStats/{os.path.basename(vcfFile)}.prog.stats {outputs['stats']}
+	
+# 	echo "END: $(date)"
+# 	echo "$(jobinfo "$SLURM_JOBID")"
+# 	"""
+# 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+
 def vcf_stats(vcfFile: str, referenceGenomeFile: str, outputDirectory: str):
 	"""
 	Template: template_description
@@ -247,13 +301,10 @@ def vcf_stats(vcfFile: str, referenceGenomeFile: str, outputDirectory: str):
 	echo "JobID: $SLURM_JOBID"
 	
 	[ -d {outputDirectory}/vcfStats ] || mkdir -p {outputDirectory}/vcfStats
-	
-	maxDepth="$(bcftools query -f '%INFO/DP' {vcfFile} | awk '{{if (max < $1) {{max = $1}}}} END{{print max}}' -)"
 
 	bcftools stats \\
 		--threads {options['cores']} \\
 		--fasta-ref {referenceGenomeFile} \\
-		--depth 0,"$maxDepth",1 \\
 		--verbose \\
 		{vcfFile} \\
 		> {outputDirectory}/vcfStats/{os.path.basename(vcfFile)}.prog.stats
@@ -868,7 +919,7 @@ def merge_bed_files(bedFiles: list, outputName: str, outputDirectory: str):
 		-k4,4n \\
 		-k2,2n \\
 		- \\
-	awk \\
+	| awk \\
 		'BEGIN{{
 			FS = OFS = "\\t"
 		}}
@@ -877,7 +928,7 @@ def merge_bed_files(bedFiles: list, outputName: str, outputDirectory: str):
 		}}' \\
 		- \\
 	| bedtools merge \\
-		- \\
+		-i - \\
 		> {outputDirectory}/{outputName}.prog.bed
 
 	mv {outputDirectory}/{outputName}.prog.bed {outputs['bed']}

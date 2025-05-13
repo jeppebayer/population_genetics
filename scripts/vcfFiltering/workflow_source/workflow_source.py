@@ -99,14 +99,41 @@ def vcfFilterAndAnnotation_workflow(configFile: str = glob.glob('*config.y*ml')[
 	# 	)
 
 	for group in setupDict:
+		normalizeVcf = gwf.target_from_template(
+			name=f'normalize_vcf_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
+			template=normalize_vcf(
+				vcfFile=setupDict[group]['vcfFile'],
+				referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
+				outputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/normalized/{setupDict[group]['name']}'
+			)
+		)
+
+		normalizedVcfStats = gwf.target_from_template(
+			name=f'normalized_vcf_stats_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
+			template=vcf_stats(
+				vcfFile=normalizeVcf.outputs['vcf'],
+				referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
+				outputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/normalized/{setupDict[group]['name']}'
+			)
+		)
+
 		filterVcf = gwf.target_from_template(
 			name=f'filter_vcf_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
 			template=filter_vcf(
-				vcfFile=setupDict[group]['vcfFile'],
+				vcfFile=normalizeVcf.outputs['vcf'],
 				referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
 				depthThresholdBed=setupDict[group]['bedFile'],
 				minDepth=setupDict[group]['minDP'],
 				maxDepth=setupDict[group]['maxDP'],
+				outputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/filtered/{setupDict[group]['name']}'
+			)
+		)
+
+		filteredVcfStats = gwf.target_from_template(
+			name=f'filtered_vcf_stats_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
+			template=vcf_stats(
+				vcfFile=filterVcf.outputs['vcf'],
+				referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
 				outputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/filtered/{setupDict[group]['name']}'
 			)
 		)
@@ -121,7 +148,7 @@ def vcfFilterAndAnnotation_workflow(configFile: str = glob.glob('*config.y*ml')[
 		# )
 
 		vcfToBed = gwf.target_from_template(
-			name=f'vcf_to_bed_{filterVcf.outputs['vcf'].replace("-", "_")}',
+			name=f'vcf_to_bed_{os.path.basename(filterVcf.outputs['vcf']).replace("-", "_")}',
 			template=vcf_to_bed(
 				vcfFile=filterVcf.outputs['vcf'],
 				outputDirectory=f'{topDir}/outgroups'
