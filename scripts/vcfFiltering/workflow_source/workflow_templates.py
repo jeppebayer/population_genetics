@@ -122,12 +122,6 @@ def normalize_vcf(vcfFile: str, referenceGenomeFile: str, outputDirectory: str):
 		--threads {options['cores']} \\
 		--output-type u \\
 		--fasta-ref {referenceGenomeFile} \\
-		--rm-dup none \\
-		- \\
-	| bcftools norm \\
-		--threads {options['cores']} \\
-		--output-type u \\
-		--fasta-ref {referenceGenomeFile} \\
 		--multiallelics +any \\
 		- \\
 	| bcftools view \\
@@ -198,11 +192,6 @@ def filter_vcf(vcfFile: str, referenceGenomeFile: str, depthThresholdBed: str, m
 		- \\
 	| bcftools view \\
 		--threads {options['cores']} \\
-		--max-alleles 2 \\
-		--output-type u \\
-		- \\
-	| bcftools view \\
-		--threads {options['cores']} \\
 		--output-type u \\
 		--max-alleles 2 \\
 		- \\
@@ -211,7 +200,8 @@ def filter_vcf(vcfFile: str, referenceGenomeFile: str, depthThresholdBed: str, m
 		--targets-file {depthThresholdBed} \\
 		--output-type z \\
 		--output {outputDirectory}/{filename}.prog.vcf.gz \\
-		--write-index
+		--write-index \\
+		-
 	
 	mv {outputDirectory}/{filename}.prog.vcf.gz {outputs['vcf']}
 	mv {outputDirectory}/{filename}.prog.vcf.gz.csi {outputs['index']}

@@ -1,0 +1,8 @@
+HiC_scaffold_1	58061482
+HiC_scaffold_2	51230349
+HiC_scaffold_3	38001811
+HiC_scaffold_4	30436318
+HiC_scaffold_5	29993897
+HiC_scaffold_6	29789980
+HiC_scaffold_7	16537739
+bundled_sequences	118284680

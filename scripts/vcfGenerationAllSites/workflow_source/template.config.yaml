@@ -1,0 +1,58 @@
+# Tag identifying file association.
+TAG: jeppebayer:EcoGenetics,population_genetics,vcf:workflowconfiguration
+# (str). The name of the relevant project account.
+account: 
+# (str). Taxonomic group. Can be left empty.
+taxonomicGroup: 
+# (str). Name of species being analyzed.
+speciesName: 
+# (str). Path to reference genome.
+referenceGenomePath: 
+# (str). BED file indicating intergenic regions of the reference genome. If left empty all site counts will be disabled.
+intergenicBedFile: 
+# (str). BED file indicating repetitive regions of the reference genome. If left empty workflow will try to extract repetitive regions from reference genome.
+repeatsBedFile: 
+# (str). Directory for intermediary files.
+workingDirectoryPath: 
+# (str). Directory for final output files. (If left empty, output file will be placed within 'workingDirectoryPath').
+outputDirectoryPath: 
+# (int). Partition size of genome in base pairs. If left empty defaults to '500000'.
+partitionSize: 
+# Variant caller, Freebayes settings.
+freebayesSettings:
+  # (int). samplePloidy = ploidy * n_individials. If left empty defaults to '100'.
+  samplePloidy: 
+  # (int). Number of variants to consider and report when multiple are available. If left empty defaults to '3'
+  bestNAlleles: 
+  # (0 | float). Lower threshold fraction for variant to be considered. If left empty defaults to '0'.
+  minAlternateFraction: 
+  # (int). Lower threshold count for variant to be considered. If left empty defaults to '2'.
+  minAlternateCount: 
+  # (int). Amount of memory, in GB, to reserve per VCF partition. If left empty defaults to '80'.
+  memory: 
+  # (str). Amount of time to reserve per VCF partition in format: 'tt:mm:ss'. If left empty defaults to '48:00:00'.
+  time: 
+# Batch settings. Can be used to reduced the number of jobs sent to the queue at one time.
+# Only partial VCF files will be created when batching. To complete the full workflow one must do a no-batch run.
+batchSettings:
+  # (int). The number of batches to create. 0 = don't batch jobs. If left empty defaults to '0'
+  numberOfBatches: 
+  # (int). Which of the created batches to run. Must be >=1 AND <=numberOfBatches. Can be left empty if numberOfBatches is '0'.
+  currentBatchNumber: 
+# (list). Sample setup. List of dictionaries listing the configuration for each sample.
+sampleList:
+  - 
+    # ('i' | 'o'). Whether the sample group is to be considered ingroup (i) or outgroup (o).
+    groupStatus: 
+    # (str). Name of sample group.
+    groupName: 
+    # (int). Minimum depth for samples in group. Used for depth distributions and site counts.
+    groupMinDP: 
+    # Lists of paths to BAM files. BAM files can be separated in two 'qualities'. If both are used; depth distribution, site counts and vcf will be
+    # created for the 'high quality' samples and for for all samples combined.
+    # (list). List of paths to 'high quality' BAM file.
+    highQualityBamFileList:
+      - 
+    # (list). List of paths to 'low quality' BAM file.
+    lowQualityBamFileList:
+      - 
