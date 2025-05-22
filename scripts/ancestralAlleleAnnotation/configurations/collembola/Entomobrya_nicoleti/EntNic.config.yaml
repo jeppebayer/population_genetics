@@ -1,8 +1,72 @@
-# The name of the relevant project account.
+# (str). The name of the relevant project account.
 account: EcoGenetics
-# Name of species being analyzed
+# (str). Taxonomic group. Can be left empty.
+taxonomicGroup: Collembola
+# (str). Name of species being analyzed (ingroup).
 speciesName: Entomobrya nicoleti
-# Directory for intermediary files.
-workingDirectoryPath: 
-# Directory for final output files.
-outputDirectoryPath: 
+# (str). Path to reference genome file.
+referenceGenomeFile: /faststorage/project/EcoGenetics/BACKUP/population_genetics/reference_genomes/collembola/Entomobrya_nicoleti/EG_EntNic_05092024_genomic.fna
+# (str). Directory for intermediary files.
+workingDirectoryPath: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps
+# (str). Directory for final output files. (If left empty, output file will be placed within 'workingDirectoryPath').
+outputDirectoryPath: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics
+# (str). Path to BED file covering all positions in the ingroups VCF files.
+ingroupsBedFile: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/vcf/outgroups/bed/EntNic.merge.bed
+# Variant caller, Freebayes settings.
+freebayesSettings:
+  # (int). samplePloidy = ploidy * n_individials. If left empty defaults to '100'.
+  samplePloidy: 100
+  # (int). Number of variants to consider and report when multiple are available. If left empty defaults to '3'
+  bestNAlleles: 3
+  # (0 | float). Lower threshold fraction for variant to be considered. If left empty defaults to '0'.
+  minAlternateFraction: 0
+  # (int). Lower threshold count for variant to be considered. If left empty defaults to '2'.
+  minAlternateCount: 2
+  # (int). Amount of memory, in GB, to reserve per VCF partition. If left empty defaults to '80'.
+  memory: 25
+  # (str). Amount of time to reserve per VCF partition in format: 'tt:mm:ss'. If left empty defaults to '48:00:00'.
+  time: '24:00:00'
+# (list). Ingroup setup. List of dictionaries containing information for each ingroup.
+ingroupSetup:
+  - 
+    # (str). Name of sample group.
+    groupName: Grassland
+    # (str). Path to ingroup VCF file.
+    vcfFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/vcf/collembola/Entomobrya_nicoleti/grassland/EntNic.grassland.ingroup.allQuality.freebayes.merge.normalized.filtered_DP200-658.ann.vcf.gz
+  - 
+    # (str). Name of sample group.
+    groupName: Grassland
+    # (str). Path to ingroup VCF file.
+    vcfFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/vcf/collembola/Entomobrya_nicoleti/grassland/EntNic.grassland.ingroup.highQuality.freebayes.merge.normalized.filtered_DP200-660.ann.vcf.gz
+  - 
+    # (str). Name of sample group.
+    groupName: Conventional agriculture
+    # (str). Path to ingroup VCF file.
+    vcfFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/vcf/collembola/Entomobrya_nicoleti/conventional_agriculture/EntNic.conventional_agriculture.ingroup.allQuality.freebayes.normalized.filtered_DP200-516.ann.vcf.gz
+  - 
+    # (str). Name of sample group.
+    groupName: Conservation agriculture
+    # (str). Path to ingroup VCF file.
+    vcfFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/vcf/collembola/Entomobrya_nicoleti/conservation_agriculture/EntNic.conservation_agriculture.ingroup.allQuality.freebayes.merge.normalized.filtered_DP200-608.ann.vcf.gz
+# (list). Outgroup setup. List of dictionaries containing information for outgroup samples.
+outgroupSetup:
+  -
+    # (str). Name of outgroup sample.
+    sampleName: EntNiv_MSJ-C93
+    # (str). Paths to outgroup BAM file.
+    bamFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/outgroup_entomobrya_nivalis/EntNiv_MSJ-C93/EntNiv_MSJ-C93.filtered.bam
+  -
+    # (str). Name of outgroup sample.
+    sampleName: EntNiv_RYJ-ENNI
+    # (str). Paths to outgroup BAM file.
+    bamFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/outgroup_entomobrya_nivalis/EntNiv_RYJ-ENNI/EntNiv_RYJ-ENNI.filtered.bam
+  -
+    # (str). Name of outgroup sample.
+    sampleName: EntNiv_SBJ-C104
+    # (str). Paths to outgroup BAM file.
+    bamFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/outgroup_entomobrya_nivalis/EntNiv_SBJ-C104/EntNiv_SBJ-C104.filtered.bam
+  -
+    # (str). Name of outgroup sample.
+    sampleName: EntNiv_ULJ-C124
+    # (str). Paths to outgroup BAM file.
+    bamFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Entomobrya_nicoleti/outgroup_entomobrya_nivalis/EntNiv_ULJ-C124/EntNiv_ULJ-C124.filtered.bam

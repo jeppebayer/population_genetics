@@ -5,7 +5,6 @@ channels:
   - genomedk
   - gwforg
   - defaults
-  - hcc
 dependencies:
   - gwf
   - pyyaml
@@ -27,4 +26,5 @@ dependencies:
   - snpsift=5.2
   - vcftools=0.1.16
   - yaml
+  - statsmodels=0.14.4
 prefix: /home/jepe/miniconda3/envs/popgen

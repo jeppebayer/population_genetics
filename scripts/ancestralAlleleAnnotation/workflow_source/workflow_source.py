@@ -21,10 +21,10 @@ def ancestral_allele_workflow(configFile: str = glob.glob('*config.y*ml')[0]):
 	SPECIES_NAME: str = CONFIG['speciesName']
 	WORK_DIR: str =  CONFIG['workingDirectoryPath'][:len(CONFIG['workingDirectoryPath']) - 1] if CONFIG['workingDirectoryPath'].endswith('/') else CONFIG['workingDirectoryPath']
 	OUTPUT_DIR: str | None = (CONFIG['outputDirectoryPath'][:len(CONFIG['outputDirectoryPath']) - 1] if CONFIG['outputDirectoryPath'].endswith('/') else CONFIG['outputDirectoryPath']) if CONFIG['outputDirectoryPath'] else None
-	VCF_BED: str = CONFIG['vcfBedFile']
+	VCF_BED: str = CONFIG['ingroupsBedFile']
 	REFERENCE_GENOME: str = CONFIG['referenceGenomeFile']
-	OUTGROUP_LIST: list = CONFIG['outgroupList']
-	INGROUP_LIST: list = CONFIG['ingroupList']
+	OUTGROUP_SETUP: list = CONFIG['outgroupSetup']
+	INGROUP_SETUP: list = CONFIG['ingroupSetup']
 	FREEBAYES_SETTINGS: dict = CONFIG['freebayesSettings']
 	FREEBAYES_PLOIDY: int | None = FREEBAYES_SETTINGS['samplePloidy'] if FREEBAYES_SETTINGS['samplePloidy'] else 100
 	FREEBAYES_BESTN: int | None = FREEBAYES_SETTINGS['bestNAlleles'] if FREEBAYES_SETTINGS['bestNAlleles'] else 3
@@ -59,7 +59,8 @@ def ancestral_allele_workflow(configFile: str = glob.glob('*config.y*ml')[0]):
 		)
 	)
 
-	for sample in OUTGROUP_LIST:
+	for sample in OUTGROUP_SETUP:
+		sampleName = sample['sampleName'].replace(' ',' _')
 		freebayesPartitionOutgroup = gwf.map(
 			name=name_freebayes_partition_outgroup,
 			template_func=freebayes_partition_outgroup,
@@ -68,7 +69,7 @@ def ancestral_allele_workflow(configFile: str = glob.glob('*config.y*ml')[0]):
 				'referenceGenomeFile': indexReferenceGenome.outputs['symlink'],
 				'bamFile': sample['bamFile'],
 				'outputDirectory': topDir,
-				'sampleName': sample['sampleName'],
+				'sampleName': sampleName,
 				'bedFile': VCF_BED,
 				'ploidy': FREEBAYES_PLOIDY,
 				'bestNAlleles': FREEBAYES_BESTN,
@@ -80,11 +81,11 @@ def ancestral_allele_workflow(configFile: str = glob.glob('*config.y*ml')[0]):
 		)
 
 		concatenateFreebayesPartitionOutgroup = gwf.target_from_template(
-			name=f'concatenate_outgroup_vcf_{sample['sampleName'].replace("-", "_")}',
+			name=f'concatenate_outgroup_vcf_{sampleName.replace("-", "_")}',
 			template=concat_vcf(
 				files=collect(freebayesPartitionOutgroup.outputs, ['vcf'])['vcfs'],
 				outputName=f'{sample['sampleName']}.outgroups.freebayes',
-				outputDirectory=f'{topOut}/outgroups/{sample['sampleName']}' if OUTPUT_DIR else f'{topDir}/outgroups/{sample['sampleName']}',
+				outputDirectory=f'{topOut}/outgroups/{sampleName}' if OUTPUT_DIR else f'{topDir}/outgroups/{sampleName}',
 				compress=True
 			)
 		)
@@ -108,6 +109,35 @@ def ancestral_allele_workflow(configFile: str = glob.glob('*config.y*ml')[0]):
 				vcfFile=outgroupVcfList[0],
 				outputName=f'{speciesAbbreviation(SPECIES_NAME)}.outgroups.freebayes',
 				outputDirectory=f'{topDir}/outgroups'
+			)
+		)
+
+	normalizeVcf = gwf.target_from_template(
+		name=f'normalize_vcf_outgroups',
+		template=normalize_vcf(
+			vcfFile=mergeOutgroups.outputs['vcf'] if len(outgroupVcfList) > 1 else cpRenameOutgroups.outputs['vcf'],
+			referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
+			outputDirectory=f'{topDir}/outgroups'
+		)
+	)
+
+	vcfStatsOutgroups = gwf.target_from_template(
+		name=f'vcf_stats_outgroups',
+		template=vcf_stats(
+			vcfFile=normalizeVcf.outputs['vcf'],
+			referenceGenomeFile=indexReferenceGenome.outputs['symlink'],
+			outputDirectory=f'{topDir}/outgroups/vcfStats'
+		)
+	)
+
+	for num, group in enumerate(INGROUP_SETUP):
+		groupName = group['groupName'].lower().replace(' ', '_')
+		mergeIngroupOutgroup = gwf.target_from_template(
+			name=f'merge_ingroup_outgroup_{groupName}_{num}',
+			template=merge_ingroup_outgroup(
+				ingroupVcfFile=group['vcfFile'],
+				outgroupVcfFile=normalizeVcf.outputs['vcf'],
+				outputDirectory=f'{topDir}/withOutgroups/{groupName}'
 			)
 		)
 

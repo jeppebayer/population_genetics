@@ -1,8 +1,42 @@
-# The name of the relevant project account.
+# (str). The name of the relevant project account.
 account: 
-# Name of species being analyzed
+# (str). Taxonomic group. Can be left empty.
+taxonomicGroup: 
+# (str). Name of species being analyzed (ingroup).
 speciesName: 
-# Directory for intermediary files.
+# (str). Path to reference genome file.
+referenceGenomeFile: 
+# (str). Directory for intermediary files.
 workingDirectoryPath: 
-# Directory for final output files.
+# (str). Directory for final output files. (If left empty, output file will be placed within 'workingDirectoryPath').
 outputDirectoryPath: 
+# (str). Path to BED file covering all positions in the ingroups VCF files.
+ingroupsBedFile: 
+# Variant caller, Freebayes settings.
+freebayesSettings:
+  # (int). samplePloidy = ploidy * n_individials. If left empty defaults to '100'.
+  samplePloidy: 
+  # (int). Number of variants to consider and report when multiple are available. If left empty defaults to '3'
+  bestNAlleles: 
+  # (0 | float). Lower threshold fraction for variant to be considered. If left empty defaults to '0'.
+  minAlternateFraction: 
+  # (int). Lower threshold count for variant to be considered. If left empty defaults to '2'.
+  minAlternateCount: 
+  # (int). Amount of memory, in GB, to reserve per VCF partition. If left empty defaults to '50'.
+  memory: 
+  # (str). Amount of time to reserve per VCF partition in format: 'tt:mm:ss'. If left empty defaults to '24:00:00'.
+  time: 
+# (list). Ingroup setup. List of dictionaries containing information for each ingroup.
+ingroupSetup:
+  - 
+    # (str). Name of sample group.
+    groupName: 
+    # (str). Path to ingroup VCF file.
+    vcfFile: 
+# (list). Outgroup setup. List of dictionaries containing information for outgroup samples.
+outgroupSetup:
+  -
+    # (str). Name of outgroup sample.
+    sampleName: 
+    # (str). Paths to outgroup BAM file.
+    bamFile: 
