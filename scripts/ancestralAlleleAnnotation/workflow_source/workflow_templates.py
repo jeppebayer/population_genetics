@@ -204,7 +204,7 @@ def freebayes_partition_outgroup(referenceGenomeFile: str, bamFile: str, outputD
 		-b {bamFile} \\
 	| bcftools view \\
 		--output-type z \\
-		--output {outputDirectory}/outgroups/{sampleName}/tmp/{sampleName}.outgroups.freebayes.{num}_{chromName.replace("|", "_")}.prog.vcf.gz \\
+		--output {outputDirectory}/outgroups/{sampleName}/tmp/{sampleName}.freebayes.{num}_{chromName.replace("|", "_")}.prog.vcf.gz \\
 		--write-index \\
 		-
 	

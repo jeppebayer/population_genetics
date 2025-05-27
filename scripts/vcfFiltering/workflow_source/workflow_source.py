@@ -27,6 +27,8 @@ def vcfFilterAndAnnotation_workflow(configFile: str = glob.glob('*config.y*ml')[
 	OUTGROUP_VCF: str | None = OUTGROUP_SETTINGS['vcfFile']
 	OUTGROUP_BEDFILE: int | None = OUTGROUP_SETTINGS['withinThresholdBedFile']
 	VCF_GROUP_LIST: list = CONFIG['vcfGroupList']
+	INTERGENIC_BED: str | None = CONFIG['intergenicBedFile']
+	REPEATS_BED: str | None = CONFIG['repeatsBedFile']
 	
 	# --------------------------------------------------
 	#                  Workflow
@@ -99,6 +101,8 @@ def vcfFilterAndAnnotation_workflow(configFile: str = glob.glob('*config.y*ml')[
 	# 	)
 
 	for group in setupDict:
+		samples = [{'sampleName': i} for i in sampleNamesVcf(setupDict[group]['vcfFile'])]
+
 		normalizeVcf = gwf.target_from_template(
 			name=f'normalize_vcf_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
 			template=normalize_vcf(
@@ -165,6 +169,34 @@ def vcfFilterAndAnnotation_workflow(configFile: str = glob.glob('*config.y*ml')[
 					snpeffPredictorFile=snpeffBuildDatabase.outputs['predictor'],
 					vcfOutputDirectory=f'{topOut}/{setupDict[group]['name']}' if OUTPUT_DIR else f'{topDir}/filtered/{setupDict[group]['name']}',
 					snpeffOutputDirectory=topDir
+				)
+			)
+		
+		if INTERGENIC_BED and REPEATS_BED:
+			sfsNeutral = gwf.map(
+				name=f'sfs_neutral_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
+				template_func=sfs_neutral,
+				inputs=samples,
+				extra={'vcfFile': filterVcf.outputs['vcf'],
+		   			   'intergenicBed': INTERGENIC_BED,
+					   'repeatsBed': REPEATS_BED,
+					   'outputDirectory': f'{topDir}/filtered/{setupDict[group]['name']}/sfs/tmp'}
+			)
+
+			sfsMerge = gwf.target_from_template(
+				name=f'merge_sfs_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
+				template=sfs_merge(
+					sfsFiles=collect(sfsNeutral.outputs, ['sfs'])['sfss'],
+					outputName=os.path.basename(os.path.splitext(os.path.splitext(filterVcf.outputs['vcf'])[0])[0]) if filterVcf.outputs['vcf'].endswith('.gz') else os.path.basename(os.path.splitext(filterVcf.outputs['vcf'])[0]),
+					outputDirectory=f'{topDir}/filtered/{setupDict[group]['name']}/sfs'
+				)
+			)
+
+			sfsPlot = gwf.target_from_template(
+				name=f'plot_sfs_{group}_{speciesAbbreviation(SPECIES_NAME)}_{setupDict[group]['name']}',
+				template=sfs_plot(
+					sfsFile=sfsMerge.outputs['sfs'],
+					outputDirectory=f'{topOut}/{setupDict[group]['name']}/vcfStats' if OUTPUT_DIR else f'{topDir}/filtered/{setupDict[group]['name']}/sfs'
 				)
 			)
 

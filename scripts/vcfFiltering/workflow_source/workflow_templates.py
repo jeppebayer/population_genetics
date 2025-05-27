@@ -1,6 +1,6 @@
 #!/bin/env python3
 from gwf import AnonymousTarget
-import os, glob
+import os, glob, gzip
 
 ########################## Functions ##########################
 
@@ -13,6 +13,36 @@ def speciesAbbreviation(speciesName: str) -> str:
 	genus = genus[0].upper() + genus[1:3]
 	species = species[0].upper() + species[1:3]
 	return genus + species
+
+def sampleNamesVcf(vcfFile: str) -> list:
+	"""Return list containing all samples listed in :format:`VCF` file.
+	
+	:param str vcfFile:
+		:format:`VCF` file. Can be gzipped."""
+	samples = []
+	if vcfFile.endswith(('.gz', '.gzip', '.bgz', '.bgzip')):
+		with gzip.open(vcfFile, 'rt') as inFile:
+			for line in inFile:
+				if line.startswith('##'):
+					continue
+				if line.startswith('#'):
+					fields = line.strip().split(sep='\t')
+					samples = [fields[i] for i in range(9, len(fields))]
+					break
+				else:
+					break
+	else:
+		with open(vcfFile, 'r') as inFile:
+			for line in inFile:
+				if line.startswith('##'):
+					continue
+				if line.startswith('#'):
+					fields = line.strip().split(sep='\t')
+					samples = [fields[i] for i in range(9, len(fields))]
+					break
+				else:
+					break
+	return samples
 
 ########################## Templates ##########################
 
@@ -941,6 +971,167 @@ def update_ancetral_allele_information(vcfFile: str, ancestralAnnotationFile: st
 	
 	mv {outputDirectory}/{filename}.aa.prog.vcf.gz {outputs['vcf']}
 	mv {outputDirectory}/{filename}.aa.prog.vcf.gz.csi {outputs['index']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def name_sfs_neutral(idx: str, target: AnonymousTarget) -> str:
+	return f'sfs_neutral_{os.path.basename(target.outputs["sfs"].replace("-", "_"))}'
+
+def sfs_neutral(vcfFile: str, intergenicBed: str, repeatsBed: str, sampleName: str, outputDirectory: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	filename = os.path.basename(os.path.splitext(os.path.splitext(vcfFile)[0])[0]) if vcfFile.endswith('.gz') else os.path.basename(os.path.splitext(vcfFile)[0])
+	inputs = {'vcf': vcfFile}
+	outputs = {'sfs': f'{outputDirectory}/{filename}.{sampleName}.sfs'}
+	options = {
+		'cores': 1,
+		'memory': '10g',
+		'walltime': '06:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+	bcftools query \\
+		--format '[%CHROM\\t%GT\\n]' \\
+		--targets-file <(bedtools subtract \\
+			-a {intergenicBed} \\
+			-b {repeatsBed}) \\
+		--samples {sampleName} \\
+		{vcfFile} \\
+	| awk \\
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			split($2, gtArray, "/")
+			gtValue = 0
+			for (i in gtArray)
+			{{
+				gtValue += gtArray[i]
+			}}
+			if (gtValue > 50)
+			{{
+				gtValue = 100 - gtValue
+			}}
+			sfsArray[gtValue] += 1
+		}}
+		END{{
+			for (i in sfsArray)
+			{{
+				print "{sampleName}", i, sfsArray[i]
+			}}
+		}}' \\
+		- \\
+	| sort \\
+		-k2,2n \\
+		- \\
+		> {outputDirectory}/{filename}.{sampleName}.prog.sfs
+	
+	mv {outputDirectory}/{filename}.{sampleName}.prog.sfs {outputs['sfs']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def sfs_merge(sfsFiles: list, outputName: str, outputDirectory: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'sfs': sfsFiles}
+	outputs = {'sfs': f'{outputDirectory}/{outputName}.sfs'}
+	options = {
+		'cores': 1,
+		'memory': '10g',
+		'walltime': '02:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+	cat \\
+		{' '.join(sfsFiles)} \\
+	| sort \\
+		-k1,1 \\
+		-k2,2n \\
+		- \\
+		> {outputDirectory}/{outputName}.prog.sfs
+	
+	mv {outputDirectory}/{outputName}.prog.sfs {outputs['sfs']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def sfs_plot(sfsFile: str, outputDirectory: str, sfsPlotScript: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/sfsPlot.py'):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'sfs': sfsFile}
+	outputs = {'plot': f'{outputDirectory}/{os.path.basename(sfsFile)}.pdf'}
+	options = {
+		'cores': 10,
+		'memory': '20g',
+		'walltime': '01:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+	python {sfsPlotScript} \\
+		{sfsFile} \\
+		{outputDirectory}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
