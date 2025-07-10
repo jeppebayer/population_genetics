@@ -1,0 +1,36 @@
+account: EcoGenetics
+condaEnvironment: popgen
+outputDirectory: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps
+setup:
+  -
+    speciesName: Sitona lineatus
+    taxonomicGroup: Beetles_azenta
+    sequencingPlatform: NovaSeq
+    alignmentFiles:
+      - /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/beetles/Sitona_lineatus/mapping/grassland/alignment/SitLin_HHJ/SitLin_HHJ.merged_alignment.bam
+      - /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/beetles/Sitona_lineatus/mapping/grassland/alignment/SitLin_HYF/SitLin_HYF.merged_alignment.bam
+      - /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/beetles/Sitona_lineatus/mapping/grassland/alignment/SitLin_KOS/SitLin_KOS.merged_alignment.bam
+      - /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/beetles/Sitona_lineatus/mapping/grassland/alignment/SitLin_MOS/SitLin_MOS.merged_alignment.bam
+      - /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/beetles/Sitona_lineatus/mapping/grassland/alignment/SitLin_MSS/SitLin_MSS.merged_alignment.bam
+      - /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/beetles/Sitona_lineatus/mapping/grassland/alignment/SitLin_RDJ_39ind/SitLin_RDJ_39ind.merged_alignment.bam
+      - /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/beetles/Sitona_lineatus/mapping/grassland/alignment/SitLin_STF_45ind/SitLin_STF_45ind.merged_alignment.bam
+      - /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/beetles/Sitona_lineatus/mapping/grassland/alignment/SitLin_STJ_44ind/SitLin_STJ_44ind.merged_alignment.bam
+      - /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/beetles/Sitona_lineatus/mapping/grassland/alignment/SitLin_VIS_36ind/SitLin_VIS_36ind.merged_alignment.bam
+  -
+    speciesName: Orchesella villosa
+    taxonomicGroup: Collembola_azenta
+    sequencingPlatform: NovaSeq
+    alignmentFiles:
+      - /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Orchesella_villosa/mapping/grassland/alignment/OrcVil_CA_DAS-C428/OrcVil_CA_DAS-C428.merged_alignment.bam
+      - /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Orchesella_villosa/mapping/grassland/alignment/OrcVil_CA_RoeF-C410/OrcVil_CA_RoeF-C410.merged_alignment.bam
+      - /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Orchesella_villosa/mapping/grassland/alignment/OrcVil_K_LES-C382/OrcVil_K_LES-C382.merged_alignment.bam
+      - /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Orchesella_villosa/mapping/grassland/alignment/OrcVil_K_RoeF-C418/OrcVil_K_RoeF-C418.merged_alignment.bam
+  -
+    speciesName: Entomobrya nicoleti
+    taxonomicGroup: Collembola_azenta
+    sequencingPlatform: NovaSeq
+    alignmentFiles:
+      - /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/mapping/grassland/alignment/EntNic_FaaJ-C248/EntNic_FaaJ-C248.merged_alignment.bam
+      - /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/mapping/grassland/alignment/EntNic_HaeJ-C281/EntNic_HaeJ-C281.merged_alignment.bam
+      - /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/mapping/grassland/alignment/EntNic_STJ-C108/EntNic_STJ-C108.merged_alignment.bam
+      - /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/mapping/grassland/alignment/EntNic_TRJ-C35/EntNic_TRJ-C35.merged_alignment.bam

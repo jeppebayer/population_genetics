@@ -27,4 +27,5 @@ dependencies:
   - vcftools=0.1.16
   - yaml
   - statsmodels=0.14.4
+  - qualimap=2.3
 prefix: /home/jepe/miniconda3/envs/popgen

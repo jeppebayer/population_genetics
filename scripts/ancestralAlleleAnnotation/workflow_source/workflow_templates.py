@@ -324,7 +324,6 @@ def merge_vcf(vcfFiles: list, outputName: str, outputDirectory: str):
 		--threads {options['cores']} \\
 		--output-type z \\
 		--output {outputDirectory}/{outputName}.merged.prog.vcf.gz \\
-		--missing-to-ref \\
 		--write-index \\
 		{' '.join(vcfFiles)}
 	
@@ -438,15 +437,10 @@ def normalize_vcf(vcfFile: str, referenceGenomeFile: str, outputDirectory: str):
 		- \\
 	| bcftools view \\
 		--threads {options['cores']} \\
-		--output-type u \\
-		--trim-alt-alleles \\
-		- \\
-	| bcftools view \\
-		--threads {options['cores']} \\
 		--output-type z \\
 		--output {outputDirectory}/{filename}.prog.vcf.gz \\
 		--write-index \\
-		--exclude 'ALT="."' \\
+		--trim-alt-alleles \\
 		-
 	
 	mv {outputDirectory}/{filename}.prog.vcf.gz {outputs['vcf']}
@@ -488,13 +482,10 @@ def vcf_stats(vcfFile: str, referenceGenomeFile: str, outputDirectory: str):
 	echo "JobID: $SLURM_JOBID"
 	
 	[ -d {outputDirectory}/vcfStats ] || mkdir -p {outputDirectory}/vcfStats
-	
-	maxDepth="$(bcftools query -f '%INFO/DP' {vcfFile} | awk '{{if (max < $1) {{max = $1}}}} END{{print max}}' -)"
 
 	bcftools stats \\
 		--threads {options['cores']} \\
 		--fasta-ref {referenceGenomeFile} \\
-		--depth 0,"$maxDepth",1 \\
 		--verbose \\
 		{vcfFile} \\
 		> {outputDirectory}/vcfStats/{os.path.basename(vcfFile)}.prog.stats
@@ -525,8 +516,8 @@ def merge_ingroup_outgroup(ingroupVcfFile: str, outgroupVcfFile: str, outputDire
 	protect = [outputs['vcf'], outputs['index']]
 	options = {
 		'cores': 30,
-		'memory': '40g',
-		'walltime': '24:00:00'
+		'memory': '10g',
+		'walltime': '48:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -540,21 +531,23 @@ def merge_ingroup_outgroup(ingroupVcfFile: str, outgroupVcfFile: str, outputDire
 	
 	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
 	
+	bcftools query \\
+		--format '%CHROM\\t%POS0\\t%END' \\
+		{ingroupVcfFile} \\
+	| bedtools merge \\
+		-i - \\
+		> {outputDirectory}/{filename}.bed
+		
 	bcftools merge \\
 		--threads {options['cores']} \\
 		--output-type z \\
 		--output {outputDirectory}/{filename}.withOutgroups.prog.vcf.gz \\
 		--write-index \\
-		--regions-file <( \\
-			bcftools query \\
-				--format '%CHROM\t%POS0\t%END' \\
-				{ingroupVcfFile} \\
-			| bedtools merge \\
-				-i - \\
-		) \\
+		--regions-file {outputDirectory}/{filename}.bed \\
 		{ingroupVcfFile} \\
 		{outgroupVcfFile}
 	
+	rm {outputDirectory}/{filename}.bed
 	mv {outputDirectory}/{filename}.withOutgroups.prog.vcf.gz {outputs['vcf']}
 	mv {outputDirectory}/{filename}.withOutgroups.prog.vcf.gz.csi {outputs['index']}
 	

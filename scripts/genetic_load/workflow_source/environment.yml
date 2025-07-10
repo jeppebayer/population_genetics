@@ -5,22 +5,27 @@ channels:
   - genomedk
   - gwforg
   - defaults
-  - hcc
 dependencies:
-  - adapterremoval=2.3.3
-  - agat=1.3.1
-  - bcftools=1.19
-  - bedtools=2.31.1
-  - bwa=0.7.17
-  - freebayes=1.3.6
   - gwf
-  - perl
   - pyyaml
-  - qualimap=2.3
-  - samtools=1.19.2
-  - seqkit=2.8.0
+  - adapterremoval=2.3.4
+  - agat=1.4.2
+  - bcftools=1.21
+  - bedtools=2.31.1
+  - bwa=0.7.19
+  - freebayes=1.3.9
+  - matplotlib=3.10.1
+  - numpy=2.2.5
+  - pandas=2.2.3
+  - python
+  - r-base
+  - samtools=1.21
+  - seqkit=2.10.0
   - seqtk=1.4
   - snpeff=5.2
   - snpsift=5.2
   - vcftools=0.1.16
+  - yaml
+  - statsmodels=0.14.4
+  - qualimap=2.3
 prefix: /home/jepe/miniconda3/envs/popgen
