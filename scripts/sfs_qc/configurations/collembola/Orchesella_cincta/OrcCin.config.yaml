@@ -1,0 +1,19 @@
+# (str). The name of the relevant project account.
+account: EcoGenetics
+# (str). Conda environment for assembly (gwf, pyyaml, bedtools, bcftools, matplotlib, pandas).
+condaEnvironment01: popgen
+# (str). Name of species being analyzed
+speciesName: Orchesella cincta
+# (str.) Taxonomic group. Can be left empty.
+taxonomicGroup: Collembola
+# (str). Directory for intermediate files.
+workingDirectoryPath: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps
+# (str). Directory for final output files. Can be left empty (If left empty, output file will be placed within 'working_directory_path').
+outputDirectoryPath: 
+# (str). Path to BED file of intergenic regions.
+intergenicBed: /faststorage/project/EcoGenetics/BACKUP/population_genetics/reference_genomes/collembola/Orchesella_cincta/annotation/GCA_001718145.1_ASM171814v1_genomic.intergenic.bed
+# (str). Path to BED file of repetitive regions.
+repeatsBed: /faststorage/project/EcoGenetics/BACKUP/population_genetics/reference_genomes/collembola/Orchesella_cincta/annotation/GCA_001718145.1_ASM171814v1_genomic.repeats.bed
+# (list). List of paths to VCF files.
+vcfFiles:
+  - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/vcf/collembola/Orchesella_cincta/grassland/OrcCin.grassland.ingroup.allQuality.freebayes.merge.normalized.filtered_DP200-728.vcf.gz

@@ -1,0 +1,19 @@
+# (str). The name of the relevant project account.
+account: 
+# (str). Conda environment for assembly (gwf, pyyaml, bedtools, bcftools, matplotlib, pandas).
+condaEnvironment01: 
+# (str). Name of species being analyzed
+speciesName: 
+# (str.) Taxonomic group. Can be left empty.
+taxonomicGroup: 
+# (str). Directory for intermediate files.
+workingDirectoryPath: 
+# (str). Directory for final output files. Can be left empty (If left empty, output file will be placed within 'working_directory_path').
+outputDirectoryPath: 
+# (str). Path to BED file of intergenic regions.
+intergenicBed: 
+# (str). Path to BED file of repetitive regions.
+repeatsBed: 
+# (list). List of paths to VCF files.
+vcfFiles:
+  - 
