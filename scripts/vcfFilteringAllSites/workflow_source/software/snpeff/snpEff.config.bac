@@ -1,0 +1,136 @@
+#-------------------------------------------------------------------------------
+#
+# SnpEff configuration file
+#
+#																Pablo Cingolani
+#-------------------------------------------------------------------------------
+
+#---
+# Databases are stored here
+# E.g.: Information for 'hg19' is stored in data.dir/hg19/
+#
+# You can use tilde ('~') as first character to refer to your home directory.
+# Also, a non-absolute path will be relative to config's file dir
+#
+#---
+data.dir = ./data/
+
+#-------------------------------------------------------------------------------
+# Loss of function (LOF)
+#-------------------------------------------------------------------------------
+	
+# It is assumed that even with a protein coding change at the
+# last 5% of the protein, the protein could still be functional.
+lof.ignoreProteinCodingAfter  : 0.95
+
+# It is assumed that even with a protein coding change at the
+# first 5% of the protein:
+#				"..suggesting some disrupted transcripts are
+#				rescued by transcriptional reinitiation at an
+#				alternative start codon."
+lof.ignoreProteinCodingBefore : 0.05
+
+# Larger deletions removing either the first exon or more than
+# 50% of the protein-coding sequence of the affected transcript
+lof.deleteProteinCodingBases : 0.50
+
+#-------------------------------------------------------------------------------
+# Codon tables
+#
+# Format:	It's a comma separated "codon/aminoAcid[+*]" list
+#			Where 'codon' is in uppper case, aminoAcid is a one letter
+#			code, '+' denotes start codon and '*' denotes stop codon.
+#
+# References:	http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi
+#				ftp://ftp.ncbi.nih.gov/entrez/misc/data/gc.prt
+#-------------------------------------------------------------------------------
+	
+codon.Standard				: TTT/F, TTC/F, TTA/L, TTG/L+, TCT/S, TCC/S, TCA/S, TCG/S, TAT/Y, TAC/Y, TAA/*, TAG/*, TGT/C, TGC/C, TGA/*, TGG/W, CTT/L, CTC/L, CTA/L, CTG/L+, CCT/P, CCC/P, CCA/P, CCG/P, CAT/H, CAC/H, CAA/Q, CAG/Q, CGT/R, CGC/R, CGA/R, CGG/R, ATT/I, ATC/I, ATA/I, ATG/M+, ACT/T, ACC/T, ACA/T, ACG/T, AAT/N, AAC/N, AAA/K, AAG/K, AGT/S, AGC/S, AGA/R, AGG/R, GTT/V, GTC/V, GTA/V, GTG/V, GCT/A, GCC/A, GCA/A, GCG/A, GAT/D, GAC/D, GAA/E, GAG/E, GGT/G, GGC/G, GGA/G, GGG/G
+
+#-------------------------------------------------------------------------------
+# Databases & Genomes
+#
+# One entry per genome version.
+#
+# For genome version 'ZZZ' the entries look like
+#		ZZZ.genome				: Real name for ZZZ (e.g. 'Human')
+#		ZZZ.reference			: [Optional] Comma separated list of URL to site/s where information for building ZZZ database was extracted.
+#		ZZZ.chrName.codonTable	: [Optional] Define codon table used for chromosome 'chrName' (Default: 'codon.Standard')
+#
+#-------------------------------------------------------------------------------
+
+#---
+# Centre for Ecological Genetics (AU) - Custom Databases
+#---
+# Orchesella cincta genome, GCA_001718145.1_ASM171814v1_genomic.fna
+GCA_001718145.1_ASM171814v1_genomic.genome : Orchesella cincta
+GCA_001718145.1_ASM171814v1_genomic.file_location : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Orchesella_cincta/vcf/reference/GCA_001718145.1_ASM171814v1_genomic.fna
+GCA_001718145.1_ASM171814v1_genomic.addition_date : 05/03/2025
+GCA_001718145.1_ASM171814v1_genomic.data_directory : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Orchesella_cincta/vcf/snpeff/data/GCA_001718145.1_ASM171814v1_genomic
+
+# Isotoma viridis genome, EG_IsoVir_23082024_genomic.fna
+EG_IsoVir_23082024_genomic.genome : Isotoma viridis
+EG_IsoVir_23082024_genomic.file_location : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Isotoma_viridis/vcf/reference/EG_IsoVir_23082024_genomic.fna
+EG_IsoVir_23082024_genomic.addition_date : 05/03/2025
+EG_IsoVir_23082024_genomic.data_directory : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Isotoma_viridis/vcf/snpeff/data/EG_IsoVir_23082024_genomic
+
+# Orchesella villosa genome, EG_OrcVil_23072024_genomic.fna
+EG_OrcVil_23072024_genomic.genome : Orchesella villosa
+EG_OrcVil_23072024_genomic.file_location : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Orchesella_villosa/vcf/reference/EG_OrcVil_23072024_genomic.fna
+EG_OrcVil_23072024_genomic.addition_date : 05/03/2025
+EG_OrcVil_23072024_genomic.data_directory : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Orchesella_villosa/vcf/snpeff/data/EG_OrcVil_23072024_genomic
+
+# Entomobrya nicoleti genome, EG_EntNic_05092024_genomic.fna
+EG_EntNic_05092024_genomic.genome : Entomobrya nicoleti
+EG_EntNic_05092024_genomic.file_location : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/vcf/reference/EG_EntNic_05092024_genomic.fna
+EG_EntNic_05092024_genomic.addition_date : 05/03/2025
+EG_EntNic_05092024_genomic.data_directory : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Entomobrya_nicoleti/vcf/snpeff/data/EG_EntNic_05092024_genomic
+
+# Aglais urticae genome, GCA_905147175.2_ilAglUrti1.2_genomic.fna
+GCA_905147175.2_ilAglUrti1.2_genomic.genome : Aglais urticae
+GCA_905147175.2_ilAglUrti1.2_genomic.file_location : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/museomics/steps/butterflies/Aglais_urticae/vcf/reference/GCA_905147175.2_ilAglUrti1.2_genomic.fna
+GCA_905147175.2_ilAglUrti1.2_genomic.addition_date : 01/04/2025
+GCA_905147175.2_ilAglUrti1.2_genomic.data_directory : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/museomics/steps/butterflies/Aglais_urticae/vcf/snpeff/data/GCA_905147175.2_ilAglUrti1.2_genomic
+
+# Maniola jurtina genome, GCF_905333055.1_ilManJurt1.1_genomic.fna
+GCF_905333055.1_ilManJurt1.1_genomic.genome : Maniola jurtina
+GCF_905333055.1_ilManJurt1.1_genomic.file_location : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/museomics/steps/butterflies/Maniola_jurtina/vcf/reference/GCF_905333055.1_ilManJurt1.1_genomic.fna
+GCF_905333055.1_ilManJurt1.1_genomic.addition_date : 07/04/2025
+GCF_905333055.1_ilManJurt1.1_genomic.data_directory : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/museomics/steps/butterflies/Maniola_jurtina/vcf/snpeff/data/GCF_905333055.1_ilManJurt1.1_genomic
+
+# Gonepteryx rhamni genome, EG_GonRha_22032024_genomic.fna
+EG_GonRha_22032024_genomic.genome : Gonepteryx rhamni
+EG_GonRha_22032024_genomic.file_location : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/museomics/steps/butterflies/Gonepteryx_rhamni/vcf/reference/EG_GonRha_22032024_genomic.fna
+EG_GonRha_22032024_genomic.addition_date : 07/04/2025
+EG_GonRha_22032024_genomic.data_directory : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/museomics/steps/butterflies/Gonepteryx_rhamni/vcf/snpeff/data/EG_GonRha_22032024_genomic
+
+# Coenonympha tulia genome, EG_CoeTul_15102024_genomic.fna
+EG_CoeTul_15102024_genomic.genome : Coenonympha tulia
+EG_CoeTul_15102024_genomic.file_location : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/museomics/steps/butterflies/Coenonympha_tulia/vcf/reference/EG_CoeTul_15102024_genomic.fna
+EG_CoeTul_15102024_genomic.addition_date : 07/04/2025
+EG_CoeTul_15102024_genomic.data_directory : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/museomics/steps/butterflies/Coenonympha_tulia/vcf/snpeff/data/EG_CoeTul_15102024_genomic
+
+# Pieris napi genome, GCF_905475465.1_ilPieNapi1.2_genomic.fna
+GCF_905475465.1_ilPieNapi1.2_genomic.genome : Pieris napi
+GCF_905475465.1_ilPieNapi1.2_genomic.file_location : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/museomics/steps/butterflies/Pieris_napi/vcf/reference/GCF_905475465.1_ilPieNapi1.2_genomic.fna
+GCF_905475465.1_ilPieNapi1.2_genomic.addition_date : 08/04/2025
+GCF_905475465.1_ilPieNapi1.2_genomic.data_directory : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/museomics/steps/butterflies/Pieris_napi/vcf/snpeff/data/GCF_905475465.1_ilPieNapi1.2_genomic
+
+# Thymelicus lineola genome, EG_ThyLin_01052024_genomic.fna
+EG_ThyLin_01052024_genomic.genome : Thymelicus lineola
+EG_ThyLin_01052024_genomic.file_location : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/museomics/steps/butterflies/Thymelicus_lineola/vcf/reference/EG_ThyLin_01052024_genomic.fna
+EG_ThyLin_01052024_genomic.addition_date : 08/04/2025
+EG_ThyLin_01052024_genomic.data_directory : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/museomics/steps/butterflies/Thymelicus_lineola/vcf/snpeff/data/EG_ThyLin_01052024_genomic
+
+# Lycaena virgaureae genome, EG_LycVir_01052024_genomic_haplotype1.fna
+EG_LycVir_01052024_genomic_haplotype1.genome : Lycaena virgaureae
+EG_LycVir_01052024_genomic_haplotype1.file_location : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/museomics/steps/butterflies/Lycaena_virgaureae/vcf/reference/EG_LycVir_01052024_genomic_haplotype1.fna
+EG_LycVir_01052024_genomic_haplotype1.addition_date : 19/05/2025
+EG_LycVir_01052024_genomic_haplotype1.data_directory : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/museomics/steps/butterflies/Lycaena_virgaureae/vcf/snpeff/data/EG_LycVir_01052024_genomic_haplotype1
+
+# Pogonognathellus flavescens genome, EG_PogFla_23072024_genomic.fna
+EG_PogFla_23072024_genomic.genome : Pogonognathellus flavescens
+EG_PogFla_23072024_genomic.file_location : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Pogonognathellus_flavescens/vcf_allSites/reference/EG_PogFla_23072024_genomic.fna
+EG_PogFla_23072024_genomic.addition_date : 15/10/2025
+EG_PogFla_23072024_genomic.data_directory : /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps/collembola/Pogonognathellus_flavescens/vcf_allSites/snpeff/data/EG_PogFla_23072024_genomic
+

@@ -71,11 +71,11 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 	# For this workflow in can occur when cancatenating massively parallellised task, eg. create the VCF parts.
 	# To alleviate the issue, multiple concatenation jobs will be created so that no concatenation has more than 5000 dependencies.
 	nPartitions = len(partitions)
-	segmentSize = 5000
+	segmentSize = 1000
 	nSegments = int(round(nPartitions / segmentSize, 0) + 1) if (nPartitions / segmentSize > round(nPartitions / segmentSize, 0)) else int(round(nPartitions / segmentSize, 0))
 
-	topDir = f'{WORK_DIR}/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}/vcf/allSites' if TAXONOMY else f'{WORK_DIR}/{SPECIES_NAME.replace(" ", "_")}/vcf/allSites'
-	topOut = f'{OUTPUT_DIR}/vcf/allSites/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}' if TAXONOMY else f'{OUTPUT_DIR}/vcf/allSites/{SPECIES_NAME.replace(" ", "_")}'
+	topDir = f'{WORK_DIR}/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}/vcf_allSites' if TAXONOMY else f'{WORK_DIR}/{SPECIES_NAME.replace(" ", "_")}/vcf_allSites'
+	topOut = f'{OUTPUT_DIR}/vcf_allSites/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}' if TAXONOMY else f'{OUTPUT_DIR}/vcf_allSites/{SPECIES_NAME.replace(" ", "_")}'
 
 	setupDict = {group['groupName'].lower().replace(' ', '_'): {'name': group['groupName'].lower().replace(' ', '_'),
 				  												'status': group['groupStatus'].lower() if group['groupStatus'] else 'i',
@@ -328,7 +328,7 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 						name=f'concatenate_freebayes_vcf_{setupDict[group]['name']}_{sampleName.replace("-", "_")}',
 						template=concat_vcf(
 							files=collect(freebayesPartitionSingle.outputs, ['vcf'])['vcfs'],
-							outputName=f'{sampleName}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
+							outputName=f'{sampleName}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_F{FREEBAYES_MINALTFRC}_C{FREEBAYES_MINALTCNT}',
 							outputDirectory=f'{topOut}/{setupDict[group]['name']}/{sampleName}' if OUTPUT_DIR else f'{topDir}/raw_vcf/{setupDict[group]['name']}/{sampleName}',
 							compress=True
 						)
@@ -345,7 +345,7 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 							name=f'concatenate_freebayes_vcf_{setupDict[group]['name']}_{sampleName.replace("-", "_")}_segment_{i+1}',
 							template=concat_vcf(
 								files=collection[start : end],
-								outputName=f'{sampleName}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}.segment{i+1}',
+								outputName=f'{sampleName}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_F{FREEBAYES_MINALTFRC}_C{FREEBAYES_MINALTCNT}.segment{i+1}',
 								outputDirectory=f'{topDir}/raw_vcf/{setupDict[group]['name']}/{sampleName}/tmp',
 								compress=True
 							)
@@ -363,7 +363,7 @@ def freebayes_population_set_workflow(configFile: str = glob.glob('*config.y*ml'
 						name=f'concatenate_freebayes_vcf_{setupDict[group]['name']}_{sampleName.replace("-", "_")}_complete',
 						template=concat_vcf(
 							files=segmentList,
-							outputName=f'{sampleName}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_minaltfrc{FREEBAYES_MINALTFRC}_minaltcnt{FREEBAYES_MINALTCNT}_singlecall',
+							outputName=f'{sampleName}.freebayes_n{FREEBAYES_BESTN}_p{FREEBAYES_PLOIDY}_F{FREEBAYES_MINALTFRC}_C{FREEBAYES_MINALTCNT}',
 							outputDirectory=f'{topOut}/{setupDict[group]['name']}/{sampleName}' if OUTPUT_DIR else f'{topDir}/raw_vcf/{setupDict[group]['name']}/{sampleName}',
 							compress=True
 						)

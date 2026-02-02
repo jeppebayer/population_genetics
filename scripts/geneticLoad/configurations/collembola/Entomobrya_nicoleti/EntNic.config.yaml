@@ -1,8 +1,30 @@
-# The name of the relevant project account.
+# (str). The name of the relevant project account.
 account: EcoGenetics
-# Name of species being analyzed
+# (str). Conda environment for...
+condaEnvironment01: popgen
+# (str). Conda environment for...
+condaEnvironment02: snpgenie
+# (str). Taxonomic group. Can be left empty.
+taxonomicGroup: Collembola
+# (str). Name of species being analyzed.
 speciesName: Entomobrya nicoleti
-# Directory for intermediary files.
-workingDirectoryPath: 
-# Directory for final output files.
+# (str). Directory for intermediary files.
+workingDirectoryPath: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps
+# (str). Directory for final output files. (If left empty, output file will be placed within 'workingDirectoryPath').
 outputDirectoryPath: 
+# (str.) Path to reference genome file.
+referenceGenome: /faststorage/project/EcoGenetics/BACKUP/population_genetics/reference_genomes/collembola/Entomobrya_nicoleti/EG_EntNic_05092024_genomic.fna
+# (str). Genome annotation file in GTF format.
+annotationFile: /faststorage/project/EcoGenetics/BACKUP/population_genetics/reference_genomes/collembola/Entomobrya_nicoleti/annotation/EG_EntNic_05092024_genomic.gtf
+# (list). Sample setup.
+sampleSetup:
+  -
+    # (str). Name of sample group.
+    groupName: Grassland
+    # (str). Path to VCF file.
+    vcfFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/vcf_allSites/collembola/Entomobrya_nicoleti/grassland/EntNic.grassland.ingroup.allQuality.freebayes.merge.normalized.filtered_DP200-668.ann.vcf.gz
+  -
+    # (str). Name of sample group.
+    groupName: Conservation agriculture
+    # (str). Path to VCF file.
+    vcfFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/vcf_allSites/collembola/Entomobrya_nicoleti/conservation_agriculture/EntNic.conservation_agriculture.ingroup.allQuality.freebayes.merge.normalized.filtered_DP200-608.ann.vcf.gz

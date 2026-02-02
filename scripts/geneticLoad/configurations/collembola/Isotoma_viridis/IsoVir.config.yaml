@@ -1,0 +1,35 @@
+# (str). The name of the relevant project account.
+account: EcoGenetics
+# (str). Conda environment for...
+condaEnvironment01: popgen
+# (str). Conda environment for...
+condaEnvironment02: snpgenie
+# (str). Taxonomic group. Can be left empty.
+taxonomicGroup: Collembola
+# (str). Name of species being analyzed.
+speciesName: Isotoma viridis
+# (str). Directory for intermediary files.
+workingDirectoryPath: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps
+# (str). Directory for final output files. (If left empty, output file will be placed within 'workingDirectoryPath').
+outputDirectoryPath: 
+# (str.) Path to reference genome file.
+referenceGenome: /faststorage/project/EcoGenetics/BACKUP/population_genetics/reference_genomes/collembola/Isotoma_viridis/EG_IsoVir_23082024_genomic.fna
+# (str). Genome annotation file in GTF format.
+annotationFile: /faststorage/project/EcoGenetics/BACKUP/population_genetics/reference_genomes/collembola/Isotoma_viridis/annotation/EG_IsoVir_23082024_genomic.gtf
+# (list). Sample setup.
+sampleSetup:
+  -
+    # (str). Name of sample group.
+    groupName: Grassland
+    # (str). Path to VCF file.
+    vcfFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/vcf_allSites/collembola/Isotoma_viridis/grassland/IsoVir.grassland.ingroup.allQuality.freebayes.merge.normalized.filtered_DP200-668.ann.vcf.gz
+  -
+    # (str). Name of sample group.
+    groupName: Conventional agriculture
+    # (str). Path to VCF file.
+    vcfFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/vcf_allSites/collembola/Isotoma_viridis/conventional_agriculture/IsoVir.conventional_agriculture.ingroup.allQuality.freebayes.merge.normalized.filtered_DP200-716.ann.vcf.gz
+  -
+    # (str). Name of sample group.
+    groupName: Conservation agriculture
+    # (str). Path to VCF file.
+    vcfFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/vcf_allSites/collembola/Isotoma_viridis/conservation_agriculture/IsoVir.conservation_agriculture.ingroup.allQuality.freebayes.merge.normalized.filtered_DP200-568.ann.vcf.gz

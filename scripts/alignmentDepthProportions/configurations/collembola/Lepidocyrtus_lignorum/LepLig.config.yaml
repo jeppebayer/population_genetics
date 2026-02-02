@@ -19,48 +19,22 @@ sampleList:
     lowerCoverageThreshold: 200
     # (list). List of paths to BAM files.
     bamFileList:
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/grassland/LepLig_aaRJ-C207/LepLig_aaRJ-C207.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/grassland/LepLig_BRS-C269/LepLig_BRS-C269.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/grassland/LepLig_FaaJ-C8/LepLig_FaaJ-C8.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/grassland/LepLig_FHJ-C92/LepLig_FHJ-C92.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/grassland/LepLig_FUR-C231/LepLig_FUR-C231.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/grassland/LepLig_GoeJ-C242/LepLig_GoeJ-C242.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/grassland/LepLig_GSJ-C273/LepLig_GSJ-C273.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/grassland/LepLig_HHJ-C215/LepLig_HHJ-C215.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/grassland/LepLig_JEJ-C18/LepLig_JEJ-C18.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/grassland/LepLig_KOS-C181/LepLig_KOS-C181.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/grassland/LepLig_LEJ-C243/LepLig_LEJ-C243.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/grassland/LepLig_LVJ-C78/LepLig_LVJ-C78.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/grassland/LepLig_MYS-C39/LepLig_MYS-C39.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/grassland/LepLig_RES-C286/LepLig_RES-C286.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/grassland/LepLig_SHJ-C9/LepLig_SHJ-C9.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/grassland/LepLig_SKS-C106/LepLig_SKS-C106.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/grassland/LepLig_SSJ-C258/LepLig_SSJ-C258.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/grassland/LepLig_VAJ-C10/LepLig_VAJ-C10.filtered.bam
-  - 
-    # (str). Name of sample group.
-    groupName: Conventional agriculture
-    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
-    lowerCoverageThreshold: 200
-    # (list). List of paths to BAM files.
-    bamFileList:
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/conventional_agriculture/LepLig_K-JES-C324/LepLig_K-JES-C324.filtered.bam
-  - 
-    # (str). Name of sample group.
-    groupName: Conservation agriculture
-    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
-    lowerCoverageThreshold: 200
-    # (list). List of paths to BAM files.
-    bamFileList:
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/conservation_agriculture/LepLig_CA-FS6J-C90/LepLig_CA-FS6J-C90.filtered.bam
-  - 
-    # (str). Name of sample group.
-    groupName: Outgroup Entomobrya nivalis
-    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
-    lowerCoverageThreshold: 20
-    # (list). List of paths to BAM files.
-    bamFileList:
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/outgroup_entomobrya_nicoleti/EntNic_aaRJ-C225/EntNic_aaRJ-C225.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/outgroup_entomobrya_nicoleti/EntNic_CA-ToeJ-C85/EntNic_CA-ToeJ-C85.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/outgroup_entomobrya_nicoleti/EntNic_GSJ-C274/EntNic_GSJ-C274.filtered.bam
-      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum/outgroup_entomobrya_nicoleti/EntNic_K-JES-C323/EntNic_K-JES-C323.filtered.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_aaRJ-C207/LepLig_aaRJ-C207.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_BRS-C269/LepLig_BRS-C269.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_FaaJ-C8/LepLig_FaaJ-C8.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_FHJ-C92/LepLig_FHJ-C92.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_FUR-C231/LepLig_FUR-C231.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_GoeJ-C242/LepLig_GoeJ-C242.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_GSJ-C273/LepLig_GSJ-C273.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_HHJ-C215/LepLig_HHJ-C215.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_JEJ-C18/LepLig_JEJ-C18.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_KOS-C181/LepLig_KOS-C181.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_LEJ-C243/LepLig_LEJ-C243.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_LVJ-C78/LepLig_LVJ-C78.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_MYS-C39/LepLig_MYS-C39.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_RES-C286/LepLig_RES-C286.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_SHJ-C9/LepLig_SHJ-C9.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_SKJ-C102/LepLig_SKJ-C102.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_SKS-C106/LepLig_SKS-C106.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_SSJ-C258/LepLig_SSJ-C258.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_VAJ-C10/LepLig_VAJ-C10.filtered_bamutils.bam

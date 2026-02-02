@@ -1,5 +1,6 @@
 #!/bin/env python3
 from gwf import AnonymousTarget
+from gwf.executors import Conda
 import os, glob
 
 ########################## Functions ##########################
@@ -174,6 +175,81 @@ def adapterremoval_pairedend(sample_name: str, read1_files: list, read2_files: l
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
+def adapterremoval_pairedend_no_collapse(sample_name: str, read1_files: list, read2_files: list, output_directory: str, min_quality: int = 25, min_length: int = 20, adapter1: str = 'AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA', adapter2: str = 'AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG'):
+	"""
+	Template: Remove remnant adapter sequences from read data using :script:`AdapterRemoval`.
+	
+	Template I/O::
+	
+		inputs = {'read1': read1_files, 'read2': read2_files}
+		outputs = {'pair1': *.pair1.truncated, 'pair2': *.pair2.truncated.,
+			   'collapsed': [*.collapsed, *.collapsed.truncated],
+			   'misc': [*.settings, *.singleton.truncated, *.discarded]}
+	
+	:param str sample_name:
+		Name of sample.
+	:param list read1_files:
+		List of mate 1 read files.
+	:param lsit read2_files:
+		List of mate 2 read files.
+	:param str output_directory:
+		Path to output directory.
+	:param int min_quality:
+		Minimum quality score to include when trimming 5'/3' termini.
+	:param int min_length:
+		Minimum length of reads to keep after trimming.
+	:param str adapter1:
+		Adapter sequence expected to be found in mate 1 reads.
+	:param str adapter2:
+		Adapter sequence expected to be found in mate 2 reads.
+	"""
+	inputs = {'read1': read1_files,
+		   	  'read2': read2_files}
+	outputs = {'pair1': f'{output_directory}/adapterremoval_no_collapse/{sample_name}/{sample_name}.pair1.truncated',
+			   'pair2':f'{output_directory}/adapterremoval_no_collapse/{sample_name}/{sample_name}.pair2.truncated',
+			   'misc': [f'{output_directory}/adapterremoval_no_collapse/{sample_name}/{sample_name}.settings',
+			   			f'{output_directory}/adapterremoval_no_collapse/{sample_name}/{sample_name}.singleton.truncated',
+			   			f'{output_directory}/adapterremoval_no_collapse/{sample_name}/{sample_name}.discarded']}
+	options = {
+		'cores': 16,
+		'memory': '60g',
+		'walltime': '12:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {output_directory}/adapterremoval_no_collapse/{sample_name} ] || mkdir -p {output_directory}/adapterremoval_no_collapse/{sample_name}
+	
+	AdapterRemoval \\
+		--threads {options['cores']} \\
+		--file1 {' '.join(read1_files)} \\
+		--file2 {' '.join(read2_files)} \\
+		--adapter1 {adapter1} \\
+		--adapter2 {adapter2} \\
+		--minquality {min_quality} \\
+		--minlength {min_length} \\
+		--basename {output_directory}/adapterremoval_no_collapse/{sample_name}/{sample_name}.prog \\
+		--trimns \\
+		--trimqualities
+	
+	mv {output_directory}/adapterremoval_no_collapse/{sample_name}/{sample_name}.prog.settings {outputs['misc'][0]}
+	mv {output_directory}/adapterremoval_no_collapse/{sample_name}/{sample_name}.prog.pair1.truncated {outputs['pair1']}
+	mv {output_directory}/adapterremoval_no_collapse/{sample_name}/{sample_name}.prog.pair2.truncated {outputs['pair2']}
+	mv {output_directory}/adapterremoval_no_collapse/{sample_name}/{sample_name}.prog.singleton.truncated {outputs['misc'][1]}
+	mv {output_directory}/adapterremoval_no_collapse/{sample_name}/{sample_name}.prog.discarded {outputs['misc'][2]}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
 def adapterremoval_singleend(sample_name: str, read_files: list, output_directory: str, min_qulaity: int = 25, min_length: int = 20, adapter1: str = 'AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA'):
 	"""
 	Template: Remove remnant adapter sequences from read data using :script:`AdapterRemoval`.
@@ -231,80 +307,6 @@ def adapterremoval_singleend(sample_name: str, read_files: list, output_director
 	mv {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog.settings {outputs['misc'][0]}
 	mv {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog.truncated {outputs['truncated']}
 	mv {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog.discarded {outputs['misc'][1]}
-	
-	echo "END: $(date)"
-	echo "$(jobinfo "$SLURM_JOBID")"
-	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
-
-def adapterremoval_pairedend_no_collapse(sample_name: str, read1_files: list, read2_files: list, output_directory: str, min_quality: int = 25, min_length: int = 20, adapter1: str = 'AAGTCGGAGGCCAAGCGGTCTTAGGAAGACAA', adapter2: str = 'AAGTCGGATCGTAGCCATGTCGTTCTGTGAGCCAAGGAGTTG'):
-	"""
-	Template: Remove remnant adapter sequences from read data using :script:`AdapterRemoval`.
-	
-	Template I/O::
-	
-		inputs = {'read1': read1_files, 'read2': read2_files}
-		outputs = {'pair1': *.pair1.truncated, 'pair2': *.pair2.truncated.,
-			   'misc': [*.settings, *.singleton.truncated, *.discarded]}
-	
-	:param str sample_name:
-		Name of sample.
-	:param list read1_files:
-		List of mate 1 read files.
-	:param lsit read2_files:
-		List of mate 2 read files.
-	:param str output_directory:
-		Path to output directory.
-	:param int min_quality:
-		Minimum quality score to include when trimming 5'/3' termini.
-	:param int min_length:
-		Minimum length of reads to keep after trimming.
-	:param str adapter1:
-		Adapter sequence expected to be found in mate 1 reads.
-	:param str adapter2:
-		Adapter sequence expected to be found in mate 2 reads.
-	"""
-	inputs = {'read1': read1_files,
-		   	  'read2': read2_files}
-	outputs = {'pair1': f'{output_directory}/adapterremoval/{sample_name}/{sample_name}.pair1.truncated',
-			   'pair2':f'{output_directory}/adapterremoval/{sample_name}/{sample_name}.pair2.truncated',
-			   'misc': [f'{output_directory}/adapterremoval/{sample_name}/{sample_name}.settings',
-			   			f'{output_directory}/adapterremoval/{sample_name}/{sample_name}.singleton.truncated',
-			   			f'{output_directory}/adapterremoval/{sample_name}/{sample_name}.discarded']}
-	options = {
-		'cores': 16,
-		'memory': '60g',
-		'walltime': '20:00:00'
-	}
-	spec = f"""
-	# Sources environment
-	if [ "$USER" == "jepe" ]; then
-		source /home/"$USER"/.bashrc
-		source activate popgen
-	fi
-	
-	echo "START: $(date)"
-	echo "JobID: $SLURM_JOBID"
-	
-	[ -d {output_directory}/adapterremoval/{sample_name} ] || mkdir -p {output_directory}/adapterremoval/{sample_name}
-	
-	AdapterRemoval \\
-		--threads {options['cores']} \\
-		--file1 {' '.join(read1_files)} \\
-		--file2 {' '.join(read2_files)} \\
-		--adapter1 {adapter1} \\
-		--adapter2 {adapter2} \\
-		--minquality {min_quality} \\
-		--minlength {min_length} \\
-		--basename {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog \\
-		--trimns \\
-		--trimqualities
-	
-	mv {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog.settings {outputs['misc'][0]}
-	mv {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog.pair1.truncated {outputs['pair1']}
-	mv {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog.pair2.truncated {outputs['pair2']}
-	mv {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog.singleton.truncated {outputs['misc'][1]}
-	mv {output_directory}/adapterremoval/{sample_name}/{sample_name}.prog.discarded {outputs['misc'][2]}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
@@ -747,75 +749,7 @@ def samtools_stats(alignment_file: str, output_directory: str):
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def samtools_stats_no_overlaps(alignment_file: str, output_directory: str):
-	"""
-	Template: Create various basic statistics on alignment using :script:`samtools`.
-	
-	Template I/O::
-	
-		inputs = {'alignment': alignment_file}
-		outputs = {'stats': [*.idxstats, *.flagstat, *.coverage, *.stats]}
-	
-	:param str alignment_file:
-		Path to input alignment file.
-	:param str output_directory:
-		Path to output directory.
-	"""
-	inputs = {'alignment': alignment_file}
-	outputs = {'stats': [f'{output_directory}/{os.path.basename(alignment_file)}.idxstats',
-						 f'{output_directory}/{os.path.basename(alignment_file)}.flagstat',
-						 f'{output_directory}/{os.path.basename(alignment_file)}.coverage',
-						 f'{output_directory}/{os.path.basename(alignment_file)}.stats']}
-	protect = outputs['stats']
-	options = {
-		'cores': 18,
-		'memory': '40g',
-		'walltime': '12:00:00'
-	}
-	spec = f"""
-	# Sources environment
-	if [ "$USER" == "jepe" ]; then
-		source /home/"$USER"/.bashrc
-		source activate popgen
-	fi
-	
-	echo "START: $(date)"
-	echo "JobID: $SLURM_JOBID"
-	
-	[ -d {output_directory} ] || mkdir -p {output_directory}
-	
-	samtools idxstats \\
-		--threads {options['cores'] - 1} \\
-		{alignment_file} \\
-		> {output_directory}/{os.path.basename(alignment_file)}.prog.idxstats
-	
-	samtools flagstat \\
-		--threads {options['cores'] - 1} \\
-		{alignment_file} \\
-		> {output_directory}/{os.path.basename(alignment_file)}.prog.flagstat
-
-	samtools coverage \\
-		-o {output_directory}/{os.path.basename(alignment_file)}.prog.coverage \\
-		{alignment_file}
-	
-	samtools stats \\
-		--threads {options['cores'] - 1} \\
-		--coverage 1,1000,1 \\
-		--remove-overlaps \\
-		{alignment_file} \\
-		> {output_directory}/{os.path.basename(alignment_file)}.prog.stats
-
-	mv {output_directory}/{os.path.basename(alignment_file)}.prog.idxstats {outputs['stats'][0]}
-	mv {output_directory}/{os.path.basename(alignment_file)}.prog.flagstat {outputs['stats'][1]}
-	mv {output_directory}/{os.path.basename(alignment_file)}.prog.coverage {outputs['stats'][2]}
-	mv {output_directory}/{os.path.basename(alignment_file)}.prog.stats {outputs['stats'][3]}
-	
-	echo "END: $(date)"
-	echo "$(jobinfo "$SLURM_JOBID")"
-	"""
-	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
-
-def samtools_filter(alignment_file: str, sample_name: str, output_directory: str, flags_excluded: int | None = 3852, flags_required: int | None = 3, min_mq: int = 20):
+def samtools_filter(alignment_file: str, sample_name: str, output_directory: str, flags_excluded: int | None = 3844, flags_required: int | None = None, min_mq: int = 20):
 	"""
 	Template: Filter alignment file using :script:`samtools`.
 	
@@ -988,7 +922,7 @@ def qualimap_multi(dataset: list, output_directory: str):
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
 
-def bamutil_clipoverlap(bamFile: str, sampleName: str, outputDirectory: str):
+def per_site_coverage(bamFiles: list, outputName: str, outputDirectory: str):
 	"""
 	Template: template_description
 	
@@ -999,16 +933,60 @@ def bamutil_clipoverlap(bamFile: str, sampleName: str, outputDirectory: str):
 	
 	:param
 	"""
-	outputDirectory = f'{outputDirectory}/{sampleName}'
-	filename = os.path.basename(os.path.splitext(os.path.splitext(bamFile)[0])[0]) if bamFile.endswith('.gz') else os.path.basename(os.path.splitext(bamFile)[0])
-	inputs = {bamFile}
-	outputs = {'bam': f'{outputDirectory}/{filename}.clipOverlap.bam',
-			   'index': f'{outputDirectory}/{filename}.clipOverlap.bam.bai',
-			   'stats': f'{outputDirectory}/{filename}.clipOverlap.bam.stats'}
+	outputDirectory = f'{outputDirectory}'
+	inputs = {'bam': bamFiles}
+	outputs = {'depth': f'{outputDirectory}/{outputName}.depth.gz'}
 	options = {
-		'cores': 5,
-		'memory': '20g',
-		'walltime': '08:00:00'
+		'cores': 20,
+		'memory': '50g',
+		'walltime': '10:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+	samtools depth \\
+		-@ {options['cores'] - 1} \\
+		-aa \\
+		{' '.join(bamFiles)} \\
+	| bgzip \\
+		--threads {options['cores']} \\
+		--stdout \\
+		> {outputDirectory}/{outputName}.prog.depth.gz
+	
+	mv {outputDirectory}/{outputName}.prog.depth.gz {outputs['depth']}
+
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def insert_size(bamFile: str, outputName: str, outputDirectory: str):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	outputDirectory = f'{outputDirectory}/insert_size'
+	inputs = {'bam': bamFile}
+	outputs = {'insert': f'{outputDirectory}/{outputName}.insertSize.gz'}
+	options = {
+		'cores': 1,
+		'memory': '10g',
+		'walltime': '10:00:00'
 	}
 	spec = f"""
 	# Sources environment
@@ -1022,22 +1000,243 @@ def bamutil_clipoverlap(bamFile: str, sampleName: str, outputDirectory: str):
 	
 	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
 	
-	bam clipOverlap \\
-		--stats \\
-		--in {bamFile} \\
-		--out {outputDirectory}/{filename}.clipOverlap.prog.bam \\
-		2> \\
-		>(tee \\
-			{outputDirectory}/{filename}.clipOverlap.bam.prog.stats)
-
-	samtools index \\
-		--bai \\
-		{outputDirectory}/{filename}.clipOverlap.prog.bam
-
-	mv {outputDirectory}/{filename}.clipOverlap.prog.bam {outputs['bam']}
-	mv {outputDirectory}/{filename}.clipOverlap.prog.bam.bai {outputs['index']}
-	mv {outputDirectory}/{filename}.clipOverlap.bam.prog.stats {outputs['stats']}
+	samtools view \\
+		--require-flags 2 \\
+		{bamFile} \\
+	| awk \\
+		'BEGIN{{
+			FS = OFS = "\\t"
+		}}
+		{{
+			if ($9 > 0)
+			{{
+				print $3, $9
+			}}
+		}}' \\
+		- \\
+	| bgzip \\
+		--stdout \\
+		> {outputDirectory}/{outputName}.insertSize.prog.gz
 	
+	mv {outputDirectory}/{outputName}.insertSize.prog.gz {outputs['insert']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
+def depth_distribution(bamFile: str, lowerThreshold: int, outputDirectory: str, sampleName: str, additionalOptions = '', depthDistribution: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/depthDistribution.py'):
+	"""
+	Template: Determine the coverage needed to capture various fractions of the data.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'bam': bamFile}
+	outputs = {'png': f'{outputDirectory}/{sampleName}.png'}
+	protect = [outputs['png']]
+	options = {
+		'cores': 10,
+		'memory': '50g',
+		'walltime': '06:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+	samtools depth \\
+		--threads {options['cores'] - 1} \\
+		{additionalOptions} \\
+		{bamFile} \\
+	| python {depthDistribution} \\
+		- \\
+		{sampleName} \\
+		{lowerThreshold} \\
+		{outputDirectory}/{sampleName}.prog
+	
+	mv {outputDirectory}/{sampleName}.prog.png {outputs['png']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+
+def insert_size_distribution(insertSizeFile: str, outputDirectory: str, sampleName: str, insertDistribution: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/insertSizeDistribution.py'):
+	"""
+	Template: Determine the coverage needed to capture various fractions of the data.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'bam': insertSizeFile}
+	outputs = {'png': f'{outputDirectory}/{sampleName}.png'}
+	protect = [outputs['png']]
+	options = {
+		'cores': 20,
+		'memory': '50g',
+		'walltime': '06:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+	python {insertDistribution} \\
+		{insertSizeFile} \\
+		{sampleName} \\
+		{outputDirectory}/{sampleName}.prog
+	
+	mv {outputDirectory}/{sampleName}.prog.png {outputs['png']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+
+def depth_along_reference(bamFile: str, outputDirectory: str, sampleName: str, depthAlongRef: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/depthAlongRef.py'):
+	"""
+	Template: Determine the coverage needed to capture various fractions of the data.
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	inputs = {'bam': bamFile}
+	outputs = {'png': f'{outputDirectory}/{sampleName}.png'}
+	protect = [outputs['png']]
+	options = {
+		'cores': 10,
+		'memory': '50g',
+		'walltime': '06:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+	
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+	samtools depth \\
+		--threads {options['cores'] - 1} \\
+		-aa \\
+		{bamFile} \\
+	| python {depthAlongRef} \\
+		- \\
+		{sampleName} \\
+		{outputDirectory}/{sampleName}.prog
+	
+	mv {outputDirectory}/{sampleName}.prog.png {outputs['png']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, protect=protect, options=options, spec=spec)
+
+def result_report(sampleName: str, preFlagstatCollapse: str, preStatsCollapse: str, preDepthDistributionCollapse: str, preDepthAlongReferenceCollapse: str, postFlagstatCollapse: str, postStatsCollapse: str, postDepthDistributionCollapse: str, postDepthAlongReferenceCollapse: str,
+				  preFlagstatDiscard: str, preStatsDiscard: str, preDepthDistributionDiscard: str, preDepthAlongReferenceDiscard: str, postFlagstatDiscard: str, postStatsDiscard: str, postDepthDistributionDiscard: str, postDepthAlongReferenceDiscard: str,
+				  preFlagstatIgnore: str, preStatsIgnore: str, preDepthDistributionIgnore: str, preDepthAlongReferenceIgnore: str, postFlagstatIgnore: str, postStatsIgnore: str, postDepthDistributionIgnore: str, postDepthAlongReferenceIgnore: str, outputDirectory: str, report: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/report.sh'):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	outputDirectory = f'{outputDirectory}'
+	inputs = {preFlagstatCollapse, preStatsCollapse, preDepthDistributionCollapse, preDepthAlongReferenceCollapse, postFlagstatCollapse, postStatsCollapse, postDepthDistributionCollapse, postDepthAlongReferenceCollapse,
+			preFlagstatDiscard, preStatsDiscard, preDepthDistributionDiscard, preDepthAlongReferenceDiscard, postFlagstatDiscard, postStatsDiscard, postDepthDistributionDiscard, postDepthAlongReferenceDiscard,
+			preFlagstatIgnore, preStatsIgnore, preDepthDistributionIgnore, preDepthAlongReferenceIgnore, postFlagstatIgnore, postStatsIgnore, postDepthDistributionIgnore, postDepthAlongReferenceIgnore}
+	outputs = {'report': f'{outputDirectory}/{sampleName}.report.pdf'}
+	options = {
+		'cores': 1,
+		'memory': '30g',
+		'walltime': '02:00:00'
+	}
+	spec = f"""
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate popgen
+	fi
+
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+	bash {report} \\
+		{sampleName} \\
+		{preFlagstatCollapse} \\
+		{preStatsCollapse} \\
+		{preDepthDistributionCollapse} \\
+		{preDepthAlongReferenceCollapse} \\
+		{postFlagstatCollapse} \\
+		{postStatsCollapse} \\
+		{postDepthDistributionCollapse} \\
+		{postDepthAlongReferenceCollapse} \\
+		{preFlagstatDiscard} \\
+		{preStatsDiscard} \\
+		{preDepthDistributionDiscard} \\
+		{preDepthAlongReferenceDiscard} \\
+		{postFlagstatDiscard} \\
+		{postStatsDiscard} \\
+		{postDepthDistributionDiscard} \\
+		{postDepthAlongReferenceDiscard} \\
+		{preFlagstatIgnore} \\
+		{preStatsIgnore} \\
+		{preDepthDistributionIgnore} \\
+		{preDepthAlongReferenceIgnore} \\
+		{postFlagstatIgnore} \\
+		{postStatsIgnore} \\
+		{postDepthDistributionIgnore} \\
+		{postDepthAlongReferenceIgnore} \\
+		{outputDirectory}
+
+	
+	# Sources environment
+	if [ "$USER" == "jepe" ]; then
+		source /home/"$USER"/.bashrc
+		source activate html2pdf
+	fi
+	
+	wkhtmltopdf \\
+		{outputDirectory}/{sampleName}.report.html \\
+		{outputDirectory}/{sampleName}.report.pdf
+
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""

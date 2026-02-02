@@ -1,8 +1,25 @@
-# The name of the relevant project account.
+# (str). The name of the relevant project account.
 account: 
-# Name of species being analyzed
+# (str). Conda environment for...
+condaEnvironment01: 
+# (str). Conda environment for...
+condaEnvironment02: 
+# (str). Taxonomic group. Can be left empty.
+taxonomicGroup: 
+# (str). Name of species being analyzed.
 speciesName: 
-# Directory for intermediary files.
+# (str). Directory for intermediary files.
 workingDirectoryPath: 
-# Directory for final output files.
+# (str). Directory for final output files. (If left empty, output file will be placed within 'workingDirectoryPath').
 outputDirectoryPath: 
+# (str.) Path to reference genome file.
+referenceGenome: 
+# (str). Genome annotation file in GTF format.
+annotationFile: 
+# (list). Sample setup.
+sampleSetup:
+  -
+    # (str). Name of sample group.
+    groupName: 
+    # (str). Path to VCF file.
+    vcfFile: 

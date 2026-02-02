@@ -1,0 +1,48 @@
+# Tag identifying file association.
+TAG: jeppebayer:EcoGenetics,population_genetics,alignment,depth:workflowconfiguration
+# (str). The name of the relevant project account.
+account: EcoGenetics
+# (str). Taxonomic group. Can be left empty.
+taxonomicGroup: beetles
+# (str). Name of species being analyzed.
+speciesName: Sitona lineatus
+# (str). Directory for intermediary files.
+workingDirectoryPath: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps
+# (str). Directory for final output files. (If left empty, output file will be placed within 'workingDirectoryPath').
+outputDirectoryPath: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics
+# (list). Sample setup. List of dictionaries listing the configuration for each sample.
+sampleList:
+  - 
+    # (str). Name of sample group.
+    groupName: Grassland
+    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
+    lowerCoverageThreshold: 100
+    # (list). List of paths to BAM files.
+    bamFileList:
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/grassland/SitLin_aaRJ/SitLin_aaRJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/grassland/SitLin_BRS/SitLin_BRS.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/grassland/SitLin_DoeJ/SitLin_DoeJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/grassland/SitLin_DSJ/SitLin_DSJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/grassland/SitLin_FHJ/SitLin_FHJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/grassland/SitLin_FUR/SitLin_FUR.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/grassland/SitLin_HAS/SitLin_HAS.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/grassland/SitLin_HES/SitLin_HES.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/grassland/SitLin_JoeJ/SitLin_JoeJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/grassland/SitLin_JYS/SitLin_JYS.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/grassland/SitLin_KRS/SitLin_KRS.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/grassland/SitLin_ORoe/SitLin_ORoe.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/grassland/SitLin_RES/SitLin_RES.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/grassland/SitLin_SBJ/SitLin_SBJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/grassland/SitLin_SUJ/SitLin_SUJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/grassland/SitLin_ULJ/SitLin_ULJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/grassland/SitLin_UTJ/SitLin_UTJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/grassland/SitLin_VAJ/SitLin_VAJ.filtered.clipOverlap.bam
+  - 
+    # (str). Name of sample group.
+    groupName: Conservation agriculture
+    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
+    lowerCoverageThreshold: 100
+    # (list). List of paths to BAM files.
+    bamFileList:
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/conservation_agriculture/SitLin_CA-HVJ/SitLin_CA-HVJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Sitona_lineatus/conservation_agriculture/SitLin_CA-MoeJ/SitLin_CA-MoeJ.filtered.clipOverlap.bam

@@ -1,0 +1,32 @@
+# Tag identifying file association.
+TAG: jeppebayer:EcoGenetics,population_genetics,alignment,depth:workflowconfiguration
+# (str). The name of the relevant project account.
+account: EcoGenetics
+# (str). Taxonomic group. Can be left empty.
+taxonomicGroup: beetles
+# (str). Name of species being analyzed.
+speciesName: Tachyporus hypnorum
+# (str). Directory for intermediary files.
+workingDirectoryPath: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps
+# (str). Directory for final output files. (If left empty, output file will be placed within 'workingDirectoryPath').
+outputDirectoryPath: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics
+# (list). Sample setup. List of dictionaries listing the configuration for each sample.
+sampleList:
+  - 
+    # (str). Name of sample group.
+    groupName: Grassland
+    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
+    lowerCoverageThreshold: 100
+    # (list). List of paths to BAM files.
+    bamFileList:
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Tachyporus_hypnorum/grassland/TacHyp_BRS/TacHyp_BRS.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Tachyporus_hypnorum/grassland/TacHyp_FUR/TacHyp_FUR.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Tachyporus_hypnorum/grassland/TacHyp_HAS/TacHyp_HAS.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Tachyporus_hypnorum/grassland/TacHyp_KRS/TacHyp_KRS.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Tachyporus_hypnorum/grassland/TacHyp_MSJ/TacHyp_MSJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Tachyporus_hypnorum/grassland/TacHyp_SKJ/TacHyp_SKJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Tachyporus_hypnorum/grassland/TacHyp_STF/TacHyp_STF.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Tachyporus_hypnorum/grassland/TacHyp_STJ/TacHyp_STJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Tachyporus_hypnorum/grassland/TacHyp_TRJ/TacHyp_TRJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Tachyporus_hypnorum/grassland/TacHyp_ULJ/TacHyp_ULJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/beetles/Tachyporus_hypnorum/grassland/TacHyp_UTJ/TacHyp_UTJ.filtered.clipOverlap.bam

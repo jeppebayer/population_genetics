@@ -121,7 +121,7 @@ def mpileup_partitions_filelist(partitions: list, topDir: str, speciesName: str,
 	mpileupFilelists.append({'contig': contigName, 'mpileup_files': [f'{topDir}/tmp/mpileup/{species_abbreviation(speciesName)}_{num:0{nPad}}_{contigName}.mpileup' for num in range(start, partNum + 1)]})
 	return mpileupFilelists
 
-########################## Freebayes ##########################
+########################## Templates ##########################
 
 def index_reference_genome(referenceGenomeFile: str, outputDirectory: str):
 	"""

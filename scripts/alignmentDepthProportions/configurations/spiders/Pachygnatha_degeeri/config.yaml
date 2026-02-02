@@ -1,0 +1,53 @@
+# Tag identifying file association.
+TAG: jeppebayer:EcoGenetics,population_genetics,alignment,depth:workflowconfiguration
+# (str). The name of the relevant project account.
+account: EcoGenetics
+# (str). Taxonomic group. Can be left empty.
+taxonomicGroup: Spiders
+# (str). Name of species being analyzed.
+speciesName: Pachygnatha degeeri
+# (str). Directory for intermediary files.
+workingDirectoryPath: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps
+# (str). Directory for final output files. (If left empty, output file will be placed within 'workingDirectoryPath').
+outputDirectoryPath: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics
+# (list). Sample setup. List of dictionaries listing the configuration for each sample.
+sampleList:
+  - 
+    # (str). Name of sample group.
+    groupName: Grassland
+    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
+    lowerCoverageThreshold: 100
+    # (list). List of paths to BAM files.
+    bamFileList:
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_aeRoe/PacDeg_aeRoe.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_DoeJ/PacDeg_DoeJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_DSJ/PacDeg_DSJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_FHJ-1/PacDeg_FHJ-1.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_FHJ-2/PacDeg_FHJ-2.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_FUR/PacDeg_FUR.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_GEJ/PacDeg_GEJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_HaeS/PacDeg_HaeS.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_HHJ/PacDeg_HHJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_HYF/PacDeg_HYF.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_KLJ/PacDeg_KLJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_KoeJ/PacDeg_KoeJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_KRS/PacDeg_KRS.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_LVJ/PacDeg_LVJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_MSJ/PacDeg_MSJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_MYS/PacDeg_MYS.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_NYS/PacDeg_NYS.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_RMJ/PacDeg_RMJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_SBJ/PacDeg_SBJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_STF/PacDeg_STF.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_SUJ/PacDeg_SUJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_SUS/PacDeg_SUS.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_UTJ-1/PacDeg_UTJ-1.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/grassland/PacDeg_UTJ-2/PacDeg_UTJ-2.filtered.clipOverlap.bam
+  - 
+    # (str). Name of sample group.
+    groupName: Conventional agriculture
+    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
+    lowerCoverageThreshold: 100
+    # (list). List of paths to BAM files.
+    bamFileList:
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Pachygnatha_degeeri_BGI/conventional_agriculture/PacDeg_K-FLJ/PacDeg_K-FLJ.filtered.clipOverlap.bam

@@ -1,0 +1,40 @@
+# Tag identifying file association.
+TAG: jeppebayer:EcoGenetics,population_genetics,alignment,depth:workflowconfiguration
+# (str). The name of the relevant project account.
+account: EcoGenetics
+# (str). Taxonomic group. Can be left empty.
+taxonomicGroup: Spiders
+# (str). Name of species being analyzed.
+speciesName: Neottiura bimaculata
+# (str). Directory for intermediary files.
+workingDirectoryPath: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps
+# (str). Directory for final output files. (If left empty, output file will be placed within 'workingDirectoryPath').
+outputDirectoryPath: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics
+# (list). Sample setup. List of dictionaries listing the configuration for each sample.
+sampleList:
+  - 
+    # (str). Name of sample group.
+    groupName: Grassland
+    # (int). A lower coverage threshold for the identification of a coverage distribution peak.
+    lowerCoverageThreshold: 100
+    # (list). List of paths to BAM files.
+    bamFileList:
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_aaRJ/NeoBim_aaRJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_aeRoe/NeoBim_aeRoe.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_BIJ/NeoBim_BIJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_DoeJ/NeoBim_DoeJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_HAS/NeoBim_HAS.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_JHJ/NeoBim_JHJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_JYS/NeoBim_JYS.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_KOS/NeoBim_KOS.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_KRS/NeoBim_KRS.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_LEJ/NeoBim_LEJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_MOS/NeoBim_MOS.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_MSS/NeoBim_MSS.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_ORoe/NeoBim_ORoe.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_RDJ/NeoBim_RDJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_SHJ/NeoBim_SHJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_SSJ/NeoBim_SSJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_STF/NeoBim_STF.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_ULJ/NeoBim_ULJ.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/spiders/Neottiura_bimaculata/grassland/NeoBim_VIS/NeoBim_VIS.filtered.clipOverlap.bam
