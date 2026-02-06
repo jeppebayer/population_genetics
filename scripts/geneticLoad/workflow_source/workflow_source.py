@@ -41,7 +41,7 @@ def geneticLoad_workflow(configFile: str = glob.glob('*config.y*ml')[0]):
 
 	topDir = f'{WORK_DIR}/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}/genetic_load' if TAXONOMY else f'{WORK_DIR}/{SPECIES_NAME.replace(" ", "_")}/genetic_load'
 	topOut = f'{OUTPUT_DIR}/genetic_load/{TAXONOMY.replace(" ", "_")}/{SPECIES_NAME.replace(" ", "_")}' if TAXONOMY else f'{OUTPUT_DIR}/genetic_load/{SPECIES_NAME.replace(" ", "_")}'
-	
+
 	for sample in SAMPLE_SETUP:
 		GROUP_NAME: str = sample['groupName'].lower().replace(' ', '_')
 		VCF_FILE: str = sample['vcfFile']
@@ -54,6 +54,20 @@ def geneticLoad_workflow(configFile: str = glob.glob('*config.y*ml')[0]):
 				vcfFile=VCF_FILE,
 				gtfAnnotationFile=ANNOTATION_FILE,
 				speciesName=SPECIES_NAME,
+				outputDirectory=f'{topDir}/{GROUP_NAME}',
+				environment=CONDA_ENV_01,
+				group=GROUP_NAME
+			)
+		)
+
+		genomeInfo = gwf.target_from_template(
+			name=f'genome_information_{GROUP_NAME}',
+			template=genome_info(
+				referenceGenomeFile=REFERENCE_GENOME,
+				gtfAnnotationFile=ANNOTATION_FILE,
+				vcfFile=VCF_FILE,
+				speciesName=SPECIES_NAME,
+				groupName=GROUP_NAME,
 				outputDirectory=f'{topDir}/{GROUP_NAME}',
 				environment=CONDA_ENV_01,
 				group=GROUP_NAME

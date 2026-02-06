@@ -109,38 +109,50 @@ def snpeff_results(vcfFile: str, gtfAnnotationFile: str, speciesName: str, outpu
 			lofField = 7
 			nmdField = 8
 			genotypeFieldStart = 9
-			print "sample", "species", "chromosome", "position", "reference", "alternative", "ancestral", "geneName", "geneId", "effect", "impact", "frequency", "lofPoT", "lofNoT", "nmdPoT", "nmdNoT", "exonNum_exonTotal", "nAnnotations", "annotationRank", "geneRank" > '{outputDirectory}/{filename}.impact.prog.tsv'
+			print "sample", "species", "chromosome", "position", "reference", "alternative", "ancestral", "geneName", "geneId", "effect", "impact", "frequency", "lofPoT", "lofNoT", "nmdPoT", "nmdNoT", "exonNum_exonTotal", "nAnnotations", "annotationRank", "geneRank" > "{outputDirectory}/{filename}.impact.prog.tsv"
 		}}
 		{{
-			if ($4 == ".")
+			if ($altField == ".")
 			{{
 				next
 			}}
 
-	        gsub(/\\)/, "", $lofField)
-			lenLofArray = split($lofField, lofArray, "|")
-			if (lenLofArray == 1)
+			gsub(/\\)/, "", $lofField)
+			gsub(/\\(/, "", $lofField)
+			lenLofArray = split($lofField, lofArray, ",")
+			
+			for (lofGene in lofArray)
 			{{
-				lofGeneCheckName = "NA"
-			}}
-			else
-			{{
-				lofGeneCheckName = lofArray[1]
+				lenLofAnn = split(lofArray[lofGene], lofAnn, "|")
+				if (lenLofAnn == 1)
+				{{
+					lofGeneCheckArray[NA] = "NA|NA|0|0.00"
+				}}
+				else
+				{{
+					lofGeneCheckArray[lofAnn[1]] = lofArray[lofGene]
+				}}
 			}}
 
 			gsub(/\\)/, "", $nmdField)
-			lenNmdArray = split($nmdField, nmdArray, "|")
-			if (lenNmdArray == 1)
+			gsub(/\\(/, "", $nmdField)
+			lenNmdArray = split($nmdField, nmdArray, ",")
+
+			for (nmdGene in nmdArray)
 			{{
-				nmdGeneCheckName = "NA"
-			}}
-			else
-			{{
-				nmdGeneCheckName = nmdArray[1]
+				lenNmdAnn = split(nmdArray[nmdGene], nmdAnn, "|")
+				if (lenNmdAnn == 1)
+				{{
+					nmdGeneCheckArray[NA] = "NA|NA|0|0.00"
+				}}
+				else
+				{{
+					nmdGeneCheckArray[nmdAnn[1]] = nmdArray[nmdGene]
+				}}
 			}}
 
 			nAnnotations = split($annField, annotationsArray, ",")
-	        lastGene = ""
+			lastGene = ""
 
 			for (annNum = 1; annNum <= nAnnotations; annNum++)
 			{{
@@ -164,7 +176,7 @@ def snpeff_results(vcfFile: str, gtfAnnotationFile: str, speciesName: str, outpu
 
 				if (impact != "LOW" && impact != "MODERATE" && impact != "HIGH")
 				{{
-					next
+					continue
 				}}
 
 				if (length(rankTotal) == 0)
@@ -182,34 +194,48 @@ def snpeff_results(vcfFile: str, gtfAnnotationFile: str, speciesName: str, outpu
 					inGeneCount++
 				}}
 
-				if (geneName != lofGeneCheckName)
+				for (gene in lofGeneCheckArray)
 				{{
-					lofPoT = 0.00
-					lofNoT = 0
-					lofGeneName = "NA"
-					lofGeneId = "NA"
-				}}
-				else
-				{{
-					lofPoT = lofArray[4]
-					lofNoT = lofArray[3]
-					lofGeneName = lofArray[1]
-					lofGeneId = lofArray[2]
+					if (gene == geneName)
+					{{
+						split(lofGeneCheckArray[gene], currentLofGeneArray, "|")
+						lofPoT = currentLofGeneArray[4]
+						lofNoT = currentLofGeneArray[3]
+						lofGeneName = currentLofGeneArray[1]
+						lofGeneId = currentLofGeneArray[2]
+						break	
+					}}
+					if (gene == "NA")
+					{{
+						split(lofGeneCheckArray[gene], currentLofGeneArray, "|")
+						lofPoT = currentLofGeneArray[4]
+						lofNoT = currentLofGeneArray[3]
+						lofGeneName = currentLofGeneArray[1]
+						lofGeneId = currentLofGeneArray[2]
+						break
+					}}
 				}}
 
-				if (geneName != nmdGeneCheckName)
+				for (gene in nmdGeneCheckArray)
 				{{
-					nmdPoT = 0.00
-					nmdNoT = 0
-					nmdGeneName = "NA"
-					nmdGeneId = "NA"
-				}}
-				else
-				{{
-					nmdPoT = nmdArray[4]
-					nmdNoT = nmdArray[3]
-					nmdGeneName = nmdArray[1]
-					nmdGeneId = nmdArray[2]
+					if (gene == geneName)
+					{{
+						split(nmdGeneCheckArray[gene], currentNmdGeneArray, "|")
+						nmdPoT = currentNmdGeneArray[4]
+						nmdNoT = currentNmdGeneArray[3]
+						nmdGeneName = currentNmdGeneArray[1]
+						nmdGeneId = currentNmdGeneArray[2]
+						break	
+					}}
+					if (gene == "NA")
+					{{
+						split(nmdGeneCheckArray[gene], currentNmdGeneArray, "|")
+						nmdPoT = currentNmdGeneArray[4]
+						nmdNoT = currentNmdGeneArray[3]
+						nmdGeneName = currentNmdGeneArray[1]
+						nmdGeneId = currentNmdGeneArray[2]
+						break
+					}}
 				}}
 
 				for (currentGenotypeField = genotypeFieldStart; currentGenotypeField <= NF; currentGenotypeField++)
@@ -227,9 +253,9 @@ def snpeff_results(vcfFile: str, gtfAnnotationFile: str, speciesName: str, outpu
 					}}
 					else
 					{{
-						next
+						continue
 					}}
-					print sampleGenotype[1], speciesName, $chromField, $posField, toupper($refField), toupper($altField), toupper($aaField), geneName, geneId, effect, impact, frequency, lofPoT, lofNoT, nmdPoT, nmdNoT, rankTotal, nAnnotations, annNum, inGeneCount > '{outputDirectory}/{filename}.impact.prog.tsv'
+					print sampleGenotype[1], speciesName, $chromField, $posField, toupper($refField), toupper($altField), toupper($aaField), geneName, geneId, effect, impact, frequency, lofPoT, lofNoT, nmdPoT, nmdNoT, rankTotal, nAnnotations, annNum, inGeneCount >> "{outputDirectory}/{filename}.impact.prog.tsv"
 				}}
 			}}
 		}}' \\
@@ -336,6 +362,93 @@ def vcf_reformat(vcfFile: str, outputDirectory: str, environment: str, group: st
 	
 	mv {outputDirectory}/{filename}.reformat.prog.gz {outputs['vcf']}
 	mv {outputDirectory}/{filename}.reformat.prog.gz.csi {outputs['index']}
+	
+	echo "END: $(date)"
+	echo "$(jobinfo "$SLURM_JOBID")"
+	"""
+	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment), group=group)
+
+def genome_info(referenceGenomeFile: str, gtfAnnotationFile: str, vcfFile: str, speciesName: str, groupName: str, outputDirectory: str, environment: str, group: str | None = None):
+	"""
+	Template: template_description
+	
+	Template I/O::
+	
+		inputs = {}
+		outputs = {}
+	
+	:param
+	"""
+	outputDirectory = f'{outputDirectory}/genome_information'
+	compression = f'<(zcat {vcfFile})' if vcfFile.endswith('.gz') else vcfFile
+	inputs = {'reference': referenceGenomeFile,
+		      'gtf': gtfAnnotationFile,
+			  'vcf': vcfFile}
+	outputs = {'info': f'{outputDirectory}/{speciesName.replace(' ', '_')}.{groupName}.genomeInfo.tsv'}
+	options = {
+		'cores': 2,
+		'memory': '10g',
+		'walltime': '02:00:00'
+	}
+	spec = f"""
+	echo "START: $(date)"
+	echo "JobID: $SLURM_JOBID"
+	
+	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+	awk \\
+		'BEGIN{{
+			FS = OFS = "\\t"
+			fileCount = 0
+			geneCount = 0
+			cdsCount = 0
+			callableGenomeCount = 0
+		}}
+		{{
+			if (FNR == 1)
+			{{
+				fileCount++
+			}}
+			if (fileCount == 1)
+			{{
+				nChromosomes = $1
+				genomeLength = $2
+				next
+			}}
+			if (fileCount == 2)
+			{{
+				if ($3 == "gene")
+				{{
+					geneCount++
+					next
+				}}
+				if ($3 == "CDS")
+				{{
+					cdsCount++
+					next
+				}}
+			}}
+			if (fileCount == 3)
+			{{
+				if ($1 ~ /^#/)
+				{{
+					next
+				}}
+				callableGenomeCount++
+				next
+			}}
+		}}
+		END{{
+			print "nChromosomes", "genomeLength", "callableGenomeLength", "nGenes", "nCds"
+			print nChromosomes, genomeLength, callableGenomeCount, geneCount, cdsCount
+		}}' \\
+		<(seqtk size \\
+			{referenceGenomeFile}) \\
+		{gtfAnnotationFile} \\
+		{compression} \\
+		> {outputDirectory}/{speciesName.replace(' ', '_')}.{groupName}.genomeInfo.prog.tsv
+	
+	mv {outputDirectory}/{speciesName.replace(' ', '_')}.{groupName}.genomeInfo.prog.tsv {outputs['info']}
 	
 	echo "END: $(date)"
 	echo "$(jobinfo "$SLURM_JOBID")"

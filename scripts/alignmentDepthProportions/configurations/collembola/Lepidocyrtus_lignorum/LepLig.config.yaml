@@ -38,3 +38,7 @@ sampleList:
       - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_SKS-C106/LepLig_SKS-C106.filtered_bamutils.bam
       - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_SSJ-C258/LepLig_SSJ-C258.filtered_bamutils.bam
       - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_VAJ-C10/LepLig_VAJ-C10.filtered_bamutils.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_BJJ-C97/LepLig_BJJ-C97.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_JoeJ-C253/LepLig_JoeJ-C253.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_RDJ-C245/LepLig_RDJ-C245.filtered.clipOverlap.bam
+      - /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/alignments/collembola/Lepidocyrtus_lignorum_BGI/grassland/LepLig_SBJ-C449/LepLig_SBJ-C449.filtered.clipOverlap.bam
