@@ -49,7 +49,7 @@ def sampleNamesVCF(vcfFile: str):
 
 ########################## Templates ##########################
 
-def snpeff_results(vcfFile: str, gtfAnnotationFile: str, speciesName: str, outputDirectory: str, environment: str, group: str | None = None):
+def snpeff_results(vcfFile: str, gtfAnnotationFile: str, speciesName: str, outputDirectory: str, environment: str, group: str | None = None, snpeffResults: str = f'{os.path.dirname(os.path.realpath(__file__))}/software/snpeffResults.awk'):
 	"""
 	Template: template_description
 	
@@ -97,169 +97,10 @@ def snpeff_results(vcfFile: str, gtfAnnotationFile: str, speciesName: str, outpu
 			{gtfAnnotationFile}) \\
 		{vcfFile} \\
 	| awk \\
-	    -v speciesName="{speciesName}" \\
-		'BEGIN{{
-			FS = OFS = "\\t"
-	        chromField = 1
-			posField =  2
-			refField = 3
-			altField = 4
-			aaField = 5
-			annField = 6
-			lofField = 7
-			nmdField = 8
-			genotypeFieldStart = 9
-			print "sample", "species", "chromosome", "position", "reference", "alternative", "ancestral", "geneName", "geneId", "effect", "impact", "frequency", "lofPoT", "lofNoT", "nmdPoT", "nmdNoT", "exonNum_exonTotal", "nAnnotations", "annotationRank", "geneRank" > "{outputDirectory}/{filename}.impact.prog.tsv"
-		}}
-		{{
-			if ($altField == ".")
-			{{
-				next
-			}}
-
-			gsub(/\\)/, "", $lofField)
-			gsub(/\\(/, "", $lofField)
-			lenLofArray = split($lofField, lofArray, ",")
-			
-			for (lofGene in lofArray)
-			{{
-				lenLofAnn = split(lofArray[lofGene], lofAnn, "|")
-				if (lenLofAnn == 1)
-				{{
-					lofGeneCheckArray[NA] = "NA|NA|0|0.00"
-				}}
-				else
-				{{
-					lofGeneCheckArray[lofAnn[1]] = lofArray[lofGene]
-				}}
-			}}
-
-			gsub(/\\)/, "", $nmdField)
-			gsub(/\\(/, "", $nmdField)
-			lenNmdArray = split($nmdField, nmdArray, ",")
-
-			for (nmdGene in nmdArray)
-			{{
-				lenNmdAnn = split(nmdArray[nmdGene], nmdAnn, "|")
-				if (lenNmdAnn == 1)
-				{{
-					nmdGeneCheckArray[NA] = "NA|NA|0|0.00"
-				}}
-				else
-				{{
-					nmdGeneCheckArray[nmdAnn[1]] = nmdArray[nmdGene]
-				}}
-			}}
-
-			nAnnotations = split($annField, annotationsArray, ",")
-			lastGene = ""
-
-			for (annNum = 1; annNum <= nAnnotations; annNum++)
-			{{
-				split(annotationsArray[annNum], fieldsArray, "|")
-				allele = fieldsArray[1]
-				effect = fieldsArray[2]
-				impact = fieldsArray[3]
-				geneName = fieldsArray[4]
-				geneId = fieldsArray[5]
-				featureType = fieldsArray[6]
-				featureId = fieldsArray[7]
-				transcriptBiotype = fieldsArray[8]
-				rankTotal = fieldsArray[9]
-				hgvsC = fieldsArray[10]
-				hgvsP = fieldsArray[11]
-				cdnaPositionLength = fieldsArray[12]
-				cdsPositionLength = fieldsArray[13]
-				proteinPositionLength = fieldsArray[14]
-				distanceToFeature = fieldsArray[15]
-				warnings = fieldsArray[16]
-
-				if (impact != "LOW" && impact != "MODERATE" && impact != "HIGH")
-				{{
-					continue
-				}}
-
-				if (length(rankTotal) == 0)
-				{{
-					rankTotal = "NA"
-				}}
-
-				if (geneName != lastGene)
-				{{
-					lastGene = geneName
-					inGeneCount = 1
-				}}
-				else
-				{{
-					inGeneCount++
-				}}
-
-				for (gene in lofGeneCheckArray)
-				{{
-					if (gene == geneName)
-					{{
-						split(lofGeneCheckArray[gene], currentLofGeneArray, "|")
-						lofPoT = currentLofGeneArray[4]
-						lofNoT = currentLofGeneArray[3]
-						lofGeneName = currentLofGeneArray[1]
-						lofGeneId = currentLofGeneArray[2]
-						break	
-					}}
-					if (gene == "NA")
-					{{
-						split(lofGeneCheckArray[gene], currentLofGeneArray, "|")
-						lofPoT = currentLofGeneArray[4]
-						lofNoT = currentLofGeneArray[3]
-						lofGeneName = currentLofGeneArray[1]
-						lofGeneId = currentLofGeneArray[2]
-						break
-					}}
-				}}
-
-				for (gene in nmdGeneCheckArray)
-				{{
-					if (gene == geneName)
-					{{
-						split(nmdGeneCheckArray[gene], currentNmdGeneArray, "|")
-						nmdPoT = currentNmdGeneArray[4]
-						nmdNoT = currentNmdGeneArray[3]
-						nmdGeneName = currentNmdGeneArray[1]
-						nmdGeneId = currentNmdGeneArray[2]
-						break	
-					}}
-					if (gene == "NA")
-					{{
-						split(nmdGeneCheckArray[gene], currentNmdGeneArray, "|")
-						nmdPoT = currentNmdGeneArray[4]
-						nmdNoT = currentNmdGeneArray[3]
-						nmdGeneName = currentNmdGeneArray[1]
-						nmdGeneId = currentNmdGeneArray[2]
-						break
-					}}
-				}}
-
-				for (currentGenotypeField = genotypeFieldStart; currentGenotypeField <= NF; currentGenotypeField++)
-				{{
-					split($currentGenotypeField, sampleGenotype, ":")
-					alleleSum = split(sampleGenotype[2], zeroesAndOnes, "/")
-					frequency = 0
-					for (haplotype in zeroesAndOnes)
-					{{
-						frequency += zeroesAndOnes[haplotype]
-					}}
-					if (frequency > 0)
-					{{
-						frequency = frequency / alleleSum
-					}}
-					else
-					{{
-						continue
-					}}
-					print sampleGenotype[1], speciesName, $chromField, $posField, toupper($refField), toupper($altField), toupper($aaField), geneName, geneId, effect, impact, frequency, lofPoT, lofNoT, nmdPoT, nmdNoT, rankTotal, nAnnotations, annNum, inGeneCount >> "{outputDirectory}/{filename}.impact.prog.tsv"
-				}}
-			}}
-		}}' \\
-		-
+		-v speciesName="{speciesName}" \\
+		-f {snpeffResults} \\
+		- \\
+		> {outputDirectory}/{filename}.impact.prog.tsv
 	
 	mv {outputDirectory}/{filename}.impact.prog.tsv {outputs['impact']}
 	
@@ -267,6 +108,225 @@ def snpeff_results(vcfFile: str, gtfAnnotationFile: str, speciesName: str, outpu
 	echo "$(jobinfo "$SLURM_JOBID")"
 	"""
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment), group=group)
+
+# def snpeff_results(vcfFile: str, gtfAnnotationFile: str, speciesName: str, outputDirectory: str, environment: str, group: str | None = None):
+# 	"""
+# 	Template: template_description
+	
+# 	Template I/O::
+	
+# 		inputs = {}
+# 		outputs = {}
+	
+# 	:param
+# 	"""
+# 	filename = os.path.basename(os.path.splitext(os.path.splitext(vcfFile)[0])[0]) if vcfFile.endswith('.gz') else os.path.basename(os.path.splitext(vcfFile)[0])
+# 	outputDirectory = f'{outputDirectory}/functional_effect_classes'
+# 	inputs = {'vcf': vcfFile,
+# 		   	  'gtf': gtfAnnotationFile}
+# 	outputs = {'impact': f'{outputDirectory}/{filename}.impact.tsv'}
+# 	options = {
+# 		'cores': 5,
+# 		'memory': '20g',
+# 		'walltime': '04:00:00'
+# 	}
+# 	spec = f"""
+# 	echo "START: $(date)"
+# 	echo "JobID: $SLURM_JOBID"
+	
+# 	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
+	
+# 	if [[ $(bcftools view -h {vcfFile} | grep "##INFO=<ID=AA,") ]]; then
+# 		formatString="%CHROM\\t%POS\\t%REF\\t%ALT\\t%INFO/AA\\t%INFO/ANN\\t%INFO/LOF\\t%INFO/NMD[\\t%SAMPLE:%GT]\\n"
+# 	else
+# 		formatString="%CHROM\\t%POS\\t%REF\\t%ALT\\t.\\t%INFO/ANN\\t%INFO/LOF\\t%INFO/NMD[\\t%SAMPLE:%GT]\\n"
+# 	fi
+
+# 	bcftools query \\
+# 		--format "$formatString" \\
+# 		--regions-file <(awk \\
+# 			'BEGIN{{
+# 				FS = OFS = "\\t"
+# 			}}
+# 			{{
+# 				if ($3 == "CDS")
+# 				{{
+# 					print $1, $4 - 1, $5
+# 				}}
+# 			}}' \\
+# 			{gtfAnnotationFile}) \\
+# 		{vcfFile} \\
+# 	| awk \\
+# 		-v speciesName="{speciesName}" \\
+# 		'BEGIN{{
+# 			FS = OFS = "\\t"
+# 			chromField = 1
+# 			posField =  2
+# 			refField = 3
+# 			altField = 4
+# 			aaField = 5
+# 			annField = 6
+# 			lofField = 7
+# 			nmdField = 8
+# 			genotypeFieldStart = 9
+# 			print "sample", "species", "chromosome", "position", "reference", "alternative", "ancestral", "geneName", "geneId", "effect", "impact", "frequency", "lofPoT", "lofNoT", "nmdPoT", "nmdNoT", "exonNum_exonTotal", "nAnnotations", "annotationRank", "geneRank" > "{outputDirectory}/{filename}.impact.prog.tsv"
+# 		}}
+# 		{{
+# 		if ($altField == ".")
+# 		{{
+# 			next
+# 		}}
+
+# 		gsub(/\\)/, "", $lofField)
+# 		gsub(/\\(/, "", $lofField)
+# 		lenLofArray = split($lofField, lofArray, ",")
+		
+# 		for (lofGene in lofArray)
+# 		{{
+# 			lenLofAnn = split(lofArray[lofGene], lofAnn, "|")
+# 			if (lenLofAnn == 1)
+# 			{{
+# 				lofGeneCheckArray["NA"] = "NA|NA|0|0.00"
+# 			}}
+# 			else
+# 			{{
+# 				lofGeneCheckArray[lofAnn[1]] = lofArray[lofGene]
+# 			}}
+# 		}}
+
+# 		gsub(/\\)/, "", $nmdField)
+# 		gsub(/\\(/, "", $nmdField)
+# 		lenNmdArray = split($nmdField, nmdArray, ",")
+
+# 		for (nmdGene in nmdArray)
+# 		{{
+# 			lenNmdAnn = split(nmdArray[nmdGene], nmdAnn, "|")
+# 			if (lenNmdAnn == 1)
+# 			{{
+# 				nmdGeneCheckArray["NA"] = "NA|NA|0|0.00"
+# 			}}
+# 			else
+# 			{{
+# 				nmdGeneCheckArray[nmdAnn[1]] = nmdArray[nmdGene]
+# 			}}
+# 		}}
+
+# 		nAnnotations = split($annField, annotationsArray, ",")
+# 		lastGene = ""
+
+# 		for (annNum = 1; annNum <= nAnnotations; annNum++)
+# 		{{
+# 			split(annotationsArray[annNum], fieldsArray, "|")
+# 			allele = fieldsArray[1]
+# 			effect = fieldsArray[2]
+# 			impact = fieldsArray[3]
+# 			geneName = fieldsArray[4]
+# 			geneId = fieldsArray[5]
+# 			featureType = fieldsArray[6]
+# 			featureId = fieldsArray[7]
+# 			transcriptBiotype = fieldsArray[8]
+# 			rankTotal = fieldsArray[9]
+# 			hgvsC = fieldsArray[10]
+# 			hgvsP = fieldsArray[11]
+# 			cdnaPositionLength = fieldsArray[12]
+# 			cdsPositionLength = fieldsArray[13]
+# 			proteinPositionLength = fieldsArray[14]
+# 			distanceToFeature = fieldsArray[15]
+# 			warnings = fieldsArray[16]
+
+# 			if (impact != "LOW" && impact != "MODERATE" && impact != "HIGH")
+# 			{{
+# 				continue
+# 			}}
+
+# 			if (length(rankTotal) == 0)
+# 			{{
+# 				rankTotal = "NA"
+# 			}}
+
+# 			if (geneName != lastGene)
+# 			{{
+# 				lastGene = geneName
+# 				inGeneCount = 1
+# 			}}
+# 			else
+# 			{{
+# 				inGeneCount++
+# 			}}
+
+# 			for (gene in lofGeneCheckArray)
+# 			{{
+# 				if (gene == geneName)
+# 				{{
+# 					split(lofGeneCheckArray[gene], currentLofGeneArray, "|")
+# 					lofPoT = currentLofGeneArray[4]
+# 					lofNoT = currentLofGeneArray[3]
+# 					lofGeneName = currentLofGeneArray[1]
+# 					lofGeneId = currentLofGeneArray[2]
+# 					break	
+# 				}}
+# 				if (gene == "NA")
+# 				{{
+# 					split(lofGeneCheckArray[gene], currentLofGeneArray, "|")
+# 					lofPoT = currentLofGeneArray[4]
+# 					lofNoT = currentLofGeneArray[3]
+# 					lofGeneName = currentLofGeneArray[1]
+# 					lofGeneId = currentLofGeneArray[2]
+# 					break
+# 				}}
+# 			}}
+
+# 			for (gene in nmdGeneCheckArray)
+# 			{{
+# 				if (gene == geneName)
+# 				{{
+# 					split(nmdGeneCheckArray[gene], currentNmdGeneArray, "|")
+# 					nmdPoT = currentNmdGeneArray[4]
+# 					nmdNoT = currentNmdGeneArray[3]
+# 					nmdGeneName = currentNmdGeneArray[1]
+# 					nmdGeneId = currentNmdGeneArray[2]
+# 					break	
+# 				}}
+# 				if (gene == "NA")
+# 				{{
+# 					split(nmdGeneCheckArray[gene], currentNmdGeneArray, "|")
+# 					nmdPoT = currentNmdGeneArray[4]
+# 					nmdNoT = currentNmdGeneArray[3]
+# 					nmdGeneName = currentNmdGeneArray[1]
+# 					nmdGeneId = currentNmdGeneArray[2]
+# 					break
+# 				}}
+# 			}}
+
+# 			for (currentGenotypeField = genotypeFieldStart; currentGenotypeField <= NF; currentGenotypeField++)
+# 			{{
+# 				split($currentGenotypeField, sampleGenotype, ":")
+# 				alleleSum = split(sampleGenotype[2], zeroesAndOnes, "/")
+# 				frequency = 0
+# 				for (haplotype in zeroesAndOnes)
+# 				{{
+# 					frequency += zeroesAndOnes[haplotype]
+# 				}}
+# 				if (frequency > 0)
+# 				{{
+# 					frequency = frequency / alleleSum
+# 				}}
+# 				else
+# 				{{
+# 					continue
+# 				}}
+# 				print sampleGenotype[1], speciesName, $chromField, $posField, toupper($refField), toupper($altField), toupper($aaField), geneName, geneId, effect, impact, frequency, lofPoT, lofNoT, nmdPoT, nmdNoT, rankTotal, nAnnotations, annNum, inGeneCount >> "{outputDirectory}/{filename}.impact.prog.tsv"
+# 			}}
+# 		}}
+# 	}}' \\
+# 	-
+	
+# 	mv {outputDirectory}/{filename}.impact.prog.tsv {outputs['impact']}
+	
+# 	echo "END: $(date)"
+# 	echo "$(jobinfo "$SLURM_JOBID")"
+# 	"""
+# 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec, executor=Conda(environment), group=group)
 
 def vcf_reformat(vcfFile: str, outputDirectory: str, environment: str, group: str | None = None):
 	"""
