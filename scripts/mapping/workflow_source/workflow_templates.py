@@ -338,7 +338,7 @@ def alignment_pairedend(read1_file: str, read2_file: str, reference_genome_file:
 	options = {
 		'cores': 18,
 		'memory': '60g',
-		'walltime': '48:00:00'
+		'walltime': '72:00:00'
 	}
 	spec = f"""
 	# Sources environment

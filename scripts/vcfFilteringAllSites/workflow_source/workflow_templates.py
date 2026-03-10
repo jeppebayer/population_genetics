@@ -1081,7 +1081,7 @@ def sfs_neutral(vcfFile: str, intergenicBed: str, repeatsBed: str, sampleName: s
 	echo "JobID: $SLURM_JOBID"
 	
 	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
-	
+
 	bcftools query \\
 		--format '[%CHROM\\t%GT\\n]' \\
 		--targets-file <(bedtools subtract \\
