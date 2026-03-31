@@ -22,7 +22,7 @@ sampleSetup:
     # (str). Name of sample group.
     groupName: Grassland
     # (str). Path to VCF file.
-    vcfFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/vcf_allSites/collembola/Isotoma_viridis/grassland/IsoVir.grassland.ingroup.allQuality.freebayes.merge.normalized.filtered_DP200-668.ann.vcf.gz
+    vcfFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/vcf_allSites/collembola/Isotoma_viridis/grassland/IsoVir.grassland.ingroup.allQuality.freebayes.merge.normalized.filtered_DP200-674.ann.vcf.gz
   -
     # (str). Name of sample group.
     groupName: Conventional agriculture

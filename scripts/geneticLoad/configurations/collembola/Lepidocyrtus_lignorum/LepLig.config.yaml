@@ -7,19 +7,19 @@ condaEnvironment02: snpgenie
 # (str). Taxonomic group. Can be left empty.
 taxonomicGroup: Collembola
 # (str). Name of species being analyzed.
-speciesName: Orchesella cincta
+speciesName: Lepidocyrtus lignorum
 # (str). Directory for intermediary files.
 workingDirectoryPath: /faststorage/project/EcoGenetics/people/Jeppe_Bayer/population_genetics/steps
 # (str). Directory for final output files. (If left empty, output file will be placed within 'workingDirectoryPath').
 outputDirectoryPath: 
 # (str.) Path to reference genome file.
-referenceGenome: /faststorage/project/EcoGenetics/BACKUP/population_genetics/reference_genomes/collembola/Orchesella_cincta/OrcCin_GCA_978021485.1_hap1_softmasked.fasta
+referenceGenome: /faststorage/project/EcoGenetics/BACKUP/population_genetics/reference_genomes/collembola/Lepidocyrtus_lignorum_updated/EG_LepLig_29102025_genomic_updated_reference.fa
 # (str). Genome annotation file in GTF format.
-annotationFile: /faststorage/project/EcoGenetics/BACKUP/population_genetics/reference_genomes/collembola/Orchesella_cincta/annotation/OrcCin_GCA_978021485.1_hap1_softmasked_genomic.gtf
+annotationFile: /faststorage/project/EcoGenetics/BACKUP/population_genetics/reference_genomes/collembola/Lepidocyrtus_lignorum_updated/annotation/EG_LepLig_29102025_genomic_updated_reference.gtf
 # (list). Sample setup.
 sampleSetup:
   -
     # (str). Name of sample group.
     groupName: Grassland
     # (str). Path to VCF file.
-    vcfFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/vcf_allSites/collembola/Orchesella_cincta/grassland/OrcCin.grassland.ingroup.allQuality.freebayes.merge.normalized.filtered_DP200-1062.ann.vcf.gz
+    vcfFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/vcf_allSites/collembola/Lepidocyrtus_lignorum/grassland/LepLig.grassland.ingroup.highQuality.freebayes.merge.normalized.filtered_DP200-890.ann.vcf.gz

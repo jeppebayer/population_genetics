@@ -22,7 +22,7 @@ sampleSetup:
     # (str). Name of sample group.
     groupName: Grassland
     # (str). Path to VCF file.
-    vcfFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/vcf_allSites/collembola/Entomobrya_nicoleti/grassland/EntNic.grassland.ingroup.allQuality.freebayes.merge.normalized.filtered_DP200-668.ann.vcf.gz
+    vcfFile: /faststorage/project/EcoGenetics/general_workflow_outputs/population_genetics/vcf_allSites/collembola/Entomobrya_nicoleti/grassland/EntNic.grassland.ingroup.allQuality.freebayes.merge.normalized.filtered_DP200-680.ann.vcf.gz
   -
     # (str). Name of sample group.
     groupName: Conservation agriculture
