@@ -23,7 +23,6 @@ BEGIN{
 	{
 		next
 	}
-
 	# Remove parenthesis from LoF field
 	gsub(/\)/, "", $lofField)
 	gsub(/\(/, "", $lofField)
@@ -44,6 +43,9 @@ BEGIN{
 		# If LoF annotation is present store it in an array based on gene name
 		else
 		{
+			target = $chromField
+			gsub(/\|/, "_", target)
+			gsub(target, $chromField, lofAnn[1])
 			lofGeneCheckArray[lofAnn[1]] = lofArray[lofGene]
 		}
 	}
@@ -67,6 +69,9 @@ BEGIN{
 		# If NMD annotation is present store it in an array based on gene name
 		else
 		{
+			target = $chromField
+			gsub(/\|/, "_", target)
+			gsub(target, $chromField, $nmdField)
 			nmdGeneCheckArray[nmdAnn[1]] = nmdArray[nmdGene]
 		}
 	}
@@ -79,24 +84,223 @@ BEGIN{
 	for (annNum = 1; annNum <= nAnnotations; annNum++)
 	{
 		# Split annotation into each of its components
-		split(annotationsArray[annNum], fieldsArray, "|")
-		# Associate each component with a variable for ease
-		allele = fieldsArray[1]
-		effect = fieldsArray[2]
-		impact = fieldsArray[3]
-		geneName = fieldsArray[4]
-		geneId = fieldsArray[5]
-		featureType = fieldsArray[6]
-		featureId = fieldsArray[7]
-		transcriptBiotype = fieldsArray[8]
-		rankTotal = fieldsArray[9]
-		hgvsC = fieldsArray[10]
-		hgvsP = fieldsArray[11]
-		cdnaPositionLength = fieldsArray[12]
-		cdsPositionLength = fieldsArray[13]
-		proteinPositionLength = fieldsArray[14]
-		distanceToFeature = fieldsArray[15]
-		warnings = fieldsArray[16]
+		nFields = split(annotationsArray[annNum], fieldsArray, "|")
+		# Surmise if sequence names contain pipes "|", if so we have to deal with that idiotic decision
+		if (nFields > 16)
+		{
+			# Figure out how many pipes are used in sequence name
+			pipeProbe = split($chromField, probeArray, "|") - 1
+			# Create a regex searchable target from sequence name containing literal pipes
+			target = $chromField
+			gsub(/\|/, "\\|", target)
+			# Figure out how many times the sequence name occurs in the annotation
+			nPipeUsage = split(annotationsArray[annNum], pipeArray, target) - 1
+			# Determine the location of the first occurrence of the sequence name in the annotation
+			firstPipeLocation = split(pipeArray[1], locationArray, "|")
+			# Associate each component with a variable
+			# First 3 fields are always the same
+			allele = fieldsArray[1]
+			effect = fieldsArray[2]
+			impact = fieldsArray[3]
+			# If the sequence name occurs once
+			if (nPipeUsage == 1)
+			{
+				# If the sequence name occurs in field 4
+				if (firstPipeLocation == 4)
+				{
+					geneName = fieldsArray[4]
+					for (i = 5; i <= 4 + pipeProbe; i++)
+					{
+						geneName = geneName "|" fieldsArray[i]
+					}
+					geneId = fieldsArray[5 + pipeProbe]
+					featureType = fieldsArray[6 + pipeProbe]
+					featureId = fieldsArray[7 + pipeProbe]
+					transcriptBiotype = fieldsArray[8 + pipeProbe]
+					rankTotal = fieldsArray[9 + pipeProbe]
+					hgvsC = fieldsArray[10 + pipeProbe]
+					hgvsP = fieldsArray[11 + pipeProbe]
+					cdnaPositionLength = fieldsArray[12 + pipeProbe]
+					cdsPositionLength = fieldsArray[13 + pipeProbe]
+					proteinPositionLength = fieldsArray[14 + pipeProbe]
+					distanceToFeature = fieldsArray[15 + pipeProbe]
+					warnings = fieldsArray[16 + pipeProbe]
+				}
+				# If the sequence name occurs in field 5
+				else if (firstPipeLocation == 5)
+				{
+					geneName = fieldsArray[4]
+					geneId = fieldsArray[5]
+					for (i = 6; i <= 5 + pipeProbe; i++)
+					{
+						geneId = geneId "|" fieldsArray[i]
+					}
+					featureType = fieldsArray[6 + pipeProbe]
+					featureId = fieldsArray[7 + pipeProbe]
+					transcriptBiotype = fieldsArray[8 + pipeProbe]
+					rankTotal = fieldsArray[9 + pipeProbe]
+					hgvsC = fieldsArray[10 + pipeProbe]
+					hgvsP = fieldsArray[11 + pipeProbe]
+					cdnaPositionLength = fieldsArray[12 + pipeProbe]
+					cdsPositionLength = fieldsArray[13 + pipeProbe]
+					proteinPositionLength = fieldsArray[14 + pipeProbe]
+					distanceToFeature = fieldsArray[15 + pipeProbe]
+					warnings = fieldsArray[16 + pipeProbe]
+				}
+				# If the sequence name occurs in field 7
+				else
+				{
+					geneName = fieldsArray[4]
+					geneId = fieldsArray[5]
+					featureType = fieldsArray[6]
+					featureId = fieldsArray[7]
+					for (i = 8; i <= 7 + pipeProbe; i++)
+					{
+						geneName = geneName "|" fieldsArray[i]
+					}
+					transcriptBiotype = fieldsArray[8 + pipeProbe]
+					rankTotal = fieldsArray[9 + pipeProbe]
+					hgvsC = fieldsArray[10 + pipeProbe]
+					hgvsP = fieldsArray[11 + pipeProbe]
+					cdnaPositionLength = fieldsArray[12 + pipeProbe]
+					cdsPositionLength = fieldsArray[13 + pipeProbe]
+					proteinPositionLength = fieldsArray[14 + pipeProbe]
+					distanceToFeature = fieldsArray[15 + pipeProbe]
+					warnings = fieldsArray[16 + pipeProbe]
+				}
+			}
+			# If the sequence name occurs twice
+			else if (nPipeUsage == 2)
+			{
+				# Determine the location of the second occurrence of the sequence name
+				secondPipeLocation = firstPipeLocation + split(pipeArray[2], locationArray, "|") - 1
+				# If the first occurrence is in field 4
+				if (firstPipeLocation == 4)
+				{
+					geneName = fieldsArray[4]
+					for (i = 5; i <= 4 + pipeProbe; i++)
+					{
+						geneName = geneName "|" fieldsArray[i]
+					}
+					# If the second occurrence is in field 5
+					if (secondPipeLocation == 5)
+					{
+						geneId = fieldsArray[5 + pipeProbe]
+						for (i = 6 + pipeProbe; i <= 5 + 2 * pipeProbe; i++)
+						{
+							geneId = geneId "|" fieldsArray[i]
+						}
+						featureType = fieldsArray[6 + 2 * pipeProbe]
+						featureId = fieldsArray[7 + 2 * pipeProbe]
+						transcriptBiotype = fieldsArray[8 + 2 * pipeProbe]
+						rankTotal = fieldsArray[9 + 2 * pipeProbe]
+						hgvsC = fieldsArray[10 + 2 * pipeProbe]
+						hgvsP = fieldsArray[11 + 2 * pipeProbe]
+						cdnaPositionLength = fieldsArray[12 + 2 * pipeProbe]
+						cdsPositionLength = fieldsArray[13 + 2 * pipeProbe]
+						proteinPositionLength = fieldsArray[14 + 2 * pipeProbe]
+						distanceToFeature = fieldsArray[15 + 2 * pipeProbe]
+						warnings = fieldsArray[16 + 2 * pipeProbe]
+					}
+					# If the second occurrence is in field 7
+					else
+					{
+						geneId = fieldsArray[5 + pipeProbe]
+						featureType = fieldsArray[6 + pipeProbe]
+						featureId = fieldsArray[7 + pipeProbe]
+						for (i = 8 + pipeProbe; i <= 7 + 2 * pipeProbe; i++)
+						{
+							featureId = featureId "|" fieldsArray[i]
+						}
+						transcriptBiotype = fieldsArray[8 + 2 * pipeProbe]
+						rankTotal = fieldsArray[9 + 2 * pipeProbe]
+						hgvsC = fieldsArray[10 + 2 * pipeProbe]
+						hgvsP = fieldsArray[11 + 2 * pipeProbe]
+						cdnaPositionLength = fieldsArray[12 + 2 * pipeProbe]
+						cdsPositionLength = fieldsArray[13 + 2 * pipeProbe]
+						proteinPositionLength = fieldsArray[14 + 2 * pipeProbe]
+						distanceToFeature = fieldsArray[15 + 2 * pipeProbe]
+						warnings = fieldsArray[16 + 2 * pipeProbe]
+
+					}
+				}
+				# If the first occurrence is in field 5
+				if (firstPipeLocation == 5)
+				{
+					geneName = fieldsArray[4]
+					geneId = fieldsArray[5]
+					for (i = 6; i <= 5 + pipeProbe; i++)
+					{
+						geneId = geneId "|" fieldsArray[i]
+					}
+					featureType = fieldsArray[6 + pipeProbe]
+					featureId = fieldsArray[7 + pipeProbe]
+					for (i = 8 + pipeProbe; i <= 7 + 2 * pipeProbe; i++)
+					{
+						featureId = featureId "|" fieldsArray[i]
+					}
+					transcriptBiotype = fieldsArray[8 + 2 * pipeProbe]
+					rankTotal = fieldsArray[9 + 2 * pipeProbe]
+					hgvsC = fieldsArray[10 + 2 * pipeProbe]
+					hgvsP = fieldsArray[11 + 2 * pipeProbe]
+					cdnaPositionLength = fieldsArray[12 + 2 * pipeProbe]
+					cdsPositionLength = fieldsArray[13 + 2 * pipeProbe]
+					proteinPositionLength = fieldsArray[14 + 2 * pipeProbe]
+					distanceToFeature = fieldsArray[15 + 2 * pipeProbe]
+					warnings = fieldsArray[16 + 2 * pipeProbe]
+
+				}
+			}
+			# If the sequence name occurs thrice
+			else if (nPipeUsage == 3)
+			{
+				geneName = fieldsArray[4]
+				for (i = 5; i <= 4 + pipeProbe; i++)
+				{
+					geneName = geneName "|" fieldsArray[i]
+				}
+				geneId = fieldsArray[5 + pipeProbe]
+				for (i = 6 + pipeProbe; i <= 5 + 2 * pipeProbe; i++)
+				{
+					geneId = geneId "|" fieldsArray[i]
+				}
+				featureType = fieldsArray[6 + 2 * pipeProbe]
+				featureId = fieldsArray[7 + 2 * pipeProbe]
+				for (i = 8 + 2 * pipeProbe; i <= 7 + 3 * pipeProbe; i++)
+				{
+					featureId = featureId "|" fieldsArray[i]
+				}
+				transcriptBiotype = fieldsArray[8 + 3 * pipeProbe]
+				rankTotal = fieldsArray[9 + 3 * pipeProbe]
+				hgvsC = fieldsArray[10 + 3 * pipeProbe]
+				hgvsP = fieldsArray[11 + 3 * pipeProbe]
+				cdnaPositionLength = fieldsArray[12 + 3 * pipeProbe]
+				cdsPositionLength = fieldsArray[13 + 3 * pipeProbe]
+				proteinPositionLength = fieldsArray[14 + 3 * pipeProbe]
+				distanceToFeature = fieldsArray[15 + 3 * pipeProbe]
+				warnings = fieldsArray[16 + 3 * pipeProbe]
+			}
+		}
+		else
+		{
+			# Associate each component with a variable for ease
+			allele = fieldsArray[1]
+			effect = fieldsArray[2]
+			impact = fieldsArray[3]
+			geneName = fieldsArray[4]
+			geneId = fieldsArray[5]
+			featureType = fieldsArray[6]
+			featureId = fieldsArray[7]
+			transcriptBiotype = fieldsArray[8]
+			rankTotal = fieldsArray[9]
+			hgvsC = fieldsArray[10]
+			hgvsP = fieldsArray[11]
+			cdnaPositionLength = fieldsArray[12]
+			cdsPositionLength = fieldsArray[13]
+			proteinPositionLength = fieldsArray[14]
+			distanceToFeature = fieldsArray[15]
+			warnings = fieldsArray[16]
+		}
 
 		# If the impact of the annotation is not LOW, MODERATE or HIGH disregard it
 		if (impact != "LOW" && impact != "MODERATE" && impact != "HIGH")

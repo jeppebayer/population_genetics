@@ -75,15 +75,10 @@ def snpeff_results(vcfFile: str, gtfAnnotationFile: str, speciesName: str, outpu
 	echo "JobID: $SLURM_JOBID"
 	
 	[ -d {outputDirectory} ] || mkdir -p {outputDirectory}
-	
-	if [[ $(bcftools view -h {vcfFile} | grep "##INFO=<ID=AA,") ]]; then
-		formatString="%CHROM\\t%POS\\t%REF\\t%ALT\\t%INFO/AA\\t%INFO/ANN\\t%INFO/LOF\\t%INFO/NMD[\\t%SAMPLE:%GT]\\n"
-	else
-		formatString="%CHROM\\t%POS\\t%REF\\t%ALT\\t.\\t%INFO/ANN\\t%INFO/LOF\\t%INFO/NMD[\\t%SAMPLE:%GT]\\n"
-	fi
 
 	bcftools query \\
-		--format "$formatString" \\
+		--format "%CHROM\\t%POS\\t%REF\\t%ALT\\t%INFO/AA\\t%INFO/ANN\\t%INFO/LOF\\t%INFO/NMD[\\t%SAMPLE:%GT]\\n" \\
+		--allow-undef-tags \\
 		--regions-file <(awk \\
 			'BEGIN{{
 				FS = OFS = "\\t"
